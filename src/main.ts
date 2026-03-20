@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { CuboidMesh, CuboidMeshMultiTexture } from './creation';
 
 const Game: {
     scene: THREE.Scene | null,
@@ -21,18 +22,26 @@ function init(): void {
     Game.renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(Game.renderer.domElement);
 
-    Game.camera.position.z = 5.0;
+    Game.camera.position.x = 1.0;
+    Game.camera.position.z = 1.0;
+    Game.camera.position.y = 1.0;
+    Game.camera.rotateY(Math.PI / 4.0)
+    Game.camera.rotateX(-Math.PI / 4.0);
 
-    const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-    const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-    const cube = new THREE.Mesh( geometry, material );
-    Game.scene.add( cube );
+    let dirtCube: CuboidMesh = new CuboidMeshMultiTexture(1, 1, 1, 
+        "grass_textures/grass_top.png",
+        "grass_textures/grass_bottom.png",
+        "grass_textures/grass_side.png"
+    );
+    Game.scene.add( dirtCube.Mesh() );
+
+    let ambientLight = new THREE.AmbientLight(0x404040, 10.0);
+    Game.scene.add(ambientLight);
 
     window.addEventListener("resize", onWindowResize, false);
 }
 
 function animate(time: number): void {
-
     if (Game.renderer != null && Game.scene != null && Game.camera != null)
         Game.renderer?.render(Game.scene, Game.camera);
 
