@@ -159,3 +159,83 @@ export class CuboidMeshPBR extends CuboidMesh {
         return newMesh;
     }
 }
+
+export class CuboidMeshMultiTexturePBR extends CuboidMesh {
+    topTexturePaths: {
+        colorPath: string,
+        normalMapPath: string,
+        metalnessMapPath: string,
+    };
+    bottomTexturePaths: {
+        colorPath: string,
+        normalMapPath: string,
+        metalnessMapPath: string,
+    };
+    sideTexturePaths: {
+        colorPath: string,
+        normalMapPath: string,
+        metalnessMapPath: string,
+    };
+    materials: THREE.MeshStandardMaterial[];
+
+    constructor(
+        width: number, 
+        height: number, 
+        depth: number, 
+        topTexturePaths: {
+            colorPath: string,
+            normalMapPath: string,
+            metalnessMapPath: string,
+        },
+        bottomTexturePaths: {
+            colorPath: string,
+            normalMapPath: string,
+            metalnessMapPath: string,
+        },
+        sideTexturePaths: {
+            colorPath: string,
+            normalMapPath: string,
+            metalnessMapPath: string,
+        }
+    ) {
+        super(width, height, depth);
+        this.topTexturePaths = topTexturePaths;
+        this.bottomTexturePaths = bottomTexturePaths;
+        this.sideTexturePaths = sideTexturePaths;
+        this.materials = [];
+
+        const loader = new THREE.TextureLoader();
+        this.geometry = new THREE.BoxGeometry(width, height, depth);
+
+        for (let i = 0; i < 6; ++i) {
+            let colorPath: string;
+            let normalMapPath: string;
+            let metalnessMapPath: string;
+
+            if (i == 2) {
+                colorPath = topTexturePaths.colorPath;
+                normalMapPath = topTexturePaths.normalMapPath;
+                metalnessMapPath = topTexturePaths.metalnessMapPath;
+            } else if (i == 3) {
+                colorPath = bottomTexturePaths.colorPath;
+                normalMapPath = bottomTexturePaths.normalMapPath;
+                metalnessMapPath = bottomTexturePaths.metalnessMapPath;
+            } else {
+                colorPath = sideTexturePaths.colorPath;
+                normalMapPath = sideTexturePaths.normalMapPath;
+                metalnessMapPath = sideTexturePaths.metalnessMapPath;
+            }
+
+            this.materials[i].map = loader.load(import.meta.env.BASE_URL + colorPath);
+            this.materials[i].normalMap = loader.load(import.meta.env.BASE_URL + normalMapPath);
+            this.materials[i].metalnessMap = loader.load(import.meta.env.BASE_URL + metalnessMapPath);
+        }
+    }
+
+    Mesh(): THREE.Mesh {
+        let newMesh: THREE.Mesh = new THREE.Mesh(this.geometry, this.materials);
+        newMesh.castShadow = true;
+        newMesh.receiveShadow = true;
+        return newMesh;
+    }
+}
