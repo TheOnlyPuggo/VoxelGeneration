@@ -11,7 +11,8 @@ const Game: {
     renderer: THREE.WebGLRenderer | null,
     environment: {
         skybox: GroundedSkybox | null,
-    }
+    },
+    timer: THREE.Timer | null,
 } = {
     scene: null,
     camera: null,
@@ -19,7 +20,8 @@ const Game: {
     renderer: null,
     environment: {
         skybox: null,
-    }
+    },
+    timer: null,
 };
 
 init();
@@ -43,6 +45,8 @@ function init(): void {
     Game.camera.rotateY(Math.PI / 4.0)
     Game.camera.rotateX(-Math.PI / 4.0); Game.renderer.domElement
 
+    // Timer
+    Game.timer = new THREE.Timer();
 
     // Temp Cube Creation Example
     let grassBlockMesh: CuboidMesh = new CuboidMeshMultiTexture(1, 1, 1, 
@@ -69,10 +73,13 @@ function init(): void {
 }
 
 function animate(time: number): void {
+    Game.timer?.update(time);
+
     if (Game.renderer != null && Game.scene != null && Game.camera != null)
         Game.renderer?.render(Game.scene, Game.camera);
 
-    Game.cameraControls?.Update();
+
+    Game.cameraControls?.Update(Game.timer?.getDelta() ?? 0);
     Game.environment.skybox?.position.copy(Game.camera?.position as THREE.Vector3);
 
     requestAnimationFrame(animate)
