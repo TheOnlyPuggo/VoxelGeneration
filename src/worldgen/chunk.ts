@@ -25,9 +25,9 @@ export class Chunk {
             for (let y: number = 0; y < chunkSize; y++) {
                 this.blocks[x].push([]);
                 for (let z: number = 0; z < chunkSize; z++) {
-                    let pos = BlockPos.fromChunkPos(chunkPos, new SubChunkPos(x, y, z));
-                    let height = world.getHeightAt(pos.x, pos.z) - pos.y;
-                    let dirtHeight = height - world.getDirtThicknessAt(pos.x, pos.z);
+                    let pos: BlockPos = BlockPos.fromChunkPos(chunkPos, new SubChunkPos(x, y, z));
+                    let height: number = world.getHeightAt(pos.x, pos.z) - pos.y;
+                    let dirtHeight: number = height - world.getDirtThicknessAt(pos.x, pos.z);
 
                     if (height < 0 || world.getCaveAt(pos)) this.blocks[x][y].push(Blocks.AIR);
                     else if (height === 0) this.blocks[x][y].push(Blocks.GRASS);
@@ -53,10 +53,9 @@ export class Chunk {
             pz: 0,
             nz: 0
         };
-        for (let x = 0; x < chunkSize; x++) {
-            for (let y = 0; y < chunkSize; y++) {
-                for (let z = 0; z < chunkSize; z++) {
-
+        for (let x: number = 0; x < chunkSize; x++) {
+            for (let y: number = 0; y < chunkSize; y++) {
+                for (let z: number = 0; z < chunkSize; z++) {
                     matrix.makeTranslation(x, y, z);
                     faces.px = this.getOpacityAtWorld(new SubChunkPos(x + 1, y, z));
                     faces.nx = this.getOpacityAtWorld(new SubChunkPos(x - 1, y, z));
@@ -64,28 +63,32 @@ export class Chunk {
                     faces.ny = this.getOpacityAtWorld(new SubChunkPos(x, y - 1, z));
                     faces.pz = this.getOpacityAtWorld(new SubChunkPos(x, y, z + 1));
                     faces.nz = this.getOpacityAtWorld(new SubChunkPos(x, y, z - 1));
-                    let mesh = this.blocks[x][y][z].getMesh(faces);
 
+                    let mesh = this.blocks[x][y][z].getMesh(faces);
                     if (mesh === null) continue;
+                    let geometry: BufferGeometry = mesh.geometry.clone();
+                    if (geometry === null) continue;
                     geometry = geometry.applyMatrix4(matrix);
 
+                    if (!(mesh.material instanceof Material)) continue;
+                    materials.push(mesh.material);
+
                     geometries.push(geometry);
-                    materials.push(material);
                 }
             }
         }
         if (geometries.length == 0) return null;
-        var mesh = new THREE.Mesh(BufferGeometryUtils.mergeGeometries(geometries, true), materials);
+        let mesh = new THREE.Mesh(BufferGeometryUtils.mergeGeometries(geometries, true), materials);
         mesh.castShadow = true;
         mesh.receiveShadow = true;
         return mesh;
     }
 
-    getOpacityAtWorld(subChunkPos: SubChunkPos) {
+    getOpacityAtWorld(subChunkPos: SubChunkPos): number {
         return this.world.getOpacityAt(BlockPos.fromChunkPos(this.chunkPos, subChunkPos));
     }
 
-    getOpacityAt(subChunkPos: SubChunkPos) {
+    getOpacityAt(subChunkPos: SubChunkPos): number {
         return this.blocks[subChunkPos.x][subChunkPos.y][subChunkPos.z].opacity;
     }
 }

@@ -59,11 +59,11 @@ export class World {
         this.cucumberNoise = new SimplexNoise();
 
         this.chunks = [];
-        for (let x = 0; x < worldSize.x; x++) {
+        for (let x: number = 0; x < worldSize.x; x++) {
             this.chunks.push([]);
-            for (let y = 0; y < worldSize.y; y++) {
+            for (let y: number = 0; y < worldSize.y; y++) {
                 this.chunks[x].push([]);
-                for (let z = 0; z < worldSize.z; z++) {
+                for (let z: number = 0; z < worldSize.z; z++) {
                     this.chunks[x][y].push(new Chunk(this, new ChunkPos(x, y, z)));
                 }
             }
@@ -71,11 +71,11 @@ export class World {
     }
 
     getMeshes() {
-        var meshes = [];
-        var matrix = new THREE.Matrix4();
-        for (let x = 0; x < this.chunks.length; x++) {
-            for (let y = 0; y < this.chunks[0].length; y++) {
-                for (let z = 0; z < this.chunks[0][0].length; z++) {
+        var meshes: THREE.Mesh[] = [];
+        var matrix: THREE.Matrix4 = new THREE.Matrix4();
+        for (let x: number = 0; x < this.chunks.length; x++) {
+            for (let y: number = 0; y < this.chunks[0].length; y++) {
+                for (let z: number = 0; z < this.chunks[0][0].length; z++) {
                     var mesh = this.chunks[x][y][z].getMesh();
                     if (mesh == null) continue;
                     matrix.makeTranslation(x * chunkSize, y * chunkSize, z * chunkSize);
@@ -87,12 +87,12 @@ export class World {
         return meshes;
     }
 
-    getOpacityAt(worldPos: BlockPos) {
-        var chunkPos: ChunkPos = worldPos.getChunkPos();
+    getOpacityAt(blockPos: BlockPos): number {
+        var chunkPos: ChunkPos = blockPos.getChunkPos();
         if (chunkPos.x < 0 || chunkPos.x >= this.chunks.length ||
             chunkPos.y < 0 || chunkPos.y >= this.chunks[0].length ||
             chunkPos.z < 0 || chunkPos.z >= this.chunks[0][0].length) return 0;
-        return this.chunks[chunkPos.x][chunkPos.y][chunkPos.z].getOpacityAt(worldPos.getSubChunkPos());
+        return this.chunks[chunkPos.x][chunkPos.y][chunkPos.z].getOpacityAt(blockPos.getSubChunkPos());
     }
 
     getHeightAt(x: number, z: number): number {
@@ -108,19 +108,19 @@ export class World {
         return Math.round(dirtGen.amplitude * this.dirtNoise.noise(x / dirtGen.size, z / dirtGen.size) + dirtGen.base);
     }
 
-    getCaveAt(worldPos: BlockPos): boolean {
-        return this.dirtNoise.noise3d(worldPos.x / caveGen.size, worldPos.y / caveGen.size, worldPos.z / caveGen.size) < caveGen.max;
+    getCaveAt(blockPos: BlockPos): boolean {
+        return this.dirtNoise.noise3d(blockPos.x / caveGen.size, blockPos.y / caveGen.size, blockPos.z / caveGen.size) < caveGen.max;
     }
 
-    getCoalAt(worldPos: BlockPos): boolean {
-        return this.coalNoise.noise3d(worldPos.x / coalGen.size, worldPos.y / coalGen.size, worldPos.z / coalGen.size) < coalGen.max && worldPos.y < coalGen.maxHeight;
+    getCoalAt(blockPos: BlockPos): boolean {
+        return this.coalNoise.noise3d(blockPos.x / coalGen.size, blockPos.y / coalGen.size, blockPos.z / coalGen.size) < coalGen.max && blockPos.y < coalGen.maxHeight;
     }
 
-    getIronAt(worldPos: BlockPos): boolean {
-        return this.ironNoise.noise3d(worldPos.x / ironGen.size, worldPos.y / ironGen.size, worldPos.z / ironGen.size) < ironGen.max && worldPos.y < ironGen.maxHeight;
+    getIronAt(blockPos: BlockPos): boolean {
+        return this.ironNoise.noise3d(blockPos.x / ironGen.size, blockPos.y / ironGen.size, blockPos.z / ironGen.size) < ironGen.max && blockPos.y < ironGen.maxHeight;
     }
 
-    getCucumberAt(worldPos: BlockPos): boolean {
-        return this.cucumberNoise.noise3d(worldPos.x / cucumberGen.size, worldPos.y / cucumberGen.size, worldPos.z / cucumberGen.size) < cucumberGen.max && worldPos.y < cucumberGen.maxHeight;
+    getCucumberAt(blockPos: BlockPos): boolean {
+        return this.cucumberNoise.noise3d(blockPos.x / cucumberGen.size, blockPos.y / cucumberGen.size, blockPos.z / cucumberGen.size) < cucumberGen.max && blockPos.y < cucumberGen.maxHeight;
     }
 }
