@@ -3,8 +3,9 @@ import { CuboidMesh, CuboidMeshMultiTexture } from './creation';
 import { GroundedSkybox } from 'three/examples/jsm/objects/GroundedSkybox.js';
 import { CameraControls } from './camera';
 import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js';
+import { CreateGUI } from './UI';
 
-const Game: {
+export const Game: {
     scene: THREE.Scene | null,
     camera: THREE.Camera | null,
     cameraControls: CameraControls | null,
@@ -72,6 +73,9 @@ function init(): void {
     Game.environment.skybox.material.color.setRGB(skyboxBrightness, skyboxBrightness, skyboxBrightness);
     Game.scene.add(Game.environment.skybox);
     //#endregion
+
+    // GUI
+    CreateGUI(Game);
 
     window.addEventListener("resize", onWindowResize, false);
 }
