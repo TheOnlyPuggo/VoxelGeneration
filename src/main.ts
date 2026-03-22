@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import { CuboidMesh, CuboidMeshMultiTexture } from './creation';
+import { CuboidMesh, CuboidMeshOneColor, CuboidMeshMultiTexture, CuboidMeshOneTexture } from './creation';
 import { CameraControls } from './camera';
 import { World } from './worldgen/world';
-import {GroundedSkybox} from "three/examples/jsm/objects/GroundedSkybox";
-import {HDRLoader} from "three/examples/jsm/loaders/HDRLoader";
+import { GroundedSkybox } from "three/examples/jsm/objects/GroundedSkybox.js";
+import { HDRLoader } from "three/examples/jsm/loaders/HDRLoader.js";
 import {CreateGUI} from "./UI";
 
 export const Game: {
@@ -51,11 +51,30 @@ function init(): void {
     Game.timer = new THREE.Timer();
 
     // Temp Cube Creation Example
+    // let grassBlockMesh: CuboidMesh = new CuboidMeshMultiTexture(1, 1, 1, 1.0,
+    //     "grass_textures/grass_top.png",
+    //     "grass_textures/grass_bottom.png",
+    //     "grass_textures/grass_side.png",
+    //     {
+    //         px: 0,
+    //         nx: 0,
+    //         py: 0,
+    //         ny: 0,
+    //         pz: 0,
+    //         nz: 0
+    //     },
+    // );
+
+    // Game.scene.add( grassBlockMesh.Mesh() ?? new THREE.Mesh() );
+
+    // World Creation
     let world: World = new World();
     let meshes: THREE.Mesh[] = world.getMeshes();
     for (let i = 0; i < meshes.length; i++) {
         Game.scene.add( meshes[i] );
     }
+
+
 
     // Light
     let ambientLight = new THREE.AmbientLight(0x404040, 10.0);

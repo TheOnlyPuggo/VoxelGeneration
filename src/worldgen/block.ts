@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import {BufferGeometryUtils} from "three/examples/jsm/Addons.js";
-import {CuboidMesh, CuboidMeshOneColor} from "../creation";
+import {CuboidMesh, CuboidMeshMultiTexture, CuboidMeshOneColor} from "../creation";
 
 export class Block {
     name: string;
@@ -15,7 +15,24 @@ export class Block {
 
     getMesh(faces: {px: number; nx: number; py: number; ny: number; pz: number; nz: number}): THREE.Mesh | null {
         if (this.opacity === 0 || this.color == null) return null;
-        let mesh: CuboidMesh = new CuboidMeshOneColor(1, 1, 1, this.color, false, faces);
+        let mesh: CuboidMesh;
+
+        switch(this.name) {
+            case "grass": {
+                mesh = new CuboidMeshMultiTexture(1, 1, 1, 1.0, 
+                    "grass_textures/grass_top.png",
+                    "grass_textures/grass_bottom.png",
+                    "grass_textures/grass_side.png",
+                    faces,
+                );
+                break;
+            }
+            default: {
+                mesh = new CuboidMeshOneColor(1, 1, 1, 1.0, this.color, false, faces);
+                break;
+            }
+        }
+
         return mesh.Mesh();
     }
 }
