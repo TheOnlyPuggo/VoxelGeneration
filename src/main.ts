@@ -3,16 +3,24 @@ import { CuboidMesh, CuboidMeshMultiTexture } from './creation';
 import { CameraControls } from './camera';
 import { World } from './worldgen/world';
 
-const Game: {
+export const Game: {
     scene: THREE.Scene | null,
     camera: THREE.Camera | null,
     cameraControls: CameraControls | null,
     renderer: THREE.WebGLRenderer | null,
+    environment: {
+        skybox: GroundedSkybox | null,
+    },
+    timer: THREE.Timer | null,
 } = {
     scene: null,
     camera: null,
     cameraControls: null,
     renderer: null,
+    environment: {
+        skybox: null,
+    },
+    timer: null,
 };
 
 init();
@@ -36,6 +44,8 @@ function init(): void {
     Game.camera.rotateY(Math.PI / 4.0)
     Game.camera.rotateX(-Math.PI / 4.0); Game.renderer.domElement
 
+    // Timer
+    Game.timer = new THREE.Timer();
 
     // Temp Cube Creation Example
     let world: World = new World();
@@ -48,14 +58,30 @@ function init(): void {
     let ambientLight = new THREE.AmbientLight(0x404040, 10.0);
     Game.scene.add(ambientLight);
 
+    //#region Skybox
+    let skyboxTexture = new HDRLoader().load(import.meta.env.BASE_URL + "skybox.hdr");
+    Game.environment.skybox = new GroundedSkybox(skyboxTexture, 100, 1000);
+
+    let skyboxBrightness = 0.7;
+    Game.environment.skybox.material.color.setRGB(skyboxBrightness, skyboxBrightness, skyboxBrightness);
+    Game.scene.add(Game.environment.skybox);
+    //#endregion
+
+    // GUI
+    CreateGUI(Game);
+
     window.addEventListener("resize", onWindowResize, false);
 }
 
 function animate(time: number): void {
+    Game.timer?.update(time);
+
     if (Game.renderer != null && Game.scene != null && Game.camera != null)
         Game.renderer?.render(Game.scene, Game.camera);
 
-    Game.cameraControls?.Update();
+
+    Game.cameraControls?.Update(Game.timer?.getDelta() ?? 0);
+    Game.environment.skybox?.position.copy(Game.camera?.position as THREE.Vector3);
 
     requestAnimationFrame(animate)
 };

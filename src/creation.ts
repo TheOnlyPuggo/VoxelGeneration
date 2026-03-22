@@ -4,18 +4,57 @@ export class CuboidMesh {
     width: number;
     height: number;
     depth: number;
+    faces: {
+        px: number,
+        nx: number,
+        py: number,
+        ny: number,
+        pz: number,
+        nz: number,
+    };
+    materials: THREE.MeshStandardMaterial[];
     geometry: THREE.BoxGeometry;
 
     constructor(
         width: number, 
         height: number, 
-        depth: number
+        depth: number,
+        faces: {
+            px: number,
+            nx: number,
+            py: number,
+            ny: number,
+            pz: number,
+            nz: number,
+        } = {
+            px: 1.0,
+            nx: 1.0,
+            py: 1.0,
+            ny: 1.0,
+            pz: 1.0,
+            nz: 1.0
+        }
     ) {
         this.width = width;
         this.height = height;
         this.depth = depth;
+        this.faces = faces;
 
+        this.materials = [new THREE.MeshStandardMaterial()];
         this.geometry = new THREE.BoxGeometry(width, height, depth);
+    }
+
+    HandleTransparency() {
+        this.materials.forEach(material => {
+            material.transparent = true;
+        });
+
+        if (this.materials.length >= 1) this.materials[0].opacity = this.faces.px === 0 ? 0.0 : 1.0;
+        if (this.materials.length >= 2) this.materials[1].opacity = this.faces.nx === 0 ? 0.0 : 1.0;
+        if (this.materials.length >= 3) this.materials[2].opacity = this.faces.py === 0 ? 0.0 : 1.0;
+        if (this.materials.length >= 4) this.materials[3].opacity = this.faces.ny === 0 ? 0.0 : 1.0;
+        if (this.materials.length >= 5) this.materials[4].opacity = this.faces.pz === 0 ? 0.0 : 1.0;
+        if (this.materials.length >= 6) this.materials[5].opacity = this.faces.nz === 0 ? 0.0 : 1.0;
     }
 
     Mesh(): THREE.Mesh {
@@ -27,48 +66,80 @@ export class CuboidMesh {
 export class CuboidMeshOneColor extends CuboidMesh {
     color: THREE.Color;
     isWireFrame: boolean;
-    material: THREE.MeshBasicMaterial;
 
     constructor(
         width: number, 
         height: number, 
         depth: number, 
         color: THREE.Color, 
-        isWireFrame: boolean
+        isWireFrame: boolean,
+        faces: {
+            px: number,
+            nx: number,
+            py: number,
+            ny: number,
+            pz: number,
+            nz: number,
+        } = {
+            px: 1.0,
+            nx: 1.0,
+            py: 1.0,
+            ny: 1.0,
+            pz: 1.0,
+            nz: 1.0
+        },
     ) {
-        super(width, height, depth);
+        super(width, height, depth, faces);
         this.color = color;
         this.isWireFrame = isWireFrame;
 
+        this.materials = [new THREE.MeshStandardMaterial({color: color})]
         this.geometry = new THREE.BoxGeometry(width, height, depth);
-        this.material = new THREE.MeshBasicMaterial({color: color});
+
+        this.HandleTransparency();
     }
 
     Mesh(): THREE.Mesh {
-        return new THREE.Mesh(this.geometry, this.material);
+        return new THREE.Mesh(this.geometry, this.materials[0]);
     }
 }
 export class CuboidMeshOneTexture extends CuboidMesh {
     texturePath: string;
-    material: THREE.MeshStandardMaterial;
 
     constructor(
         width: number, 
         height: number, 
         depth: number,
-        texturePath: string
+        texturePath: string,
+        faces: {
+            px: number,
+            nx: number,
+            py: number,
+            ny: number,
+            pz: number,
+            nz: number,
+        } = {
+            px: 1.0,
+            nx: 1.0,
+            py: 1.0,
+            ny: 1.0,
+            pz: 1.0,
+            nz: 1.0
+        },
     ) {
-        super(width, height, depth);
+        super(width, height, depth, faces);
         this.texturePath = texturePath;
         this.geometry = new THREE.BoxGeometry(width, height, depth);
 
         const loader = new THREE.TextureLoader();
-        this.material = new THREE.MeshStandardMaterial();
-        this.material.map = loader.load(import.meta.env.BASE_URL + texturePath);
+        this.materials = [new THREE.MeshStandardMaterial()];
+        this.materials[0].map = loader.load(import.meta.env.BASE_URL + texturePath);
+
+        this.HandleTransparency();
     }
 
     Mesh(): THREE.Mesh {
-        let newMesh: THREE.Mesh = new THREE.Mesh(this.geometry, this.material);
+        let newMesh: THREE.Mesh = new THREE.Mesh(this.geometry, this.materials[0]);
         newMesh.castShadow = true;
         newMesh.receiveShadow = true;
         return newMesh;
@@ -79,7 +150,6 @@ export class CuboidMeshMultiTexture extends CuboidMesh {
     topTexturePath: string
     bottomTexturePath: string;
     sideTexturePath: string;
-    materials: THREE.MeshStandardMaterial[];
 
     constructor(
         width: number, 
@@ -88,8 +158,23 @@ export class CuboidMeshMultiTexture extends CuboidMesh {
         topTexturePath: string,
         bottomTexturePath: string,
         sideTexturePath: string,
+        faces: {
+            px: number,
+            nx: number,
+            py: number,
+            ny: number,
+            pz: number,
+            nz: number,
+        } = {
+            px: 1.0,
+            nx: 1.0,
+            py: 1.0,
+            ny: 1.0,
+            pz: 1.0,
+            nz: 1.0
+        }
     ) {
-        super(width, height, depth);
+        super(width, height, depth, faces);
         this.topTexturePath = topTexturePath;
         this.bottomTexturePath = bottomTexturePath;
         this.sideTexturePath = sideTexturePath;
@@ -115,6 +200,8 @@ export class CuboidMeshMultiTexture extends CuboidMesh {
 
             this.materials[i] = new THREE.MeshStandardMaterial({map: texture});
         }
+
+        this.HandleTransparency();
     }
 
     Mesh(): THREE.Mesh {
@@ -129,31 +216,47 @@ export class CuboidMeshPBR extends CuboidMesh {
     colorPath: string;
     normalMapPath: string;
     metalnessMapPath: string;
-    material: THREE.MeshStandardMaterial;
 
     constructor(
         width: number, 
         height: number, 
-        depth: number, 
+        depth: number,
         colorPath: string, 
         normalMapPath: string, 
-        metalnessMapPath: string
+        metalnessMapPath: string,
+        faces: {
+            px: number,
+            nx: number,
+            py: number,
+            ny: number,
+            pz: number,
+            nz: number,
+        } = {
+            px: 1.0,
+            nx: 1.0,
+            py: 1.0,
+            ny: 1.0,
+            pz: 1.0,
+            nz: 1.0
+        }
     ) {
-        super(width, height, depth);
+        super(width, height, depth, faces);
         this.colorPath = colorPath;
         this.normalMapPath = normalMapPath;
         this.metalnessMapPath = metalnessMapPath;
 
         const loader: THREE.TextureLoader = new THREE.TextureLoader();
         this.geometry = new THREE.BoxGeometry(width, height, depth);
-        this.material = new THREE.MeshStandardMaterial();
-        this.material.map = loader.load(import.meta.env.BASE_URL + colorPath);
-        this.material.normalMap = loader.load(import.meta.env.BASE_URL + normalMapPath);
-        this.material.metalnessMap = loader.load(import.meta.env.BASE_URL + metalnessMapPath);
+        this.materials = [new THREE.MeshStandardMaterial()];
+        this.materials[0].map = loader.load(import.meta.env.BASE_URL + colorPath);
+        this.materials[0].normalMap = loader.load(import.meta.env.BASE_URL + normalMapPath);
+        this.materials[0].metalnessMap = loader.load(import.meta.env.BASE_URL + metalnessMapPath);
+
+        this.HandleTransparency();
     }
 
     Mesh(): THREE.Mesh {
-        let newMesh: THREE.Mesh = new THREE.Mesh(this.geometry, this.material);
+        let newMesh: THREE.Mesh = new THREE.Mesh(this.geometry, this.materials[0]);
         newMesh.castShadow = true;
         newMesh.receiveShadow = true;
         return newMesh;
@@ -181,7 +284,7 @@ export class CuboidMeshMultiTexturePBR extends CuboidMesh {
     constructor(
         width: number, 
         height: number, 
-        depth: number, 
+        depth: number,
         topTexturePaths: {
             colorPath: string,
             normalMapPath: string,
@@ -196,9 +299,24 @@ export class CuboidMeshMultiTexturePBR extends CuboidMesh {
             colorPath: string,
             normalMapPath: string,
             metalnessMapPath: string,
+        },
+        faces: {
+            px: number,
+            nx: number,
+            py: number,
+            ny: number,
+            pz: number,
+            nz: number,
+        } = {
+            px: 1.0,
+            nx: 1.0,
+            py: 1.0,
+            ny: 1.0,
+            pz: 1.0,
+            nz: 1.0
         }
     ) {
-        super(width, height, depth);
+        super(width, height, depth, faces);
         this.topTexturePaths = topTexturePaths;
         this.bottomTexturePaths = bottomTexturePaths;
         this.sideTexturePaths = sideTexturePaths;
@@ -230,6 +348,8 @@ export class CuboidMeshMultiTexturePBR extends CuboidMesh {
             this.materials[i].normalMap = loader.load(import.meta.env.BASE_URL + normalMapPath);
             this.materials[i].metalnessMap = loader.load(import.meta.env.BASE_URL + metalnessMapPath);
         }
+
+        this.HandleTransparency();
     }
 
     Mesh(): THREE.Mesh {
