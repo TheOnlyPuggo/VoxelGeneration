@@ -4,7 +4,7 @@ import {Chunk, chunkSize} from "./chunk";
 import {BlockPos} from "../positions/blockPos";
 import {ChunkPos} from "../positions/chunkPos";
 
-export const worldSize = new THREE.Vector3(5, 8, 5);
+export const worldSize = new THREE.Vector3(1, 1, 1);
 export const heightGen = {
     base: 64,
     amplitude: 6,

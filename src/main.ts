@@ -2,6 +2,9 @@ import * as THREE from 'three';
 import { CuboidMesh, CuboidMeshMultiTexture } from './creation';
 import { CameraControls } from './camera';
 import { World } from './worldgen/world';
+import {GroundedSkybox} from "three/examples/jsm/objects/GroundedSkybox";
+import {HDRLoader} from "three/examples/jsm/loaders/HDRLoader";
+import {CreateGUI} from "./UI";
 
 export const Game: {
     scene: THREE.Scene | null,

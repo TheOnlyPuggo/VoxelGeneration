@@ -56,7 +56,6 @@ export class Chunk {
         for (let x: number = 0; x < chunkSize; x++) {
             for (let y: number = 0; y < chunkSize; y++) {
                 for (let z: number = 0; z < chunkSize; z++) {
-                    matrix.makeTranslation(x, y, z);
                     faces.px = this.getOpacityAtWorld(new SubChunkPos(x + 1, y, z));
                     faces.nx = this.getOpacityAtWorld(new SubChunkPos(x - 1, y, z));
                     faces.py = this.getOpacityAtWorld(new SubChunkPos(x, y + 1, z));
@@ -68,7 +67,7 @@ export class Chunk {
                     if (mesh === null) continue;
                     let geometry: BufferGeometry = mesh.geometry.clone();
                     if (geometry === null) continue;
-                    geometry = geometry.applyMatrix4(matrix);
+                    geometry = geometry.translate(x, y, z);
 
                     if (!(mesh.material instanceof Material)) continue;
                     materials.push(mesh.material);
