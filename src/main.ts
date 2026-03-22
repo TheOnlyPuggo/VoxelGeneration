@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { CuboidMesh, CuboidMeshMultiTexture } from './creation';
 import { GroundedSkybox } from 'three/examples/jsm/objects/GroundedSkybox.js';
 import { CameraControls } from './camera';
-import { HDRLoader } from 'three/examples/jsm/Addons';
+import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js';
 
 const Game: {
     scene: THREE.Scene | null,
