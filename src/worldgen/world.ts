@@ -1,6 +1,8 @@
 import * as THREE from "three";
-import { SimplexNoise } from "three/examples/jsm/Addons.js";
-import { Chunk } from "./chunk";
+import {SimplexNoise} from "three/examples/jsm/Addons.js";
+import {Chunk, chunkSize} from "./chunk";
+import {BlockPos} from "../positions/blockPos";
+import {ChunkPos} from "../positions/chunkPos";
 
 export const worldSize = new THREE.Vector3(5, 8, 5);
 export const heightGen = {
@@ -62,7 +64,7 @@ export class World {
             for (let y = 0; y < worldSize.y; y++) {
                 this.chunks[x].push([]);
                 for (let z = 0; z < worldSize.z; z++) {
-                    this.chunks[x][y].push(new Chunk(this, new THREE.Vector3(x, y, z)));
+                    this.chunks[x][y].push(new Chunk(this, new ChunkPos(x, y, z)));
                 }
             }
         }
@@ -76,7 +78,7 @@ export class World {
                 for (let z = 0; z < this.chunks[0][0].length; z++) {
                     var mesh = this.chunks[x][y][z].getMesh();
                     if (mesh == null) continue;
-                    matrix.makeTranslation(x * Chunk.getChunkSize(), y * Chunk.getChunkSize(), z * Chunk.getChunkSize());
+                    matrix.makeTranslation(x * chunkSize, y * chunkSize, z * chunkSize);
                     mesh.applyMatrix4(matrix);
                     meshes.push(mesh);
                 }
@@ -85,23 +87,15 @@ export class World {
         return meshes;
     }
 
-    getChunkPos(worldPos: THREE.Vector3) {
-        return worldPos.clone().divideScalar(Chunk.getChunkSize()).floor();
-    }
-
-    getInternalPos(worldPos: THREE.Vector3) {
-        return worldPos.clone().sub(this.getChunkPos(worldPos).multiplyScalar(Chunk.getChunkSize()));
-    }
-
-    getOpacityAt(worldPos: THREE.Vector3) {
-        var chunkPos = this.getChunkPos(worldPos);
+    getOpacityAt(worldPos: BlockPos) {
+        var chunkPos: ChunkPos = worldPos.getChunkPos();
         if (chunkPos.x < 0 || chunkPos.x >= this.chunks.length ||
             chunkPos.y < 0 || chunkPos.y >= this.chunks[0].length ||
             chunkPos.z < 0 || chunkPos.z >= this.chunks[0][0].length) return 0;
-        return this.chunks[chunkPos.x][chunkPos.y][chunkPos.z].getOpacityAt(this.getInternalPos(worldPos));
+        return this.chunks[chunkPos.x][chunkPos.y][chunkPos.z].getOpacityAt(worldPos.getSubChunkPos());
     }
 
-    getHeightAt(x: number, z: number) {
+    getHeightAt(x: number, z: number): number {
         return Math.round(heightGen.amplitude *
             this.heightNoiseCoarse.noise(x / heightGen.size, z / heightGen.size) +
             heightGen.amplitude * heightGen.mediumFactor *
@@ -110,23 +104,23 @@ export class World {
             this.heightNoiseFine.noise(x / (heightGen.size * heightGen.fineFactor), z / (heightGen.size * heightGen.fineFactor)) + heightGen.base);
     }
 
-    getDirtThicknessAt(x: number, z: number) {
+    getDirtThicknessAt(x: number, z: number): number {
         return Math.round(dirtGen.amplitude * this.dirtNoise.noise(x / dirtGen.size, z / dirtGen.size) + dirtGen.base);
     }
 
-    getCaveAt(worldPos: THREE.Vector3) {
+    getCaveAt(worldPos: BlockPos): boolean {
         return this.dirtNoise.noise3d(worldPos.x / caveGen.size, worldPos.y / caveGen.size, worldPos.z / caveGen.size) < caveGen.max;
     }
 
-    getCoalAt(worldPos: THREE.Vector3) {
+    getCoalAt(worldPos: BlockPos): boolean {
         return this.coalNoise.noise3d(worldPos.x / coalGen.size, worldPos.y / coalGen.size, worldPos.z / coalGen.size) < coalGen.max && worldPos.y < coalGen.maxHeight;
     }
 
-    getIronAt(worldPos: THREE.Vector3) {
+    getIronAt(worldPos: BlockPos): boolean {
         return this.ironNoise.noise3d(worldPos.x / ironGen.size, worldPos.y / ironGen.size, worldPos.z / ironGen.size) < ironGen.max && worldPos.y < ironGen.maxHeight;
     }
 
-    getCucumberAt(worldPos: THREE.Vector3) {
+    getCucumberAt(worldPos: BlockPos): boolean {
         return this.cucumberNoise.noise3d(worldPos.x / cucumberGen.size, worldPos.y / cucumberGen.size, worldPos.z / cucumberGen.size) < cucumberGen.max && worldPos.y < cucumberGen.maxHeight;
     }
 }

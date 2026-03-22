@@ -16,8 +16,12 @@ export class BlockPos extends PosInt {
         return new ChunkPos(mod(this.x, chunkSize), mod(this.y, chunkSize), mod(this.z, chunkSize));
     }
 
-    static fromChunkPos(chunkPos: ChunkPos, subChunkPos: SubChunkPos) {
-        chunkPos.multiply(chunkSize).add(subChunkPos);
+    static fromChunkPos(chunkPos: ChunkPos, subChunkPos: SubChunkPos): BlockPos {
+        return BlockPos.fromPosInt(chunkPos.multiply(chunkSize).add(subChunkPos));
+    }
+
+    static fromPosInt(posInt: PosInt): BlockPos {
+        return new BlockPos(posInt.x, posInt.y, posInt.z);
     }
 }
 
