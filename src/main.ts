@@ -3,8 +3,9 @@ import { CuboidMesh, CuboidMeshMultiTexture } from './creation';
 import { GroundedSkybox } from 'three/examples/jsm/objects/GroundedSkybox.js';
 import { CameraControls } from './camera';
 import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js';
+import { CreateGUI } from './UI';
 
-const Game: {
+export const Game: {
     scene: THREE.Scene | null,
     camera: THREE.Camera | null,
     cameraControls: CameraControls | null,
@@ -49,10 +50,18 @@ function init(): void {
     Game.timer = new THREE.Timer();
 
     // Temp Cube Creation Example
-    let grassBlockMesh: CuboidMesh = new CuboidMeshMultiTexture(1, 1, 1, 
+    let grassBlockMesh: CuboidMesh = new CuboidMeshMultiTexture(1, 1, 1,
         "grass_textures/grass_top.png",
         "grass_textures/grass_bottom.png",
-        "grass_textures/grass_side.png"
+        "grass_textures/grass_side.png",
+        {
+            px: 0,
+            nx: 1,
+            py: 1,
+            ny: 1,
+            pz: 1,
+            nz: 1
+        },
     );
     Game.scene.add( grassBlockMesh.Mesh() );
 
@@ -68,6 +77,9 @@ function init(): void {
     Game.environment.skybox.material.color.setRGB(skyboxBrightness, skyboxBrightness, skyboxBrightness);
     Game.scene.add(Game.environment.skybox);
     //#endregion
+
+    // GUI
+    CreateGUI(Game);
 
     window.addEventListener("resize", onWindowResize, false);
 }
