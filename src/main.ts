@@ -45,10 +45,18 @@ function init(): void {
 
 
     // Temp Cube Creation Example
-    let grassBlockMesh: CuboidMesh = new CuboidMeshMultiTexture(1, 1, 1, 
+    let grassBlockMesh: CuboidMesh = new CuboidMeshMultiTexture(1, 1, 1,
         "grass_textures/grass_top.png",
         "grass_textures/grass_bottom.png",
-        "grass_textures/grass_side.png"
+        "grass_textures/grass_side.png",
+        {
+            px: 0,
+            nx: 1,
+            py: 1,
+            ny: 1,
+            pz: 1,
+            nz: 1
+        },
     );
     Game.scene.add( grassBlockMesh.Mesh() );
 
