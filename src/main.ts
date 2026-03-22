@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { CuboidMesh, CuboidMeshMultiTexture } from './creation';
 import { CameraControls } from './camera';
+import { World } from './world';
 
 const Game: {
     scene: THREE.Scene | null,
@@ -37,12 +38,11 @@ function init(): void {
 
 
     // Temp Cube Creation Example
-    let grassBlockMesh: CuboidMesh = new CuboidMeshMultiTexture(1, 1, 1, 
-        "grass_textures/grass_top.png",
-        "grass_textures/grass_bottom.png",
-        "grass_textures/grass_side.png"
-    );
-    Game.scene.add( grassBlockMesh.Mesh() );
+    let world: World = new World();
+    let meshes: THREE.Mesh[] = world.getMeshes();
+    for (let i = 0; i < meshes.length; i++) {
+        Game.scene.add( meshes[i] );
+    }
 
     // Light
     let ambientLight = new THREE.AmbientLight(0x404040, 10.0);
