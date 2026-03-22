@@ -1,18 +1,19 @@
-import * as THREE from 'three';
-import { BufferGeometryUtils } from 'three/examples/jsm/Addons.js';
-import * as Block from "./block";
-import * as World from "./world";
+import * as THREE from "three";
+import { BufferGeometryUtils } from "three/examples/jsm/Addons.js";
+import * as Blocks from "./blocks";
+import { Block } from "./block";
+import { World } from "./world";
 
 export const chunkSize = 16;
 
 export class Chunk {
-    world: World.World;
+    world: World;
     pos: THREE.Vector3;
-    blocks: Array<Array<Array<Block.Block>>>;
+    blocks: Array<Array<Array<Block>>>;
 
-    constructor(world: World.World, pos: THREE.Vector3) {
+    constructor(world: World, chunkPos: THREE.Vector3) {
         this.world = world;
-        this.pos = pos;
+        this.pos = chunkPos;
         this.blocks = [];
         for (let x = 0; x < chunkSize; x++) {
             this.blocks.push([]);
@@ -22,13 +23,13 @@ export class Chunk {
                     var pos = this.getWorldPos(new THREE.Vector3(x, y, z));
                     var height = world.getHeightAt(pos.x, pos.z) - pos.y;
                     var dirtHeight = height - world.getDirtThicknessAt(pos.x, pos.z);
-                    if (height < 0 || world.getCaveAt(pos)) this.blocks[x][y].push(Block.AIR);
-                    else if (height == 0) this.blocks[x][y].push(Block.GRASS);
-                    else if (dirtHeight <= 0) this.blocks[x][y].push(Block.DIRT);
-                    else if (world.getCoalAt(pos)) this.blocks[x][y].push(Block.COAL);
-                    else if (world.getIronAt(pos)) this.blocks[x][y].push(Block.IRON);
-                    else if (world.getCucumberAt(pos)) this.blocks[x][y].push(Block.CUCUMBER);
-                    else this.blocks[x][y].push(Block.STONE);
+                    if (height < 0 || world.getCaveAt(pos)) this.blocks[x][y].push(Blocks.AIR);
+                    else if (height == 0) this.blocks[x][y].push(Blocks.GRASS);
+                    else if (dirtHeight <= 0) this.blocks[x][y].push(Blocks.DIRT);
+                    else if (world.getCoalAt(pos)) this.blocks[x][y].push(Blocks.COAL);
+                    else if (world.getIronAt(pos)) this.blocks[x][y].push(Blocks.IRON);
+                    else if (world.getCucumberAt(pos)) this.blocks[x][y].push(Blocks.CUCUMBER);
+                    else this.blocks[x][y].push(Blocks.STONE);
                 }
             }
         }
@@ -86,5 +87,9 @@ export class Chunk {
 
     getWorldPos(internalPos: THREE.Vector3) {
         return this.pos.clone().multiplyScalar(chunkSize).add(internalPos);
+    }
+
+    static getChunkSize() {
+        return chunkSize;
     }
 }

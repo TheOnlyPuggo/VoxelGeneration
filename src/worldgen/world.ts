@@ -1,6 +1,6 @@
-import * as THREE from 'three';
-import * as SimplexNoise from 'three/examples/jsm/Addons.js';
-import * as Chunk from './chunk';
+import * as THREE from "three";
+import { SimplexNoise } from "three/examples/jsm/Addons.js";
+import { Chunk } from "./chunk";
 
 export const worldSize = new THREE.Vector3(5, 8, 5);
 export const heightGen = {
@@ -36,25 +36,25 @@ export const cucumberGen = {
 }
 
 export class World {
-    heightNoiseCoarse: SimplexNoise.SimplexNoise;
-    heightNoiseMedium: SimplexNoise.SimplexNoise;
-    heightNoiseFine: SimplexNoise.SimplexNoise;
-    dirtNoise: SimplexNoise.SimplexNoise;
-    caveNoise: SimplexNoise.SimplexNoise;
-    coalNoise: SimplexNoise.SimplexNoise;
-    ironNoise: SimplexNoise.SimplexNoise;
-    cucumberNoise: SimplexNoise.SimplexNoise;
-    chunks: Array<Array<Array<Chunk.Chunk>>>;
+    heightNoiseCoarse: SimplexNoise;
+    heightNoiseMedium: SimplexNoise;
+    heightNoiseFine: SimplexNoise;
+    dirtNoise: SimplexNoise;
+    caveNoise: SimplexNoise;
+    coalNoise: SimplexNoise;
+    ironNoise: SimplexNoise;
+    cucumberNoise: SimplexNoise;
+    chunks: Array<Array<Array<Chunk>>>;
 
     constructor() {
-        this.heightNoiseCoarse = new SimplexNoise.SimplexNoise();
-        this.heightNoiseMedium = new SimplexNoise.SimplexNoise();
-        this.heightNoiseFine = new SimplexNoise.SimplexNoise();
-        this.dirtNoise = new SimplexNoise.SimplexNoise();
-        this.caveNoise = new SimplexNoise.SimplexNoise();
-        this.coalNoise = new SimplexNoise.SimplexNoise();
-        this.ironNoise = new SimplexNoise.SimplexNoise();
-        this.cucumberNoise = new SimplexNoise.SimplexNoise();
+        this.heightNoiseCoarse = new SimplexNoise();
+        this.heightNoiseMedium = new SimplexNoise();
+        this.heightNoiseFine = new SimplexNoise();
+        this.dirtNoise = new SimplexNoise();
+        this.caveNoise = new SimplexNoise();
+        this.coalNoise = new SimplexNoise();
+        this.ironNoise = new SimplexNoise();
+        this.cucumberNoise = new SimplexNoise();
 
         this.chunks = [];
         for (let x = 0; x < worldSize.x; x++) {
@@ -62,7 +62,7 @@ export class World {
             for (let y = 0; y < worldSize.y; y++) {
                 this.chunks[x].push([]);
                 for (let z = 0; z < worldSize.z; z++) {
-                    this.chunks[x][y].push(new Chunk.Chunk(this, new THREE.Vector3(x, y, z)));
+                    this.chunks[x][y].push(new Chunk(this, new THREE.Vector3(x, y, z)));
                 }
             }
         }
@@ -76,7 +76,7 @@ export class World {
                 for (let z = 0; z < this.chunks[0][0].length; z++) {
                     var mesh = this.chunks[x][y][z].getMesh();
                     if (mesh == null) continue;
-                    matrix.makeTranslation(x * Chunk.chunkSize, y * Chunk.chunkSize, z * Chunk.chunkSize);
+                    matrix.makeTranslation(x * Chunk.getChunkSize(), y * Chunk.getChunkSize(), z * Chunk.getChunkSize());
                     mesh.applyMatrix4(matrix);
                     meshes.push(mesh);
                 }
@@ -86,11 +86,11 @@ export class World {
     }
 
     getChunkPos(worldPos: THREE.Vector3) {
-        return worldPos.clone().divideScalar(Chunk.chunkSize).floor();
+        return worldPos.clone().divideScalar(Chunk.getChunkSize()).floor();
     }
 
     getInternalPos(worldPos: THREE.Vector3) {
-        return worldPos.clone().sub(this.getChunkPos(worldPos).multiplyScalar(Chunk.chunkSize));
+        return worldPos.clone().sub(this.getChunkPos(worldPos).multiplyScalar(Chunk.getChunkSize()));
     }
 
     getOpacityAt(worldPos: THREE.Vector3) {

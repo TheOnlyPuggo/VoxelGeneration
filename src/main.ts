@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { CuboidMesh, CuboidMeshMultiTexture } from './creation';
 import { CameraControls } from './camera';
-import { World } from './world';
+import { World } from './worldgen/world';
 
 const Game: {
     scene: THREE.Scene | null,
