@@ -1,17 +1,25 @@
 import * as THREE from 'three';
 import { CuboidMesh, CuboidMeshMultiTexture } from './creation';
+import { GroundedSkybox } from 'three/examples/jsm/objects/GroundedSkybox.js';
 import { CameraControls } from './camera';
+import { HDRLoader } from 'three/examples/jsm/Addons';
 
 const Game: {
     scene: THREE.Scene | null,
     camera: THREE.Camera | null,
     cameraControls: CameraControls | null,
     renderer: THREE.WebGLRenderer | null,
+    environment: {
+        skybox: GroundedSkybox | null,
+    }
 } = {
     scene: null,
     camera: null,
     cameraControls: null,
     renderer: null,
+    environment: {
+        skybox: null,
+    }
 };
 
 init();
@@ -48,6 +56,15 @@ function init(): void {
     let ambientLight = new THREE.AmbientLight(0x404040, 10.0);
     Game.scene.add(ambientLight);
 
+    //#region Skybox
+    let skyboxTexture = new HDRLoader().load(import.meta.env.BASE_URL + "skybox.hdr"); 
+    Game.environment.skybox = new GroundedSkybox(skyboxTexture, 100, 1000);
+
+    let skyboxBrightness = 0.7;
+    Game.environment.skybox.material.color.setRGB(skyboxBrightness, skyboxBrightness, skyboxBrightness);
+    Game.scene.add(Game.environment.skybox);
+    //#endregion
+
     window.addEventListener("resize", onWindowResize, false);
 }
 
@@ -56,6 +73,7 @@ function animate(time: number): void {
         Game.renderer?.render(Game.scene, Game.camera);
 
     Game.cameraControls?.Update();
+    Game.environment.skybox?.position.copy(Game.camera?.position as THREE.Vector3);
 
     requestAnimationFrame(animate)
 };
