@@ -1,0 +1,41 @@
+import * as THREE from "three";
+
+export class PosInt {
+    x: number;
+    y: number;
+    z: number;
+
+    constructor(x: number, y: number, z: number) {
+        this.x = Math.floor(x);
+        this.y = Math.floor(y);
+        this.z = Math.floor(z);
+    }
+
+    static fromTHREEVector3(vector: THREE.Vector3): PosInt {
+        return new PosInt(vector.x, vector.y, vector.z);
+    }
+
+    asTHREEVector3(): THREE.Vector3 {
+        return new THREE.Vector3(Number(this.x), Number(this.y), Number(this.z));
+    }
+
+    add(other: PosInt | number): PosInt {
+        if (other instanceof PosInt) return new PosInt(this.x + other.x, this.y + other.y, this.z + other.z);
+        else return new PosInt(this.x + other, this.y + other, this.z + other);
+    }
+
+    subtract(other: PosInt | number): PosInt {
+        if (other instanceof PosInt) return new PosInt(this.x - other.x, this.y - other.y, this.z - other.z);
+        else return new PosInt(this.x - other, this.y - other, this.z - other);
+    }
+
+    multiply(other: PosInt | number): PosInt {
+        if (other instanceof PosInt) return new PosInt(this.x * other.x, this.y * other.y, this.z * other.z);
+        else return new PosInt(this.x * other, this.y * other, this.z * other);
+    }
+
+    divide(other: PosInt | number): PosInt {
+        if (other instanceof PosInt) return new PosInt(this.x / other.x, this.y / other.y, this.z / other.z);
+        else return new PosInt(this.x / other, this.y / other, this.z / other);
+    }
+}
