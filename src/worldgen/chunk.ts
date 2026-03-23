@@ -1,12 +1,10 @@
-import * as THREE from "three";
-import {BufferGeometryUtils} from "three/examples/jsm/Addons.js";
+import {Mesh} from "three";
 import * as Blocks from "./blocks";
 import {Block} from "./block";
 import {World} from "./world";
 import {ChunkPos} from "../positions/chunkPos";
 import {SubChunkPos} from "../positions/subChunkPos";
 import {BlockPos} from "../positions/blockPos";
-import {BufferGeometry, Material} from "three";
 import {CompositeGeometry} from "../geometry/compositeGeometry";
 import {FaceMap} from "../geometry/faceMap";
 
@@ -43,7 +41,7 @@ export class Chunk {
         }
     }
 
-    getChunkMesh(): THREE.Mesh | null {
+    getChunkMesh(): Mesh | null {
         const geometry = new CompositeGeometry([], []);
         const faces = new FaceMap();
 

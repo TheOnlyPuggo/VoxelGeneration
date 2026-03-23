@@ -1,19 +1,19 @@
-import * as THREE from 'three';
-import { CameraControls } from './camera';
-import { World } from './worldgen/world';
-import { GroundedSkybox } from "three/examples/jsm/objects/GroundedSkybox.js";
-import { HDRLoader } from "three/examples/jsm/loaders/HDRLoader.js";
+import {AmbientLight, Camera, Mesh, PerspectiveCamera, Scene, Timer, Vector3, WebGLRenderer} from "three";
+import {CameraControls} from './camera';
+import {World} from './worldgen/world';
+import {GroundedSkybox} from "three/examples/jsm/objects/GroundedSkybox.js";
+import {HDRLoader} from "three/examples/jsm/loaders/HDRLoader.js";
 import {CreateGUI} from "./UI";
 
 export const Game: {
-    scene: THREE.Scene | null,
-    camera: THREE.Camera | null,
+    scene: Scene | null,
+    camera: Camera | null,
     cameraControls: CameraControls | null,
-    renderer: THREE.WebGLRenderer | null,
+    renderer: WebGLRenderer | null,
     environment: {
         skybox: GroundedSkybox | null,
     },
-    timer: THREE.Timer | null,
+    timer: Timer | null,
 } = {
     scene: null,
     camera: null,
@@ -30,14 +30,14 @@ animate(0.0);
 
 function init(): void {
     // Setup
-    Game.scene = new THREE.Scene();
+    Game.scene = new Scene();
 
-    Game.renderer = new THREE.WebGLRenderer({precision: "highp"});
+    Game.renderer = new WebGLRenderer({precision: "highp"});
     Game.renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(Game.renderer.domElement);
 
     // Game Camera stuff
-    Game.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
+    Game.camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
     Game.cameraControls = new CameraControls(Game.camera, Game.renderer.domElement, 10.0, true);
 
     Game.camera.position.x = 1.0;
@@ -47,16 +47,16 @@ function init(): void {
     Game.camera.rotateX(-Math.PI / 4.0); Game.renderer.domElement
 
     // Timer
-    Game.timer = new THREE.Timer();
+    Game.timer = new Timer();
 
     // Temp Cube Creation Example
-    // let testBlock: CuboidMesh = new CuboidMeshOneColor(1, 1, 1, 1.0, new THREE.Color(0xff0000), false);
+    // let testBlock: CuboidMesh = new CuboidMeshOneColor(1, 1, 1, 1.0, new Color(0xff0000), false);
     // let testBlockMesh = testBlock.Mesh({px: 0, nx: 0, py: 0, ny: 0, pz: 0, nz: 0});
-    // Game.scene.add(testBlockMesh ?? new THREE.Mesh());
+    // Game.scene.add(testBlockMesh ?? new Mesh());
 
     // let dirtBlock: CuboidMesh = new CuboidMeshOneTexture(1, 1, 1, 1.0, "one_texture/dirt.png");
     // let dirtBlockMesh = dirtBlock.Mesh({px: 0, nx: 0, py: 0, ny: 0, pz: 0, nz: 0});
-    // Game.scene.add(dirtBlockMesh ?? new THREE.Mesh());
+    // Game.scene.add(dirtBlockMesh ?? new Mesh());
 
     // let grassBlockMesh: CuboidMesh = new CuboidMeshMultiTexture(1, 1, 1, 1.0,
     //     "grass_textures/grass_top.png",
@@ -64,22 +64,22 @@ function init(): void {
     //     "grass_textures/grass_side.png"
     // );
 
-    // Game.scene.add( grassBlockMesh.Mesh({px: 1, nx: 0, py: 0, ny: 0, pz: 0, nz: 0}) ?? new THREE.Mesh() );
+    // Game.scene.add( grassBlockMesh.Mesh({px: 1, nx: 0, py: 0, ny: 0, pz: 0, nz: 0}) ?? new Mesh() );
 
     // World Creation
     let world: World = new World();
-    let meshes: THREE.Mesh[] = world.getMeshes();
+    let meshes: Mesh[] = world.getMeshes();
     for (let i = 0; i < meshes.length; i++) {
         Game.scene.add( meshes[i] );
     }
 
     //#region Skybox Dynamic - Currently very laggy dont use until we get occlussion culling
-    // Game.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    // Game.renderer.toneMapping = ACESFilmicToneMapping;
     // Game.renderer.toneMappingExposure = 1.0;
-    // Game.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    // Game.renderer.outputColorSpace = SRGBColorSpace;
 
     // new HDRLoader().load(import.meta.env.BASE_URL + "skybox.hdr", (tex) => {
-    //     tex.mapping = THREE.EquirectangularReflectionMapping;
+    //     tex.mapping = EquirectangularReflectionMapping;
     //     if (Game.scene) {
     //         Game.scene.background = tex;
     //         Game.scene.environment = tex;
@@ -89,7 +89,7 @@ function init(): void {
     // });
 
     //#region No lighting Skybox
-    let ambientLight = new THREE.AmbientLight(0x404040, 10.0);
+    let ambientLight = new AmbientLight(0x404040, 10.0);
     Game.scene.add(ambientLight);
     let skyboxTexture = new HDRLoader().load(import.meta.env.BASE_URL + "skybox.hdr");
     Game.environment.skybox = new GroundedSkybox(skyboxTexture, 100, 1000);
@@ -113,7 +113,7 @@ function animate(time: number): void {
 
 
     Game.cameraControls?.Update(Game.timer?.getDelta() ?? 0);
-    Game.environment.skybox?.position.copy(Game.camera?.position as THREE.Vector3);
+    Game.environment.skybox?.position.copy(Game.camera?.position as Vector3);
 
     requestAnimationFrame(animate)
 };

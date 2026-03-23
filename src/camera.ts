@@ -1,8 +1,8 @@
-import * as THREE from 'three';
+import {Camera, Vector3} from "three";
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 
 export class CameraControls {
-    camera: THREE.Camera;
+    camera: Camera;
     canvas: HTMLCanvasElement;
     speed: number;
     isFlyingControls: boolean;
@@ -10,7 +10,7 @@ export class CameraControls {
     pointerLockControls: PointerLockControls;
     inputWrapper: InputWrapper;
 
-    constructor(camera: THREE.Camera, canvas: HTMLCanvasElement, speed: number = 0.0, isFlyingControls = false) {
+    constructor(camera: Camera, canvas: HTMLCanvasElement, speed: number = 0.0, isFlyingControls = false) {
         this.camera = camera;
         this.canvas = canvas;
         this.speed = speed;
@@ -27,7 +27,7 @@ export class CameraControls {
     }
 
     FlyingHandle(delta: number) {
-        let direction = new THREE.Vector3();
+        let direction = new Vector3();
         direction.set(
             Number(this.inputWrapper.inputs.get(Input.Right)) - Number(this.inputWrapper.inputs.get(Input.Left)),
             Number(this.inputWrapper.inputs.get(Input.Up)) - Number(this.inputWrapper.inputs.get(Input.Down)),

@@ -1,5 +1,4 @@
-import {BufferGeometry, Material} from "three";
-import * as THREE from "three";
+import {BufferGeometry, Material, Mesh} from "three";
 import {BufferGeometryUtils} from "three/examples/jsm/Addons";
 
 export class CompositeGeometry {
@@ -30,7 +29,7 @@ export class CompositeGeometry {
     }
 
     getCombinedMesh() {
-        return new THREE.Mesh(BufferGeometryUtils.mergeGeometries(this.geometries, true), this.materials);
+        return new Mesh(BufferGeometryUtils.mergeGeometries(this.geometries, true), this.materials);
     }
 
     translate(x: number, y: number, z: number): void {

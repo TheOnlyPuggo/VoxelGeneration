@@ -1,11 +1,11 @@
-import * as THREE from 'three';
+import {Color, Material, MeshStandardMaterial, NearestFilter, PlaneGeometry, TextureLoader} from "three";
 import {CompositeGeometry} from "./compositeGeometry";
 import {FaceMap} from "./faceMap";
 
 export class CuboidMesh {
-    static planeGeometries: THREE.PlaneGeometry[] = [];
-    static materialCache = new Map<string, THREE.MeshStandardMaterial>;
-    static textureLoader = new THREE.TextureLoader();
+    static planeGeometries: PlaneGeometry[] = [];
+    static materialCache = new Map<string, MeshStandardMaterial>;
+    static textureLoader = new TextureLoader();
 
     width: number;
     height: number;
@@ -26,44 +26,44 @@ export class CuboidMesh {
         if (CuboidMesh.planeGeometries.length === 0) {
             CuboidMesh.planeGeometries = [];
 
-            const pxFace = new THREE.PlaneGeometry(1, 1);
+            const pxFace = new PlaneGeometry(1, 1);
             pxFace.rotateY(Math.PI / 2);
             pxFace.translate(0.5, 0.0, 0.0);
             CuboidMesh.planeGeometries.push(pxFace);
 
-            const nxFace = new THREE.PlaneGeometry(1, 1);
+            const nxFace = new PlaneGeometry(1, 1);
             nxFace.rotateY(-Math.PI / 2);
             nxFace.translate(-0.5, 0.0, 0.0);
             CuboidMesh.planeGeometries.push(nxFace);
 
-            const pyFace = new THREE.PlaneGeometry(1, 1);
+            const pyFace = new PlaneGeometry(1, 1);
             pyFace.rotateX(-Math.PI / 2);
             pyFace.translate(0.0, 0.5, 0.0);
             CuboidMesh.planeGeometries.push(pyFace);
 
-            const nyFace = new THREE.PlaneGeometry(1, 1);
+            const nyFace = new PlaneGeometry(1, 1);
             nyFace.rotateX(Math.PI / 2);
             nyFace.translate(0.0, -0.5, 0.0);
             CuboidMesh.planeGeometries.push(nyFace);
 
-            const pzFace = new THREE.PlaneGeometry(1, 1);
+            const pzFace = new PlaneGeometry(1, 1);
             pzFace.translate(0.0, 0.0, 0.5);
             CuboidMesh.planeGeometries.push(pzFace);
 
-            const nzFace = new THREE.PlaneGeometry(1, 1);
+            const nzFace = new PlaneGeometry(1, 1);
             nzFace.rotateY(Math.PI);
             nzFace.translate(0.0, 0.0, -0.5);
             CuboidMesh.planeGeometries.push(nzFace);
         }
     }
 
-    getMaterial(index: number): THREE.Material {
-        return new THREE.MeshStandardMaterial();
+    getMaterial(index: number): Material {
+        return new MeshStandardMaterial();
     }
 
     constructGeometry(faces: FaceMap): CompositeGeometry | null {
-        const geometries: THREE.PlaneGeometry[] = [];
-        const materials: THREE.Material[] = [];
+        const geometries: PlaneGeometry[] = [];
+        const materials: Material[] = [];
 
         const addFace = (visible: boolean, geomIndex: number, matIndex: number) => {
             if (visible && this.opacity !== 0) {
@@ -87,33 +87,33 @@ export class CuboidMesh {
 }
 
 export class CuboidMeshOneColor extends CuboidMesh {
-    color: THREE.Color;
+    color: Color;
     isWireFrame: boolean;
-    material: THREE.MeshStandardMaterial;
+    material: MeshStandardMaterial;
 
     constructor(
         width: number, 
         height: number, 
         depth: number, 
         opacity: number = 1.0,
-        color: THREE.Color, 
+        color: Color, 
         isWireFrame: boolean,
     ) {
         super(width, height, depth, opacity);
         this.color = color;
         this.isWireFrame = isWireFrame;
 
-        this.material = new THREE.MeshStandardMaterial({color: color, transparent: true, opacity: this.opacity});
+        this.material = new MeshStandardMaterial({color: color, transparent: true, opacity: this.opacity});
     }
 
-    getMaterial(index: number): THREE.Material {
+    getMaterial(index: number): Material {
         return this.material;
     }
 }
 
 export class CuboidMeshOneTexture extends CuboidMesh {
     texturePath: string;
-    material: THREE.MeshStandardMaterial;
+    material: MeshStandardMaterial;
 
     constructor(
         width: number, 
@@ -129,18 +129,18 @@ export class CuboidMeshOneTexture extends CuboidMesh {
 
         if (!mat) {
             const texture = CuboidMesh.textureLoader.load(import.meta.env.BASE_URL + texturePath, (tex) => {tex.needsUpdate = true});
-            texture.magFilter = THREE.NearestFilter;
-            texture.minFilter = THREE.NearestFilter;
+            texture.magFilter = NearestFilter;
+            texture.minFilter = NearestFilter;
             texture.generateMipmaps = false;
 
-            mat = new THREE.MeshStandardMaterial({map: texture, transparent: true, opacity: this.opacity});
+            mat = new MeshStandardMaterial({map: texture, transparent: true, opacity: this.opacity});
             CuboidMesh.materialCache.set(texturePath, mat);
         }
 
         this.material = mat;
     }
 
-    getMaterial(index: number): THREE.Material {
+    getMaterial(index: number): Material {
         return this.material;
     }
 }
@@ -149,7 +149,7 @@ export class CuboidMeshMultiTexture extends CuboidMesh {
     topTexturePath: string
     bottomTexturePath: string;
     sideTexturePath: string;
-    materials: THREE.MeshStandardMaterial[];
+    materials: MeshStandardMaterial[];
 
     constructor(
         width: number, 
@@ -181,10 +181,10 @@ export class CuboidMeshMultiTexture extends CuboidMesh {
 
             if (!mat) {
                 const texture = CuboidMesh.textureLoader.load(import.meta.env.BASE_URL + path);
-                texture.magFilter = THREE.NearestFilter;
-                texture.minFilter = THREE.NearestFilter;
+                texture.magFilter = NearestFilter;
+                texture.minFilter = NearestFilter;
 
-                mat = new THREE.MeshStandardMaterial({map: texture, transparent: true, opacity: this.opacity});
+                mat = new MeshStandardMaterial({map: texture, transparent: true, opacity: this.opacity});
                 
                 CuboidMesh.materialCache.set(path, mat);
             }
@@ -193,7 +193,7 @@ export class CuboidMeshMultiTexture extends CuboidMesh {
         }
     }
 
-    getMaterial(index: number): THREE.Material {
+    getMaterial(index: number): Material {
         return this.materials[index];
     }
 }
@@ -233,16 +233,16 @@ export class CuboidMeshMultiTexture extends CuboidMesh {
 //         this.normalMapPath = normalMapPath;
 //         this.metalnessMapPath = metalnessMapPath;
 
-//         const loader: THREE.TextureLoader = new THREE.TextureLoader();
-//         this.materials = [new THREE.MeshStandardMaterial({transparent: true, opacity: this.opacity})];
+//         const loader: TextureLoader = new TextureLoader();
+//         this.materials = [new MeshStandardMaterial({transparent: true, opacity: this.opacity})];
 //         this.materials[0].map = loader.load(import.meta.env.BASE_URL + colorPath);
 //         this.materials[0].normalMap = loader.load(import.meta.env.BASE_URL + normalMapPath);
 //         this.materials[0].metalnessMap = loader.load(import.meta.env.BASE_URL + metalnessMapPath);
 //     }
 
-//     Mesh(): THREE.Mesh | null {
+//     Mesh(): Mesh | null {
 //         if (this.boxGeometries.length === 0) return null;
-//         let newMesh: THREE.Mesh = new THREE.Mesh(this.geometry, this.materials[0]);
+//         let newMesh: Mesh = new Mesh(this.geometry, this.materials[0]);
 //         newMesh.castShadow = true;
 //         newMesh.receiveShadow = true;
 //         return newMesh;
@@ -265,7 +265,7 @@ export class CuboidMeshMultiTexture extends CuboidMesh {
 //         normalMapPath: string,
 //         metalnessMapPath: string,
 //     };
-//     materials: THREE.MeshStandardMaterial[];
+//     materials: MeshStandardMaterial[];
 
 //     constructor(
 //         width: number, 
@@ -309,7 +309,7 @@ export class CuboidMeshMultiTexture extends CuboidMesh {
 //         this.sideTexturePaths = sideTexturePaths;
 //         this.materials = [];
 
-//         const loader = new THREE.TextureLoader();
+//         const loader = new TextureLoader();
 
 //         for (const faceIndex of this.visibleFaces) {
 //             let colorPath: string;
@@ -336,9 +336,9 @@ export class CuboidMeshMultiTexture extends CuboidMesh {
 //         }
 //     }
 
-//     Mesh(): THREE.Mesh | null {
+//     Mesh(): Mesh | null {
 //         if (this.boxGeometries.length === 0) return null;
-//         let newMesh: THREE.Mesh = new THREE.Mesh(this.geometry, this.materials);
+//         let newMesh: Mesh = new Mesh(this.geometry, this.materials);
 //         newMesh.castShadow = true;
 //         newMesh.receiveShadow = true;
 //         return newMesh;

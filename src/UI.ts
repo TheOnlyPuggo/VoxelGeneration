@@ -1,9 +1,10 @@
-import * as THREE from 'three';
-import { GUI } from 'lil-gui';
-import { CameraControls } from './camera';
+
+import {Camera} from "three";
+import {GUI} from 'lil-gui';
+import {CameraControls} from './camera';
 
 type GameLike = {
-    camera: THREE.Camera | null
+    camera: Camera | null
     cameraControls: CameraControls | null,
 }
 

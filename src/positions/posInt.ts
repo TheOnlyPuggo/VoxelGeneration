@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import {Vector3} from "three";
 
 export class PosInt {
     x: number;
@@ -11,12 +11,12 @@ export class PosInt {
         this.z = Math.floor(z);
     }
 
-    static fromTHREEVector3(vector: THREE.Vector3): PosInt {
+    static fromTHREEVector3(vector: Vector3): PosInt {
         return new PosInt(vector.x, vector.y, vector.z);
     }
 
-    asTHREEVector3(): THREE.Vector3 {
-        return new THREE.Vector3(Number(this.x), Number(this.y), Number(this.z));
+    asTHREEVector3(): Vector3 {
+        return new Vector3(Number(this.x), Number(this.y), Number(this.z));
     }
 
     add(other: PosInt | number): PosInt {

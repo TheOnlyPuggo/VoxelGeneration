@@ -1,10 +1,10 @@
-import * as THREE from "three";
+import {Vector3, Mesh} from "three";
 import {SimplexNoise} from "three/examples/jsm/Addons.js";
 import {Chunk, chunkSize} from "./chunk";
 import {BlockPos} from "../positions/blockPos";
 import {ChunkPos} from "../positions/chunkPos";
 
-export const worldSize = new THREE.Vector3(5, 8, 5);
+export const worldSize = new Vector3(5, 8, 5);
 export const heightGen = {
     base: 64,
     amplitude: 6,
@@ -70,17 +70,17 @@ export class World {
         }
     }
 
-    getMeshes(): THREE.Mesh[] {
-        let meshes: THREE.Mesh[] = [];
-        let matrix: THREE.Matrix4 = new THREE.Matrix4();
+    getMeshes(): Mesh[] {
+        let meshes: Mesh[] = [];
         for (let x: number = 0; x < this.chunks.length; x++) {
             for (let y: number = 0; y < this.chunks[0].length; y++) {
                 for (let z: number = 0; z < this.chunks[0][0].length; z++) {
                     let mesh = this.chunks[x][y][z].getChunkMesh();
                     if (mesh == null) continue;
 
-                    matrix.makeTranslation(x * chunkSize, y * chunkSize, z * chunkSize);
-                    mesh.applyMatrix4(matrix);
+                    mesh.translateX(x * chunkSize);
+                    mesh.translateY(y * chunkSize);
+                    mesh.translateZ(z * chunkSize);
                     meshes.push(mesh);
                 }
             }

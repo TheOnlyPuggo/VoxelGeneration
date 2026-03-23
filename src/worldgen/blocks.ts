@@ -1,5 +1,5 @@
-import * as THREE from "three";
 import {Block} from "./block";
+import {Color} from "three";
 import {CuboidMeshMultiTexture, CuboidMeshOneColor, CuboidMeshOneTexture} from "../geometry/creation";
 
 export const AIR = new Block("air", false, true,
@@ -21,4 +21,4 @@ export const COAL = new Block("coal", true, false,
 export const IRON = new Block("iron", true, false,
     new CuboidMeshOneTexture(1, 1, 1, 1.0, "one_texture/iron.png"));
 export const CUCUMBER = new Block("cucumber", true, false,
-    new CuboidMeshOneColor(1, 1, 1, 1, new THREE.Color(0.1, 0.5, 0.2), false));
+    new CuboidMeshOneColor(1, 1, 1, 1, new Color(0.1, 0.5, 0.2), false));
