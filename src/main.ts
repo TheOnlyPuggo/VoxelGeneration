@@ -5,7 +5,6 @@ import { World } from './worldgen/world';
 import { GroundedSkybox } from "three/examples/jsm/objects/GroundedSkybox.js";
 import { HDRLoader } from "three/examples/jsm/loaders/HDRLoader.js";
 import {CreateGUI} from "./UI";
-import { PMREMGenerator } from 'three/webgpu';
 
 export const Game: {
     scene: THREE.Scene | null,
@@ -77,11 +76,24 @@ function init(): void {
         }
     }
 
-    // Light
+    //#region Skybox Dynamic - Currently very laggy dont use until we get occlussion culling
+    // Game.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    // Game.renderer.toneMappingExposure = 1.0;
+    // Game.renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+    // new HDRLoader().load(import.meta.env.BASE_URL + "skybox.hdr", (tex) => {
+    //     tex.mapping = THREE.EquirectangularReflectionMapping;
+    //     if (Game.scene) {
+    //         Game.scene.background = tex;
+    //         Game.scene.environment = tex;
+    //         Game.scene.backgroundIntensity = 0.5;
+    //         Game.scene.environmentIntensity = 0.5;
+    //     }
+    // });
+
+    //#region No lighting Skybox
     let ambientLight = new THREE.AmbientLight(0x404040, 10.0);
     Game.scene.add(ambientLight);
-
-    //#region Skybox
     let skyboxTexture = new HDRLoader().load(import.meta.env.BASE_URL + "skybox.hdr");
     Game.environment.skybox = new GroundedSkybox(skyboxTexture, 100, 1000);
 
