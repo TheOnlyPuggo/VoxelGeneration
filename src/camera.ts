@@ -38,7 +38,7 @@ export class CameraControls {
 
         this.pointerLockControls.moveRight(direction.x * delta);
         this.camera.position.y += (direction.y * delta);
-        this.camera.translateZ(direction.z * delta);
+        this.pointerLockControls.moveForward(-direction.z * delta);
     }
 }
 
