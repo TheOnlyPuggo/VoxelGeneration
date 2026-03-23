@@ -43,7 +43,6 @@ export class Chunk {
 
     getMesh() {
         const geometries: BufferGeometry[] = [];
-        const materials: Material[] = [];
         const matrix = new THREE.Matrix4();
         const faces = {
             px: 0,
@@ -53,6 +52,10 @@ export class Chunk {
             pz: 0,
             nz: 0
         };
+
+        const materialMap = new Map<THREE.Material, number>();
+        const materials: THREE.Material[] = [];
+
         for (let x: number = 0; x < chunkSize; x++) {
             for (let y: number = 0; y < chunkSize; y++) {
                 for (let z: number = 0; z < chunkSize; z++) {

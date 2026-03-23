@@ -3,6 +3,7 @@ import { BufferGeometryUtils } from 'three/examples/jsm/Addons.js';
 
 export class CuboidMesh {
     static planeGeometries: THREE.PlaneGeometry[] = [];
+    static materialCache = new Map<string, THREE.MeshStandardMaterial>;
 
     width: number;
     height: number;
@@ -109,8 +110,20 @@ export class CuboidMesh {
             this.visibleFaces.push(5);
         }
 
-        if (this.boxGeometries.length !== 0) this.geometry = BufferGeometryUtils.mergeGeometries(this.boxGeometries, true);
-        else this.geometry = new THREE.BufferGeometry();
+        // if (this.boxGeometries.length !== 0) this.geometry = BufferGeometryUtils.mergeGeometries(this.boxGeometries, true);
+        // else this.geometry = new THREE.BufferGeometry();
+
+        if (this.boxGeometries.length !== 0) {
+            this.geometry = BufferGeometryUtils.mergeGeometries(this.boxGeometries, true);
+
+            // ✅ IMPORTANT FIX: assign material indices per face
+            for (let i = 0; i < this.geometry.groups.length; i++) {
+                this.geometry.groups[i].materialIndex = i;
+            }
+        }
+        else {
+            this.geometry = new THREE.BufferGeometry();
+        }
 
         this.materials = [new THREE.MeshStandardMaterial()];
     }
@@ -252,11 +265,19 @@ export class CuboidMeshMultiTexture extends CuboidMesh {
                 path = sideTexturePath;
             }
 
-            const texture = loader.load(import.meta.env.BASE_URL + path);
-            texture.magFilter = THREE.NearestFilter;
-            texture.minFilter = THREE.NearestFilter;
-            
-            this.materials[faceIndex] = new THREE.MeshStandardMaterial({map: texture, transparent: true, opacity: this.opacity});
+            let mat = CuboidMesh.materialCache.get(path);
+
+            if (!mat) {
+                const texture = loader.load(import.meta.env.BASE_URL + path);
+                texture.magFilter = THREE.NearestFilter;
+                texture.minFilter = THREE.NearestFilter;
+
+                mat = new THREE.MeshStandardMaterial({map: texture, transparent: true, opacity: this.opacity});
+                
+                CuboidMesh.materialCache.set(path, mat);
+            }
+
+            this.materials[faceIndex] = mat;
         }
     }
 

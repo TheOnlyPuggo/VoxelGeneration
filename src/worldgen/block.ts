@@ -18,15 +18,15 @@ export class Block {
         let mesh: CuboidMesh;
 
         switch(this.name) {
-            case "grass": {
-                mesh = new CuboidMeshMultiTexture(1, 1, 1, 1.0, 
-                    "grass_textures/grass_top.png",
-                    "grass_textures/grass_bottom.png",
-                    "grass_textures/grass_side.png",
-                    faces,
-                );
-                break;
-            }
+            // case "grass": {
+            //     mesh = new CuboidMeshMultiTexture(1, 1, 1, 1.0, 
+            //         "grass_textures/grass_top.png",
+            //         "grass_textures/grass_bottom.png",
+            //         "grass_textures/grass_side.png",
+            //         faces,
+            //     );
+            //     break;
+            // }
             default: {
                 mesh = new CuboidMeshOneColor(1, 1, 1, 1.0, this.color, false, faces);
                 break;
