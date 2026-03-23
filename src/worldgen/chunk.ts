@@ -7,6 +7,8 @@ import {ChunkPos} from "../positions/chunkPos";
 import {SubChunkPos} from "../positions/subChunkPos";
 import {BlockPos} from "../positions/blockPos";
 import {BufferGeometry, Material} from "three";
+import {CompositeGeometry} from "../geometry/compositeGeometry";
+import {FaceMap} from "../geometry/faceMap";
 
 export const chunkSize = 16;
 
@@ -41,43 +43,39 @@ export class Chunk {
         }
     }
 
-    getChunkMeshes(): THREE.Mesh[] {
-        const meshes: THREE.Mesh[] = [];
-        const faces = {
-            px: 0,
-            nx: 0,
-            py: 0,
-            ny: 0,
-            pz: 0,
-            nz: 0
-        };
+    getChunkMesh(): THREE.Mesh | null {
+        const geometry = new CompositeGeometry([], []);
+        const faces = new FaceMap();
 
         for (let x: number = 0; x < chunkSize; x++) {
             for (let y: number = 0; y < chunkSize; y++) {
                 for (let z: number = 0; z < chunkSize; z++) {
-                    faces.px = this.getOpacityAtWorld(new SubChunkPos(x + 1, y, z));
-                    faces.nx = this.getOpacityAtWorld(new SubChunkPos(x - 1, y, z));
-                    faces.py = this.getOpacityAtWorld(new SubChunkPos(x, y + 1, z));
-                    faces.ny = this.getOpacityAtWorld(new SubChunkPos(x, y - 1, z));
-                    faces.pz = this.getOpacityAtWorld(new SubChunkPos(x, y, z + 1));
-                    faces.nz = this.getOpacityAtWorld(new SubChunkPos(x, y, z - 1));
+                    faces.px = this.getTransparentAtWorld(new SubChunkPos(x + 1, y, z));
+                    faces.nx = this.getTransparentAtWorld(new SubChunkPos(x - 1, y, z));
+                    faces.py = this.getTransparentAtWorld(new SubChunkPos(x, y + 1, z));
+                    faces.ny = this.getTransparentAtWorld(new SubChunkPos(x, y - 1, z));
+                    faces.pz = this.getTransparentAtWorld(new SubChunkPos(x, y, z + 1));
+                    faces.nz = this.getTransparentAtWorld(new SubChunkPos(x, y, z - 1));
 
-                    let mesh = this.blocks[x][y][z].getMesh(faces);
-                    if (mesh === null) continue;
-                    mesh.geometry.translate(x, y, z);
-                
-                    meshes.push(mesh);
+                    let newGeometry = this.blocks[x][y][z].getGeometry(faces);
+                    newGeometry?.translate(x, y, z);
+                    geometry.addComposite(newGeometry);
                 }
             }
         }
-        return meshes;
+        if (geometry.isEmpty()) return null;
+
+        let mesh = geometry.getCombinedMesh();
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        return mesh;
     }
 
-    getOpacityAtWorld(subChunkPos: SubChunkPos): number {
-        return this.world.getOpacityAt(BlockPos.fromChunkPos(this.chunkPos, subChunkPos));
+    getTransparentAtWorld(subChunkPos: SubChunkPos): boolean {
+        return this.world.getTransparentAt(BlockPos.fromChunkPos(this.chunkPos, subChunkPos));
     }
 
-    getOpacityAt(subChunkPos: SubChunkPos): number {
-        return this.blocks[subChunkPos.x][subChunkPos.y][subChunkPos.z].opacity;
+    getTransparentAt(subChunkPos: SubChunkPos): boolean {
+        return this.blocks[subChunkPos.x][subChunkPos.y][subChunkPos.z].transparent;
     }
 }

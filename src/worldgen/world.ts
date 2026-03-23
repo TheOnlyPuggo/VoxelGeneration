@@ -4,7 +4,7 @@ import {Chunk, chunkSize} from "./chunk";
 import {BlockPos} from "../positions/blockPos";
 import {ChunkPos} from "../positions/chunkPos";
 
-export const worldSize = new THREE.Vector3(3, 6, 3);
+export const worldSize = new THREE.Vector3(5, 8, 5);
 export const heightGen = {
     base: 64,
     amplitude: 6,
@@ -70,33 +70,30 @@ export class World {
         }
     }
 
-    getMeshes(): THREE.Mesh[][] {
-        var chunkMeshes: THREE.Mesh[][] = [];
-        var matrix: THREE.Matrix4 = new THREE.Matrix4();
+    getMeshes(): THREE.Mesh[] {
+        let meshes: THREE.Mesh[] = [];
+        let matrix: THREE.Matrix4 = new THREE.Matrix4();
         for (let x: number = 0; x < this.chunks.length; x++) {
             for (let y: number = 0; y < this.chunks[0].length; y++) {
                 for (let z: number = 0; z < this.chunks[0][0].length; z++) {
-                    var meshes = this.chunks[x][y][z].getChunkMeshes();
-                    if (meshes == null) continue;
+                    let mesh = this.chunks[x][y][z].getChunkMesh();
+                    if (mesh == null) continue;
 
                     matrix.makeTranslation(x * chunkSize, y * chunkSize, z * chunkSize);
-                    meshes.forEach(mesh => {
-                        mesh.geometry.applyMatrix4(matrix);
-                    });
-
-                    chunkMeshes.push(meshes);
+                    mesh.applyMatrix4(matrix);
+                    meshes.push(mesh);
                 }
             }
         }
-        return chunkMeshes;
+        return meshes;
     }
 
-    getOpacityAt(blockPos: BlockPos): number {
-        var chunkPos: ChunkPos = blockPos.getChunkPos();
+    getTransparentAt(blockPos: BlockPos): boolean {
+        let chunkPos: ChunkPos = blockPos.getChunkPos();
         if (chunkPos.x < 0 || chunkPos.x >= this.chunks.length ||
             chunkPos.y < 0 || chunkPos.y >= this.chunks[0].length ||
-            chunkPos.z < 0 || chunkPos.z >= this.chunks[0][0].length) return 0;
-        return this.chunks[chunkPos.x][chunkPos.y][chunkPos.z].getOpacityAt(blockPos.getSubChunkPos());
+            chunkPos.z < 0 || chunkPos.z >= this.chunks[0][0].length) return true;
+        return this.chunks[chunkPos.x][chunkPos.y][chunkPos.z].getTransparentAt(blockPos.getSubChunkPos());
     }
 
     getHeightAt(x: number, z: number): number {

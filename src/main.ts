@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { CuboidMesh, CuboidMeshOneColor, CuboidMeshOneTexture, CuboidMeshMultiTexture } from './creation';
 import { CameraControls } from './camera';
 import { World } from './worldgen/world';
 import { GroundedSkybox } from "three/examples/jsm/objects/GroundedSkybox.js";
@@ -69,11 +68,9 @@ function init(): void {
 
     // World Creation
     let world: World = new World();
-    let meshes: THREE.Mesh[][] = world.getMeshes();
+    let meshes: THREE.Mesh[] = world.getMeshes();
     for (let i = 0; i < meshes.length; i++) {
-        for (let j = 0; j < meshes[i].length; ++j) {
-            Game.scene.add( meshes[i][j] );
-        }
+        Game.scene.add( meshes[i] );
     }
 
     //#region Skybox Dynamic - Currently very laggy dont use until we get occlussion culling

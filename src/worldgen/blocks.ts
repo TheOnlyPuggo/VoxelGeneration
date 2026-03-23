@@ -1,11 +1,24 @@
 import * as THREE from "three";
 import {Block} from "./block";
+import {CuboidMeshMultiTexture, CuboidMeshOneColor, CuboidMeshOneTexture} from "../geometry/creation";
 
-export const AIR = new Block("air", 0, new THREE.Color(1, 1, 1));
-export const GRASS = new Block("grass", 1, new THREE.Color(0, 1, 0));
-export const DIRT = new Block("dirt", 1, new THREE.Color(0.5, 0.3, 0));
-export const STONE = new Block("stone", 1, new THREE.Color(0.5, 0.5, 0.5));
-export const GLASS = new Block("glass", 0.5, new THREE.Color(0.3, 0.5, 0.8));
-export const COAL = new Block("coal", 1, new THREE.Color(0.1, 0.1, 0.1));
-export const IRON = new Block("iron", 1, new THREE.Color(0.8, 0.6, 0.4));
-export const CUCUMBER = new Block("cucumber", 1, new THREE.Color(0.1, 0.5, 0.2));
+export const AIR = new Block("air", false, true,
+    null);
+export const GRASS = new Block("grass", true, false,
+    new CuboidMeshMultiTexture(1, 1, 1, 1.0,
+        "grass_textures/grass_top.png",
+        "grass_textures/grass_bottom.png",
+        "grass_textures/grass_side.png",
+    ));
+export const DIRT = new Block("dirt", true, false,
+    new CuboidMeshOneTexture(1, 1, 1, 1.0, "one_texture/dirt.png"));
+export const STONE = new Block("stone", true, false,
+    new CuboidMeshOneTexture(1, 1, 1, 1.0, "one_texture/stone.png"));
+export const GLASS = new Block("glass", true, true,
+    new CuboidMeshOneTexture(1, 1, 1, 1.0, "one_texture/glass.png"));
+export const COAL = new Block("coal", true, false,
+    new CuboidMeshOneTexture(1, 1, 1, 1.0, "one_texture/coal.png"));
+export const IRON = new Block("iron", true, false,
+    new CuboidMeshOneTexture(1, 1, 1, 1.0, "one_texture/iron.png"));
+export const CUCUMBER = new Block("cucumber", true, false,
+    new CuboidMeshOneColor(1, 1, 1, 1, new THREE.Color(0.1, 0.5, 0.2), false));
