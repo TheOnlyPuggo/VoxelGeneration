@@ -41,9 +41,8 @@ export class Chunk {
         }
     }
 
-    getMesh() {
-        const geometries: BufferGeometry[] = [];
-        const matrix = new THREE.Matrix4();
+    getChunkMeshes(): THREE.Mesh[] {
+        const meshes: THREE.Mesh[] = [];
         const faces = {
             px: 0,
             nx: 0,
@@ -52,9 +51,6 @@ export class Chunk {
             pz: 0,
             nz: 0
         };
-
-        const materialMap = new Map<THREE.Material, number>();
-        const materials: THREE.Material[] = [];
 
         for (let x: number = 0; x < chunkSize; x++) {
             for (let y: number = 0; y < chunkSize; y++) {
@@ -68,22 +64,13 @@ export class Chunk {
 
                     let mesh = this.blocks[x][y][z].getMesh(faces);
                     if (mesh === null) continue;
-                    let geometry: BufferGeometry = mesh.geometry.clone();
-                    if (geometry === null) continue;
-                    geometry = geometry.translate(x, y, z);
-
-                    if (!(mesh.material instanceof Material)) continue;
-                    materials.push(mesh.material);
-
-                    geometries.push(geometry);
+                    mesh.geometry.translate(x, y, z);
+                
+                    meshes.push(mesh);
                 }
             }
         }
-        if (geometries.length == 0) return null;
-        let mesh = new THREE.Mesh(BufferGeometryUtils.mergeGeometries(geometries, true), materials);
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-        return mesh;
+        return meshes;
     }
 
     getOpacityAtWorld(subChunkPos: SubChunkPos): number {

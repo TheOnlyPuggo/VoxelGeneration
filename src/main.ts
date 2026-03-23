@@ -51,8 +51,8 @@ function init(): void {
     Game.timer = new THREE.Timer();
 
     // Temp Cube Creation Example
-    let dirtBlockMesh: CuboidMesh = new CuboidMeshOneTexture(1, 1, 1, 1.0, "dirt.png");
-    Game.scene.add(dirtBlockMesh.Mesh() ?? new THREE.Mesh());
+    // let dirtBlockMesh: CuboidMesh = new CuboidMeshOneTexture(1, 1, 1, 1.0, "dirt.png");
+    // Game.scene.add(dirtBlockMesh.Mesh() ?? new THREE.Mesh());
 
     // let grassBlockMesh: CuboidMesh = new CuboidMeshMultiTexture(1, 1, 1, 1.0,
     //     "grass_textures/grass_top.png",
@@ -72,12 +72,12 @@ function init(): void {
 
     // World Creation
     let world: World = new World();
-    let meshes: THREE.Mesh[] = world.getMeshes();
+    let meshes: THREE.Mesh[][] = world.getMeshes();
     for (let i = 0; i < meshes.length; i++) {
-        Game.scene.add( meshes[i] );
+        for (let j = 0; j < meshes[i].length; ++j) {
+            Game.scene.add( meshes[i][j] );
+        }
     }
-
-
 
     // Light
     let ambientLight = new THREE.AmbientLight(0x404040, 10.0);

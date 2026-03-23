@@ -70,21 +70,25 @@ export class World {
         }
     }
 
-    getMeshes() {
-        var meshes: THREE.Mesh[] = [];
+    getMeshes(): THREE.Mesh[][] {
+        var chunkMeshes: THREE.Mesh[][] = [];
         var matrix: THREE.Matrix4 = new THREE.Matrix4();
         for (let x: number = 0; x < this.chunks.length; x++) {
             for (let y: number = 0; y < this.chunks[0].length; y++) {
                 for (let z: number = 0; z < this.chunks[0][0].length; z++) {
-                    var mesh = this.chunks[x][y][z].getMesh();
-                    if (mesh == null) continue;
+                    var meshes = this.chunks[x][y][z].getChunkMeshes();
+                    if (meshes == null) continue;
+
                     matrix.makeTranslation(x * chunkSize, y * chunkSize, z * chunkSize);
-                    mesh.applyMatrix4(matrix);
-                    meshes.push(mesh);
+                    meshes.forEach(mesh => {
+                        mesh.geometry.applyMatrix4(matrix);
+                    });
+
+                    chunkMeshes.push(meshes);
                 }
             }
         }
-        return meshes;
+        return chunkMeshes;
     }
 
     getOpacityAt(blockPos: BlockPos): number {

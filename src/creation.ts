@@ -275,7 +275,7 @@ export class CuboidMeshMultiTexture extends CuboidMesh {
                 CuboidMesh.materialCache.set(path, mat);
             }
 
-            this.materials[faceIndex] = mat;
+            this.materials.push(mat);
         }
     }
 
@@ -288,7 +288,7 @@ export class CuboidMeshMultiTexture extends CuboidMesh {
     }
 }
 
-// The pbr classes are untested so might not work, dm me if they dont so i can fix or fix it urself if u figure it out.
+// The pbr are outdated rn, i will fix them when we get to using pbr textures.
 export class CuboidMeshPBR extends CuboidMesh {
     colorPath: string;
     normalMapPath: string;
