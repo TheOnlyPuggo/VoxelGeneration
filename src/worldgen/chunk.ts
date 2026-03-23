@@ -11,9 +11,9 @@ import {FaceMap} from "../geometry/faceMap";
 export const chunkSize = 16;
 
 export class Chunk {
-    world: World;
-    chunkPos: ChunkPos;
-    blocks: Array<Array<Array<Block>>>;
+    readonly world: World;
+    readonly chunkPos: ChunkPos;
+    readonly blocks: Array<Array<Array<Block>>>;
 
     constructor(world: World, chunkPos: ChunkPos) {
         this.world = world;
@@ -48,12 +48,12 @@ export class Chunk {
         for (let x: number = 0; x < chunkSize; x++) {
             for (let y: number = 0; y < chunkSize; y++) {
                 for (let z: number = 0; z < chunkSize; z++) {
-                    faces.px = this.getTransparentAtWorld(new SubChunkPos(x + 1, y, z));
-                    faces.nx = this.getTransparentAtWorld(new SubChunkPos(x - 1, y, z));
-                    faces.py = this.getTransparentAtWorld(new SubChunkPos(x, y + 1, z));
-                    faces.ny = this.getTransparentAtWorld(new SubChunkPos(x, y - 1, z));
-                    faces.pz = this.getTransparentAtWorld(new SubChunkPos(x, y, z + 1));
-                    faces.nz = this.getTransparentAtWorld(new SubChunkPos(x, y, z - 1));
+                    faces.px = this.world.getTransparentAt(this.getWorldPos(new SubChunkPos(x + 1, y, z)));
+                    faces.nx = this.world.getTransparentAt(this.getWorldPos(new SubChunkPos(x - 1, y, z)));
+                    faces.py = this.world.getTransparentAt(this.getWorldPos(new SubChunkPos(x, y + 1, z)));
+                    faces.ny = this.world.getTransparentAt(this.getWorldPos(new SubChunkPos(x, y - 1, z)));
+                    faces.pz = this.world.getTransparentAt(this.getWorldPos(new SubChunkPos(x, y, z + 1)));
+                    faces.nz = this.world.getTransparentAt(this.getWorldPos(new SubChunkPos(x, y, z - 1)));
 
                     let newGeometry = this.blocks[x][y][z].getGeometry(faces);
                     newGeometry?.translate(x, y, z);
@@ -69,11 +69,7 @@ export class Chunk {
         return mesh;
     }
 
-    getTransparentAtWorld(subChunkPos: SubChunkPos): boolean {
-        return this.world.getTransparentAt(BlockPos.fromChunkPos(this.chunkPos, subChunkPos));
-    }
-
-    getTransparentAt(subChunkPos: SubChunkPos): boolean {
-        return this.blocks[subChunkPos.x][subChunkPos.y][subChunkPos.z].transparent;
+    getWorldPos(subChunkPos: SubChunkPos): BlockPos {
+        return BlockPos.fromChunkPos(this.chunkPos, subChunkPos);
     }
 }

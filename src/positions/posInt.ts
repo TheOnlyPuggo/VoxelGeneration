@@ -1,11 +1,11 @@
 import {Vector3} from "three";
 
 export class PosInt {
-    x: number;
-    y: number;
-    z: number;
+    readonly x: number;
+    readonly y: number;
+    readonly z: number;
 
-    constructor(x: number, y: number, z: number) {
+    protected constructor(x: number, y: number, z: number) {
         this.x = Math.floor(x);
         this.y = Math.floor(y);
         this.z = Math.floor(z);

@@ -3,6 +3,7 @@ import {SimplexNoise} from "three/examples/jsm/Addons.js";
 import {Chunk, chunkSize} from "./chunk";
 import {BlockPos} from "../positions/blockPos";
 import {ChunkPos} from "../positions/chunkPos";
+import {SubChunkPos} from "../positions/subChunkPos";
 
 export const worldSize = new Vector3(5, 8, 5);
 export const heightGen = {
@@ -38,15 +39,16 @@ export const cucumberGen = {
 }
 
 export class World {
-    heightNoiseCoarse: SimplexNoise;
-    heightNoiseMedium: SimplexNoise;
-    heightNoiseFine: SimplexNoise;
-    dirtNoise: SimplexNoise;
-    caveNoise: SimplexNoise;
-    coalNoise: SimplexNoise;
-    ironNoise: SimplexNoise;
-    cucumberNoise: SimplexNoise;
-    chunks: Array<Array<Array<Chunk>>>;
+    private readonly heightNoiseCoarse: SimplexNoise;
+    private readonly heightNoiseMedium: SimplexNoise;
+    private readonly heightNoiseFine: SimplexNoise;
+    private readonly dirtNoise: SimplexNoise;
+    private readonly caveNoise: SimplexNoise;
+    private readonly coalNoise: SimplexNoise;
+    private readonly ironNoise: SimplexNoise;
+    private readonly cucumberNoise: SimplexNoise;
+
+    readonly chunks: Array<Array<Array<Chunk>>>;
 
     constructor() {
         this.heightNoiseCoarse = new SimplexNoise();
@@ -90,10 +92,11 @@ export class World {
 
     getTransparentAt(blockPos: BlockPos): boolean {
         let chunkPos: ChunkPos = blockPos.getChunkPos();
+        let subChunkPos: SubChunkPos = blockPos.getSubChunkPos();
         if (chunkPos.x < 0 || chunkPos.x >= this.chunks.length ||
             chunkPos.y < 0 || chunkPos.y >= this.chunks[0].length ||
             chunkPos.z < 0 || chunkPos.z >= this.chunks[0][0].length) return true;
-        return this.chunks[chunkPos.x][chunkPos.y][chunkPos.z].getTransparentAt(blockPos.getSubChunkPos());
+        return this.chunks[chunkPos.x][chunkPos.y][chunkPos.z].blocks[subChunkPos.x][subChunkPos.y][subChunkPos.z].transparent;
     }
 
     getHeightAt(x: number, z: number): number {

@@ -3,10 +3,10 @@ import {FaceMap} from "../geometry/faceMap";
 import {CompositeGeometry} from "../geometry/compositeGeometry";
 
 export class Block {
-    name: string;
-    visible: boolean;
-    transparent: boolean;
-    meshConstructor: CuboidMesh | null;
+    readonly name: string;
+    readonly visible: boolean;
+    readonly transparent: boolean;
+    readonly meshConstructor: CuboidMesh | null;
 
     constructor(name: string, visible: boolean, transparent: boolean, meshConstructor: CuboidMesh | null) {
         this.name = name;
