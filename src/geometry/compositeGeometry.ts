@@ -1,5 +1,5 @@
 import {BufferGeometry, Material, Mesh} from "three";
-import {BufferGeometryUtils} from "three/examples/jsm/Addons";
+import {BufferGeometryUtils} from "three/examples/jsm/Addons.js";
 
 export class CompositeGeometry {
     readonly geometries: BufferGeometry[];
