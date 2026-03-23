@@ -68,7 +68,6 @@ export class CuboidMesh {
         const addFace = (visible: boolean, geomIndex: number, matIndex: number) => {
             if (visible && this.opacity !== 0) {
                 geometries.push(CuboidMesh.planeGeometries[geomIndex].clone());
-                console.log(this.getMaterial(matIndex));
                 materials.push(this.getMaterial(matIndex));
             }
         }

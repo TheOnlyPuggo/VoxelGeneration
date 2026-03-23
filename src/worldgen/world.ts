@@ -1,9 +1,11 @@
 import {Vector3, Mesh} from "three";
+import * as Blocks from "./blocks";
 import {SimplexNoise} from "three/examples/jsm/Addons.js";
 import {Chunk, chunkSize} from "./chunk";
 import {BlockPos} from "../positions/blockPos";
 import {ChunkPos} from "../positions/chunkPos";
 import {SubChunkPos} from "../positions/subChunkPos";
+import {Block} from "./block";
 
 export const worldSize = new Vector3(5, 8, 5);
 export const heightGen = {
@@ -99,7 +101,7 @@ export class World {
         return this.chunks[chunkPos.x][chunkPos.y][chunkPos.z].blocks[subChunkPos.x][subChunkPos.y][subChunkPos.z].transparent;
     }
 
-    getHeightAt(x: number, z: number): number {
+    private getHeightAt(x: number, z: number): number {
         return Math.round(heightGen.amplitude *
             this.heightNoiseCoarse.noise(x / heightGen.size, z / heightGen.size) +
             heightGen.amplitude * heightGen.mediumFactor *
@@ -108,23 +110,36 @@ export class World {
             this.heightNoiseFine.noise(x / (heightGen.size * heightGen.fineFactor), z / (heightGen.size * heightGen.fineFactor)) + heightGen.base);
     }
 
-    getDirtThicknessAt(x: number, z: number): number {
+    private getDirtThicknessAt(x: number, z: number): number {
         return Math.round(dirtGen.amplitude * this.dirtNoise.noise(x / dirtGen.size, z / dirtGen.size) + dirtGen.base);
     }
 
-    getCaveAt(blockPos: BlockPos): boolean {
+    private getCaveAt(blockPos: BlockPos): boolean {
         return this.dirtNoise.noise3d(blockPos.x / caveGen.size, blockPos.y / caveGen.size, blockPos.z / caveGen.size) < caveGen.max;
     }
 
-    getCoalAt(blockPos: BlockPos): boolean {
+    private getCoalAt(blockPos: BlockPos): boolean {
         return this.coalNoise.noise3d(blockPos.x / coalGen.size, blockPos.y / coalGen.size, blockPos.z / coalGen.size) < coalGen.max && blockPos.y < coalGen.maxHeight;
     }
 
-    getIronAt(blockPos: BlockPos): boolean {
+    private getIronAt(blockPos: BlockPos): boolean {
         return this.ironNoise.noise3d(blockPos.x / ironGen.size, blockPos.y / ironGen.size, blockPos.z / ironGen.size) < ironGen.max && blockPos.y < ironGen.maxHeight;
     }
 
-    getCucumberAt(blockPos: BlockPos): boolean {
+    private getCucumberAt(blockPos: BlockPos): boolean {
         return this.cucumberNoise.noise3d(blockPos.x / cucumberGen.size, blockPos.y / cucumberGen.size, blockPos.z / cucumberGen.size) < cucumberGen.max && blockPos.y < cucumberGen.maxHeight;
+    }
+    
+    getBlockToGenerateAt(blockPos: BlockPos): Block {
+        let height: number = this.getHeightAt(blockPos.x, blockPos.z) - blockPos.y;
+        let dirtHeight: number = height - this.getDirtThicknessAt(blockPos.x, blockPos.z);
+
+        if (height < 0 || this.getCaveAt(blockPos)) return Blocks.AIR;
+        else if (height === 0) return Blocks.GRASS;
+        else if (dirtHeight <= 0) return Blocks.DIRT;
+        else if (this.getCoalAt(blockPos)) return Blocks.COAL;
+        else if (this.getIronAt(blockPos)) return Blocks.IRON;
+        else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
+        else return Blocks.STONE;
     }
 }

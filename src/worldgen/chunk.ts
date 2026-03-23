@@ -25,17 +25,7 @@ export class Chunk {
             for (let y: number = 0; y < chunkSize; y++) {
                 this.blocks[x].push([]);
                 for (let z: number = 0; z < chunkSize; z++) {
-                    let pos: BlockPos = BlockPos.fromChunkPos(chunkPos, new SubChunkPos(x, y, z));
-                    let height: number = world.getHeightAt(pos.x, pos.z) - pos.y;
-                    let dirtHeight: number = height - world.getDirtThicknessAt(pos.x, pos.z);
-
-                    if (height < 0 || world.getCaveAt(pos)) this.blocks[x][y].push(Blocks.AIR);
-                    else if (height === 0) this.blocks[x][y].push(Blocks.GRASS);
-                    else if (dirtHeight <= 0) this.blocks[x][y].push(Blocks.DIRT);
-                    else if (world.getCoalAt(pos)) this.blocks[x][y].push(Blocks.COAL);
-                    else if (world.getIronAt(pos)) this.blocks[x][y].push(Blocks.IRON);
-                    else if (world.getCucumberAt(pos)) this.blocks[x][y].push(Blocks.CUCUMBER);
-                    else this.blocks[x][y].push(Blocks.STONE);
+                    this.blocks[x][y].push(world.getBlockToGenerateAt(BlockPos.fromChunkPos(chunkPos, new SubChunkPos(x, y, z))));
                 }
             }
         }
