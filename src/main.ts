@@ -1,10 +1,11 @@
 import * as THREE from 'three';
-import { CuboidMesh, CuboidMeshOneColor, CuboidMeshMultiTexture, CuboidMeshOneTexture } from './creation';
+import { CuboidMesh, CuboidMeshOneColor, CuboidMeshOneTexture, CuboidMeshMultiTexture } from './creation';
 import { CameraControls } from './camera';
 import { World } from './worldgen/world';
 import { GroundedSkybox } from "three/examples/jsm/objects/GroundedSkybox.js";
 import { HDRLoader } from "three/examples/jsm/loaders/HDRLoader.js";
 import {CreateGUI} from "./UI";
+import { PMREMGenerator } from 'three/webgpu';
 
 export const Game: {
     scene: THREE.Scene | null,
@@ -33,7 +34,7 @@ function init(): void {
     // Setup
     Game.scene = new THREE.Scene();
 
-    Game.renderer = new THREE.WebGLRenderer();
+    Game.renderer = new THREE.WebGLRenderer({precision: "highp"});
     Game.renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(Game.renderer.domElement);
 
@@ -51,24 +52,21 @@ function init(): void {
     Game.timer = new THREE.Timer();
 
     // Temp Cube Creation Example
-    // let dirtBlockMesh: CuboidMesh = new CuboidMeshOneTexture(1, 1, 1, 1.0, "dirt.png");
-    // Game.scene.add(dirtBlockMesh.Mesh() ?? new THREE.Mesh());
+    // let testBlock: CuboidMesh = new CuboidMeshOneColor(1, 1, 1, 1.0, new THREE.Color(0xff0000), false);
+    // let testBlockMesh = testBlock.Mesh({px: 0, nx: 0, py: 0, ny: 0, pz: 0, nz: 0});
+    // Game.scene.add(testBlockMesh ?? new THREE.Mesh());
+
+    // let dirtBlock: CuboidMesh = new CuboidMeshOneTexture(1, 1, 1, 1.0, "one_texture/dirt.png");
+    // let dirtBlockMesh = dirtBlock.Mesh({px: 0, nx: 0, py: 0, ny: 0, pz: 0, nz: 0});
+    // Game.scene.add(dirtBlockMesh ?? new THREE.Mesh());
 
     // let grassBlockMesh: CuboidMesh = new CuboidMeshMultiTexture(1, 1, 1, 1.0,
     //     "grass_textures/grass_top.png",
     //     "grass_textures/grass_bottom.png",
-    //     "grass_textures/grass_side.png",
-    //     {
-    //         px: 0,
-    //         nx: 0,
-    //         py: 0,
-    //         ny: 0,
-    //         pz: 0,
-    //         nz: 0
-    //     },
+    //     "grass_textures/grass_side.png"
     // );
 
-    // Game.scene.add( grassBlockMesh.Mesh() ?? new THREE.Mesh() );
+    // Game.scene.add( grassBlockMesh.Mesh({px: 1, nx: 0, py: 0, ny: 0, pz: 0, nz: 0}) ?? new THREE.Mesh() );
 
     // World Creation
     let world: World = new World();
