@@ -51,6 +51,9 @@ function init(): void {
     Game.timer = new THREE.Timer();
 
     // Temp Cube Creation Example
+    let dirtBlockMesh: CuboidMesh = new CuboidMeshOneTexture(1, 1, 1, 1.0, "dirt.png");
+    Game.scene.add(dirtBlockMesh.Mesh() ?? new THREE.Mesh());
+
     // let grassBlockMesh: CuboidMesh = new CuboidMeshMultiTexture(1, 1, 1, 1.0,
     //     "grass_textures/grass_top.png",
     //     "grass_textures/grass_bottom.png",
