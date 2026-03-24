@@ -1,4 +1,4 @@
-import {AmbientLight, Box3, BoxGeometry, Camera, Frustum, Matrix4, Mesh, MeshBasicMaterial, PerspectiveCamera, Raycaster, Scene, Timer, Vector3, WebGLRenderer} from "three";
+import {ACESFilmicToneMapping, AmbientLight, ArrowHelper, Box3, BoxGeometry, Camera, Color, EquirectangularReflectionMapping, Frustum, Matrix4, Mesh, MeshBasicMaterial, PerspectiveCamera, Raycaster, Scene, SRGBColorSpace, Timer, Vector3, WebGLRenderer} from "three";
 import {CameraControls} from './camera';
 import {World} from './worldgen/world';
 import {GroundedSkybox} from "three/examples/jsm/objects/GroundedSkybox.js";
@@ -103,29 +103,29 @@ function init(): void {
     }
 
     //#region Skybox Dynamic - Currently very laggy dont use until we get occlussion culling
-    // Game.renderer.toneMapping = ACESFilmicToneMapping;
-    // Game.renderer.toneMappingExposure = 1.0;
-    // Game.renderer.outputColorSpace = SRGBColorSpace;
+    Game.renderer.toneMapping = ACESFilmicToneMapping;
+    Game.renderer.toneMappingExposure = 1.0;
+    Game.renderer.outputColorSpace = SRGBColorSpace;
 
-    // new HDRLoader().load(import.meta.env.BASE_URL + "skybox.hdr", (tex) => {
-    //     tex.mapping = EquirectangularReflectionMapping;
-    //     if (Game.scene) {
-    //         Game.scene.background = tex;
-    //         Game.scene.environment = tex;
-    //         Game.scene.backgroundIntensity = 0.5;
-    //         Game.scene.environmentIntensity = 0.5;
-    //     }
-    // });
+    new HDRLoader().load(import.meta.env.BASE_URL + "skybox.hdr", (tex) => {
+        tex.mapping = EquirectangularReflectionMapping;
+        if (Game.scene) {
+            Game.scene.background = tex;
+            Game.scene.environment = tex;
+            Game.scene.backgroundIntensity = 0.5;
+            Game.scene.environmentIntensity = 0.5;
+        }
+    });
 
     //#region No lighting Skybox
-    let ambientLight = new AmbientLight(0x404040, 10.0);
-    Game.scene.add(ambientLight);
-    let skyboxTexture = new HDRLoader().load(import.meta.env.BASE_URL + "skybox.hdr");
-    Game.environment.skybox = new GroundedSkybox(skyboxTexture, 100, 1000);
+    // let ambientLight = new AmbientLight(0x404040, 10.0);
+    // Game.scene.add(ambientLight);
+    // let skyboxTexture = new HDRLoader().load(import.meta.env.BASE_URL + "skybox.hdr");
+    // Game.environment.skybox = new GroundedSkybox(skyboxTexture, 100, 1000);
 
-    let skyboxBrightness = 0.7;
-    Game.environment.skybox.material.color.setRGB(skyboxBrightness, skyboxBrightness, skyboxBrightness);
-    Game.scene.add(Game.environment.skybox);
+    // let skyboxBrightness = 0.7;
+    // Game.environment.skybox.material.color.setRGB(skyboxBrightness, skyboxBrightness, skyboxBrightness);
+    // Game.scene.add(Game.environment.skybox);
     //#endregion
 
     // GUI
@@ -150,6 +150,7 @@ function animate(time: number): void {
 
     const frustum = new Frustum();
     const matrix = new Matrix4();
+    let raycaster = new Raycaster();
     
     if (Game.camera?.projectionMatrix != null) {
         matrix.multiplyMatrices(Game.camera?.projectionMatrix, Game.camera?.matrixWorldInverse);
@@ -162,16 +163,7 @@ function animate(time: number): void {
         let chunksPerFrame = 3;
         for (let i = (Game.currentFrame*chunksPerFrame) % len; i < (Game.currentFrame*chunksPerFrame + chunksPerFrame) % len; i++) {
         //for (let i = 0; i < len; i++) {
-
-            
-
-            
-
-
-            
             let isVisible = false;
-            
-
 
             let mesh = Game.instantiatedMeshes[i];
 
@@ -182,21 +174,21 @@ function animate(time: number): void {
 
             let points = [];
 
-            points.push(mesh.position.clone().add(new Vector3(0, 0, 0)));
-            points.push(mesh.position.clone().add(new Vector3(chunkSize, 0, 0)));
-            points.push(mesh.position.clone().add(new Vector3(0, chunkSize, 0)));
-            points.push(mesh.position.clone().add(new Vector3(0, 0, chunkSize)));
-            points.push(mesh.position.clone().add(new Vector3(chunkSize, chunkSize, 0)));
-            points.push(mesh.position.clone().add(new Vector3(chunkSize, 0, chunkSize)));
-            points.push(mesh.position.clone().add(new Vector3(0, chunkSize, chunkSize)));
-            points.push(mesh.position.clone().add(new Vector3(chunkSize, chunkSize, chunkSize)));
+            // points.push(mesh.position.clone().add(new Vector3(0, 0, 0)));
+            // points.push(mesh.position.clone().add(new Vector3(chunkSize, 0, 0)));
+            // points.push(mesh.position.clone().add(new Vector3(0, chunkSize, 0)));
+            // points.push(mesh.position.clone().add(new Vector3(0, 0, chunkSize)));
+            // points.push(mesh.position.clone().add(new Vector3(chunkSize, chunkSize, 0)));
+            // points.push(mesh.position.clone().add(new Vector3(chunkSize, 0, chunkSize)));
+            // points.push(mesh.position.clone().add(new Vector3(0, chunkSize, chunkSize)));
+            // points.push(mesh.position.clone().add(new Vector3(chunkSize, chunkSize, chunkSize)));
+            points.push(mesh.position.clone().add(new Vector3(chunkSize / 2.0, 0.0, chunkSize / 2.0)));
+            points.push(mesh.position.clone().add(new Vector3(chunkSize / 2.0, chunkSize / 2.0, chunkSize / 2.0)));
+            points.push(mesh.position.clone().add(new Vector3(chunkSize / 2.0, chunkSize, chunkSize / 2.0)));
+            points.push(mesh.position.clone().add(new Vector3(chunkSize / 2.0, chunkSize * 2.0, chunkSize / 2.0)));
 
-            let raycaster = new Raycaster();
             let cameraPos = Game.camera?.position as Vector3;
             let occluderMeshes = Game.instantiatedMeshes.filter(m => m !== mesh);
-
-            
-            
 
             for (let point of points) {
                 let rayDir = new Vector3().subVectors(point, cameraPos).normalize();
