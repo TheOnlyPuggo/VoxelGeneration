@@ -15,6 +15,25 @@ export class PosInt {
         return new PosInt(vector.x, vector.y, vector.z);
     }
 
+    clone(): PosInt {
+        return new PosInt(this.x, this.y, this.z);
+    }
+
+    compare(other: PosInt): boolean {
+        return this.x === other.x && this.y === other.y && this.z === other.z;
+    }
+
+    createKey(): string {
+        return `${this.x},${this.y},${this.z}`
+    }
+
+    static interpretKeyToPosInt(key: string): PosInt {
+        let keyArray = key.split(",");
+        let numArray = keyArray.map(Number);
+
+        return new PosInt(numArray[0], numArray[1], numArray[2]);
+    }
+
     asTHREEVector3(): Vector3 {
         return new Vector3(Number(this.x), Number(this.y), Number(this.z));
     }

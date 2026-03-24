@@ -16,6 +16,7 @@ export const Game: {
         skybox: GroundedSkybox | null,
     },
     timer: Timer | null,
+    world: World | null,
 
     instantiatedMeshes: Mesh[] | null,
     currentFrame: number | null,
@@ -29,6 +30,7 @@ export const Game: {
         skybox: null,
     },
     timer: null,
+    world: null,
 
     instantiatedMeshes: null,
     currentFrame: null,
@@ -64,43 +66,25 @@ function init(): void {
 
     Game.currentFrame = 0;
 
-
-    // Temp Cube Creation Example
-    // let testBlock: CuboidMesh = new CuboidMeshOneColor(1, 1, 1, 1.0, new Color(0xff0000), false);
-    // let testBlockMesh = testBlock.Mesh({px: 0, nx: 0, py: 0, ny: 0, pz: 0, nz: 0});
-    // Game.scene.add(testBlockMesh ?? new Mesh());
-
-    // let dirtBlock: CuboidMesh = new CuboidMeshOneTexture(1, 1, 1, 1.0, "one_texture/dirt.png");
-    // let dirtBlockMesh = dirtBlock.Mesh({px: 0, nx: 0, py: 0, ny: 0, pz: 0, nz: 0});
-    // Game.scene.add(dirtBlockMesh ?? new Mesh());
-
-    // let grassBlockMesh: CuboidMesh = new CuboidMeshMultiTexture(1, 1, 1, 1.0,
-    //     "grass_textures/grass_top.png",
-    //     "grass_textures/grass_bottom.png",
-    //     "grass_textures/grass_side.png"
-    // );
-
-    // Game.scene.add( grassBlockMesh.Mesh({px: 1, nx: 0, py: 0, ny: 0, pz: 0, nz: 0}) ?? new Mesh() );
-
     // World Creation
-    let world: World = new World();
-    let meshes: Mesh[] = world.getMeshes();
-    Game.instantiatedMeshes = [];
-    for (let i = 0; i < meshes.length; i++) {
-        Game.instantiatedMeshes?.push(meshes[i]);
-        Game.scene.add( meshes[i] );
+    Game.world = new World();
+    // let meshes: Mesh[] = Game.world.getMeshes();
+    // Game.instantiatedMeshes = [];
+    // for (let i = 0; i < meshes.length; i++) {
+    //     Game.instantiatedMeshes?.push(meshes[i]);
+    //     Game.scene.add( meshes[i] );
 
 
-        //Test Box
-        // let meshCubeOutline = new Mesh(new BoxGeometry(chunkSize, chunkSize, chunkSize), new MeshBasicMaterial({color: 0xffff00, wireframe: true}));
-        // meshCubeOutline.position.copy(meshes[i].position);
-        // meshCubeOutline.position.add(new Vector3(chunkSize / 2.0 - 0.5, chunkSize / 2.0 - 0.5, chunkSize / 2.0 - 0.5));
-        // Game.scene.add(meshCubeOutline);
+    //     //Test Box
+    //     // let meshCubeOutline = new Mesh(new BoxGeometry(chunkSize, chunkSize, chunkSize), new MeshBasicMaterial({color: 0xffff00, wireframe: true}));
+    //     // meshCubeOutline.position.copy(meshes[i].position);
+    //     // meshCubeOutline.position.add(new Vector3(chunkSize / 2.0 - 0.5, chunkSize / 2.0 - 0.5, chunkSize / 2.0 - 0.5));
+    //     // Game.scene.add(meshCubeOutline);
 
-        // let originMesh = new Mesh(new BoxGeometry(0.1, 0.1, 0.1), new MeshBasicMaterial({color: 0xff0000}));
-        // originMesh.position.copy(meshes[i].position);
-        // Game.scene.add(originMesh);
-    }
+    //     // let originMesh = new Mesh(new BoxGeometry(0.1, 0.1, 0.1), new MeshBasicMaterial({color: 0xff0000}));
+    //     // originMesh.position.copy(meshes[i].position);
+    //     // Game.scene.add(originMesh);
+    // }
 
     //#region Skybox Dynamic - Currently very laggy dont use until we get occlussion culling
     Game.renderer.toneMapping = ACESFilmicToneMapping;
@@ -145,18 +129,19 @@ function animate(time: number): void {
     Game.cameraControls?.Update(Game.timer?.getDelta() ?? 0);
     Game.environment.skybox?.position.copy(Game.camera?.position as Vector3);
 
+    if (Game.scene) Game.world?.Update(Game.camera, Game.scene, Game.currentFrame);
+
     //#region Occlusion Culling Test
     let len = Game.instantiatedMeshes?.length ?? 0;
 
     const frustum = new Frustum();
     const matrix = new Matrix4();
-    let raycaster = new Raycaster();
+    const raycaster = new Raycaster();
     
     if (Game.camera?.projectionMatrix != null) {
         matrix.multiplyMatrices(Game.camera?.projectionMatrix, Game.camera?.matrixWorldInverse);
         frustum.setFromProjectionMatrix(matrix);
     }
-
 
     if (Game.instantiatedMeshes != null) {
 
