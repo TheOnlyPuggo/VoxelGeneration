@@ -63,30 +63,11 @@ function init(): void {
 
     // Timer
     Game.timer = new Timer();
-
     Game.currentFrame = 0;
 
     // World Creation
     Game.world = new World();
-    // let meshes: Mesh[] = Game.world.getMeshes();
-    // Game.instantiatedMeshes = [];
-    // for (let i = 0; i < meshes.length; i++) {
-    //     Game.instantiatedMeshes?.push(meshes[i]);
-    //     Game.scene.add( meshes[i] );
 
-
-    //     //Test Box
-    //     // let meshCubeOutline = new Mesh(new BoxGeometry(chunkSize, chunkSize, chunkSize), new MeshBasicMaterial({color: 0xffff00, wireframe: true}));
-    //     // meshCubeOutline.position.copy(meshes[i].position);
-    //     // meshCubeOutline.position.add(new Vector3(chunkSize / 2.0 - 0.5, chunkSize / 2.0 - 0.5, chunkSize / 2.0 - 0.5));
-    //     // Game.scene.add(meshCubeOutline);
-
-    //     // let originMesh = new Mesh(new BoxGeometry(0.1, 0.1, 0.1), new MeshBasicMaterial({color: 0xff0000}));
-    //     // originMesh.position.copy(meshes[i].position);
-    //     // Game.scene.add(originMesh);
-    // }
-
-    //#region Skybox Dynamic - Currently very laggy dont use until we get occlussion culling
     Game.renderer.toneMapping = ACESFilmicToneMapping;
     Game.renderer.toneMappingExposure = 1.0;
     Game.renderer.outputColorSpace = SRGBColorSpace;
@@ -100,17 +81,6 @@ function init(): void {
             Game.scene.environmentIntensity = 0.5;
         }
     });
-
-    //#region No lighting Skybox
-    // let ambientLight = new AmbientLight(0x404040, 10.0);
-    // Game.scene.add(ambientLight);
-    // let skyboxTexture = new HDRLoader().load(import.meta.env.BASE_URL + "skybox.hdr");
-    // Game.environment.skybox = new GroundedSkybox(skyboxTexture, 100, 1000);
-
-    // let skyboxBrightness = 0.7;
-    // Game.environment.skybox.material.color.setRGB(skyboxBrightness, skyboxBrightness, skyboxBrightness);
-    // Game.scene.add(Game.environment.skybox);
-    //#endregion
 
     // GUI
     CreateGUI(Game);
@@ -131,87 +101,8 @@ function animate(time: number): void {
 
     if (Game.scene) Game.world?.Update(Game.camera, Game.scene, Game.currentFrame);
 
-    //#region Occlusion Culling Test
-    let len = Game.instantiatedMeshes?.length ?? 0;
-
-    const frustum = new Frustum();
-    const matrix = new Matrix4();
-    const raycaster = new Raycaster();
-    
-    if (Game.camera?.projectionMatrix != null) {
-        matrix.multiplyMatrices(Game.camera?.projectionMatrix, Game.camera?.matrixWorldInverse);
-        frustum.setFromProjectionMatrix(matrix);
-    }
-
-    if (Game.instantiatedMeshes != null) {
-
-        let chunksPerFrame = 3;
-        for (let i = (Game.currentFrame*chunksPerFrame) % len; i < (Game.currentFrame*chunksPerFrame + chunksPerFrame) % len; i++) {
-        //for (let i = 0; i < len; i++) {
-            let isVisible = false;
-
-            let mesh = Game.instantiatedMeshes[i];
-
-            let box = new Box3().setFromObject(mesh);
-            if (!frustum.intersectsBox(box)) {
-                continue;
-            }
-
-            let points = [];
-
-            // points.push(mesh.position.clone().add(new Vector3(0, 0, 0)));
-            // points.push(mesh.position.clone().add(new Vector3(chunkSize, 0, 0)));
-            // points.push(mesh.position.clone().add(new Vector3(0, chunkSize, 0)));
-            // points.push(mesh.position.clone().add(new Vector3(0, 0, chunkSize)));
-            // points.push(mesh.position.clone().add(new Vector3(chunkSize, chunkSize, 0)));
-            // points.push(mesh.position.clone().add(new Vector3(chunkSize, 0, chunkSize)));
-            // points.push(mesh.position.clone().add(new Vector3(0, chunkSize, chunkSize)));
-            // points.push(mesh.position.clone().add(new Vector3(chunkSize, chunkSize, chunkSize)));
-            points.push(mesh.position.clone().add(new Vector3(chunkSize / 2.0, 0.0, chunkSize / 2.0)));
-            points.push(mesh.position.clone().add(new Vector3(chunkSize / 2.0, chunkSize / 2.0, chunkSize / 2.0)));
-            points.push(mesh.position.clone().add(new Vector3(chunkSize / 2.0, chunkSize, chunkSize / 2.0)));
-            points.push(mesh.position.clone().add(new Vector3(chunkSize / 2.0, chunkSize * 2.0, chunkSize / 2.0)));
-
-            let cameraPos = Game.camera?.position as Vector3;
-            let occluderMeshes = Game.instantiatedMeshes.filter(m => m !== mesh);
-
-            for (let point of points) {
-                let rayDir = new Vector3().subVectors(point, cameraPos).normalize();
-                raycaster.set(cameraPos, rayDir);
-
-                let intersects = raycaster.intersectObjects(occluderMeshes, false);
-                
-                if (intersects.length === 0) {
-                    // Nothing blocking
-                    isVisible = true;
-                    break;
-                }
-
-                let hit = intersects[0];
-                let distanceToPoint = cameraPos.distanceTo(point);
-                if (!hit || hit.distance > distanceToPoint) {
-                    isVisible = true;
-                    break;
-                }
-            }   
-
-            //console.log(isVisible);
-            
-            Game.instantiatedMeshes[i].visible = isVisible;
-
-            /*
-            if (Game.instantiatedMeshes[i].position.distanceTo(Game.camera?.position as Vector3) < 20) {
-                Game.instantiatedMeshes[i].visible = true;
-            } else {
-                Game.instantiatedMeshes[i].visible = false;
-            }
-                */
-        }
-    }
-    //#endregion
-
     Game.stats?.update();
-    requestAnimationFrame(animate)
+    requestAnimationFrame(animate);
 };
 
 function onWindowResize(): void {
