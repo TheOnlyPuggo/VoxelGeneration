@@ -204,7 +204,7 @@ export class World {
         const chunkPos: ChunkPos = blockPos.getChunkPos();
         const subChunkPos: SubChunkPos = blockPos.getSubChunkPos();
         const chunkEntry = this.chunksMap.get(chunkPos.createKey());
-        if (!chunkEntry) return true;
+        if (!chunkEntry) return this.getBlockToGenerateAt(blockPos).transparent;
 
         const block = chunkEntry.chunk.blocks[subChunkPos.x][subChunkPos.y][subChunkPos.z];
         if (!block) return true;
