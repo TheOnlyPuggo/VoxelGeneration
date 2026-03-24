@@ -50,10 +50,10 @@ function init(): void {
     Game.camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
     Game.cameraControls = new CameraControls(Game.camera, Game.renderer.domElement, 10.0, true);
 
-    Game.camera.position.x = 1.0;
-    Game.camera.position.z = 1.0;
-    Game.camera.position.y = 1.0;
-    Game.camera.rotateY(Math.PI / 4.0)
+    Game.camera.position.x = 7.0;
+    Game.camera.position.z = 7.0;
+    Game.camera.position.y = 88.0;
+    Game.camera.rotateY(-Math.PI * 0.75);
     Game.camera.rotateX(-Math.PI / 4.0); Game.renderer.domElement
     
     Game.stats = new Stats();
@@ -92,14 +92,14 @@ function init(): void {
 
 
         //Test Box
-        let meshCubeOutline = new Mesh(new BoxGeometry(chunkSize, chunkSize, chunkSize), new MeshBasicMaterial({color: 0xffff00, wireframe: true}));
-        meshCubeOutline.position.copy(meshes[i].position);
-        meshCubeOutline.position.add(new Vector3(chunkSize / 2.0 - 0.5, chunkSize / 2.0 - 0.5, chunkSize / 2.0 - 0.5));
-        Game.scene.add(meshCubeOutline);
+        // let meshCubeOutline = new Mesh(new BoxGeometry(chunkSize, chunkSize, chunkSize), new MeshBasicMaterial({color: 0xffff00, wireframe: true}));
+        // meshCubeOutline.position.copy(meshes[i].position);
+        // meshCubeOutline.position.add(new Vector3(chunkSize / 2.0 - 0.5, chunkSize / 2.0 - 0.5, chunkSize / 2.0 - 0.5));
+        // Game.scene.add(meshCubeOutline);
 
-        let originMesh = new Mesh(new BoxGeometry(0.1, 0.1, 0.1), new MeshBasicMaterial({color: 0xff0000}));
-        originMesh.position.copy(meshes[i].position);
-        Game.scene.add(originMesh);
+        // let originMesh = new Mesh(new BoxGeometry(0.1, 0.1, 0.1), new MeshBasicMaterial({color: 0xff0000}));
+        // originMesh.position.copy(meshes[i].position);
+        // Game.scene.add(originMesh);
     }
 
     //#region Skybox Dynamic - Currently very laggy dont use until we get occlussion culling
