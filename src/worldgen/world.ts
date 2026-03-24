@@ -78,126 +78,125 @@ export class World {
         if (!camera) return;
 
         this.cameraChunkPos = Chunk.getChunkPosfromCameraPos(camera);
-        
-        if (!this.previousCameraChunkPos.compare(this.cameraChunkPos)) {
-            this.previousCameraChunkPos = this.cameraChunkPos.clone();
+        if (this.previousCameraChunkPos.compare(this.cameraChunkPos)) return;
 
-            const newChunks: Chunk[] = [];
+        this.previousCameraChunkPos = this.cameraChunkPos.clone();
 
-            // Chunk Creation
-            for (let x = this.cameraChunkPos.x - this.worldRadius; x <= this.cameraChunkPos.x + this.worldRadius; x++) {
-                for (let y = this.cameraChunkPos.y - this.worldRadius; y <= this.cameraChunkPos.y + this.worldRadius; y++) {
-                    for (let z = this.cameraChunkPos.z - this.worldRadius; z <= this.cameraChunkPos.z + this.worldRadius; z++) {
-                        const chunkPos = new ChunkPos(x, y, z);
-                        if (!this.chunksMap.has(chunkPos.createKey())) {
-                            const chunk = new Chunk(this, chunkPos);
+        const newChunks: Chunk[] = [];
 
-                            this.chunksMap.set(chunkPos.createKey(), {
-                                chunk,
-                                chunkMesh: new Mesh()
-                            });
+        // Chunk Creation
+        for (let x = this.cameraChunkPos.x - this.worldRadius; x <= this.cameraChunkPos.x + this.worldRadius; x++) {
+            for (let y = this.cameraChunkPos.y - this.worldRadius; y <= this.cameraChunkPos.y + this.worldRadius; y++) {
+                for (let z = this.cameraChunkPos.z - this.worldRadius; z <= this.cameraChunkPos.z + this.worldRadius; z++) {
+                    const chunkPos = new ChunkPos(x, y, z);
+                    if (!this.chunksMap.has(chunkPos.createKey())) {
+                        const chunk = new Chunk(this, chunkPos);
 
-                            newChunks.push(chunk);
-                        }
+                        this.chunksMap.set(chunkPos.createKey(), {
+                            chunk,
+                            chunkMesh: new Mesh()
+                        });
+
+                        newChunks.push(chunk);
                     }
                 }
             }
-
-            // Chunk Mesh Creation
-            for (const chunk of newChunks) {
-                const mesh = chunk.getChunkMesh();
-                if (!mesh) continue;
-
-                mesh.position.set(
-                    chunk.chunkPos.x * chunkSize,
-                    chunk.chunkPos.y * chunkSize,
-                    chunk.chunkPos.z * chunkSize
-                );
-
-                scene.add(mesh);
-
-                this.chunksMap.get(chunk.chunkPos.createKey())!.chunkMesh = mesh;
-            }
-
-
-            // Deletion of chunks outside radius
-            this.chunksMap.forEach(({chunk, chunkMesh}, chunkPosKey) => {
-                if (
-                    chunk.chunkPos.x < this.cameraChunkPos.x - this.worldRadius ||
-                    chunk.chunkPos.x > this.cameraChunkPos.x + this.worldRadius ||
-                    chunk.chunkPos.y < this.cameraChunkPos.y - this.worldRadius ||
-                    chunk.chunkPos.y > this.cameraChunkPos.y + this.worldRadius ||
-                    chunk.chunkPos.z < this.cameraChunkPos.z - this.worldRadius ||
-                    chunk.chunkPos.z > this.cameraChunkPos.z + this.worldRadius
-                ) {
-                    chunkMesh.geometry.dispose();
-                    scene.remove(chunkMesh);
-                    this.chunksMap.delete(chunkPosKey);
-                    return;
-                }
-            });
-
-            // Occlusion Culling
-            // const frustum = new Frustum();
-            // const matrix = new Matrix4();
-            // const raycaster = new Raycaster();
-
-            // if (camera.projectionMatrix != null) {
-            //     matrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
-            //     frustum.setFromProjectionMatrix(matrix);
-            // }
-
-            // let chunksPerFrame = 3;
-
-            // const entries = Array.from(this.chunksMap.values());
-
-            // const start = (currentFrame * chunksPerFrame) % entries.length;
-            // const end = Math.min(start + chunksPerFrame, entries.length);
-
-            // for (let i = start; i < end; i++) {
-            //     const {chunk, chunkMesh} = entries[i];
-
-            //     let isVisible = false;
-
-            //     let box = new Box3().setFromObject(chunkMesh);
-            //     if (!frustum.intersectsBox(box)) {
-            //         chunkMesh.visible = false;
-            //         continue;
-            //     }
-    
-            //     let points = [];
-    
-            //     points.push(chunkMesh.position.clone().add(new Vector3(chunkSize / 2.0, 0.0, chunkSize / 2.0)));
-            //     points.push(chunkMesh.position.clone().add(new Vector3(chunkSize / 2.0, chunkSize / 2.0, chunkSize / 2.0)));
-            //     points.push(chunkMesh.position.clone().add(new Vector3(chunkSize / 2.0, chunkSize, chunkSize / 2.0)));
-            //     points.push(chunkMesh.position.clone().add(new Vector3(chunkSize / 2.0, chunkSize * 2.0, chunkSize / 2.0)));
-
-            //     let cameraPos = camera.position as Vector3;
-            //     let occluderMeshes = entries.filter(entry => entry.chunkMesh !== chunkMesh).map(entry => entry.chunkMesh);
-
-            //     for (let point of points) {
-            //         let rayDir = new Vector3().subVectors(point, cameraPos).normalize();
-            //         raycaster.set(cameraPos, rayDir);
-    
-            //         let intersects = raycaster.intersectObjects(occluderMeshes, false);
-                    
-            //         if (intersects.length === 0) {
-            //             // Nothing blocking
-            //             isVisible = true;
-            //             break;
-            //         }
-    
-            //         let hit = intersects[0];
-            //         let distanceToPoint = cameraPos.distanceTo(point);
-            //         if (!hit || hit.distance > distanceToPoint) {
-            //             isVisible = true;
-            //             break;
-            //         }
-            //     }   
-                
-            //     chunkMesh.visible = isVisible;
-            // }
         }
+
+        // Chunk Mesh Creation
+        for (const chunk of newChunks) {
+            const mesh = chunk.getChunkMesh();
+            if (!mesh) continue;
+
+            mesh.position.set(
+                chunk.chunkPos.x * chunkSize,
+                chunk.chunkPos.y * chunkSize,
+                chunk.chunkPos.z * chunkSize
+            );
+
+            scene.add(mesh);
+
+            this.chunksMap.get(chunk.chunkPos.createKey())!.chunkMesh = mesh;
+        }
+
+
+        // Deletion of chunks outside radius
+        this.chunksMap.forEach(({chunk, chunkMesh}, chunkPosKey) => {
+            if (
+                chunk.chunkPos.x < this.cameraChunkPos.x - this.worldRadius ||
+                chunk.chunkPos.x > this.cameraChunkPos.x + this.worldRadius ||
+                chunk.chunkPos.y < this.cameraChunkPos.y - this.worldRadius ||
+                chunk.chunkPos.y > this.cameraChunkPos.y + this.worldRadius ||
+                chunk.chunkPos.z < this.cameraChunkPos.z - this.worldRadius ||
+                chunk.chunkPos.z > this.cameraChunkPos.z + this.worldRadius
+            ) {
+                chunkMesh.geometry.dispose();
+                scene.remove(chunkMesh);
+                this.chunksMap.delete(chunkPosKey);
+                return;
+            }
+        });
+
+        // Occlusion Culling
+        // const frustum = new Frustum();
+        // const matrix = new Matrix4();
+        // const raycaster = new Raycaster();
+
+        // if (camera.projectionMatrix != null) {
+        //     matrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+        //     frustum.setFromProjectionMatrix(matrix);
+        // }
+
+        // let chunksPerFrame = 3;
+
+        // const entries = Array.from(this.chunksMap.values());
+
+        // const start = (currentFrame * chunksPerFrame) % entries.length;
+        // const end = Math.min(start + chunksPerFrame, entries.length);
+
+        // for (let i = start; i < end; i++) {
+        //     const {chunk, chunkMesh} = entries[i];
+
+        //     let isVisible = false;
+
+        //     let box = new Box3().setFromObject(chunkMesh);
+        //     if (!frustum.intersectsBox(box)) {
+        //         chunkMesh.visible = false;
+        //         continue;
+        //     }
+
+        //     let points = [];
+
+        //     points.push(chunkMesh.position.clone().add(new Vector3(chunkSize / 2.0, 0.0, chunkSize / 2.0)));
+        //     points.push(chunkMesh.position.clone().add(new Vector3(chunkSize / 2.0, chunkSize / 2.0, chunkSize / 2.0)));
+        //     points.push(chunkMesh.position.clone().add(new Vector3(chunkSize / 2.0, chunkSize, chunkSize / 2.0)));
+        //     points.push(chunkMesh.position.clone().add(new Vector3(chunkSize / 2.0, chunkSize * 2.0, chunkSize / 2.0)));
+
+        //     let cameraPos = camera.position as Vector3;
+        //     let occluderMeshes = entries.filter(entry => entry.chunkMesh !== chunkMesh).map(entry => entry.chunkMesh);
+
+        //     for (let point of points) {
+        //         let rayDir = new Vector3().subVectors(point, cameraPos).normalize();
+        //         raycaster.set(cameraPos, rayDir);
+
+        //         let intersects = raycaster.intersectObjects(occluderMeshes, false);
+                
+        //         if (intersects.length === 0) {
+        //             // Nothing blocking
+        //             isVisible = true;
+        //             break;
+        //         }
+
+        //         let hit = intersects[0];
+        //         let distanceToPoint = cameraPos.distanceTo(point);
+        //         if (!hit || hit.distance > distanceToPoint) {
+        //             isVisible = true;
+        //             break;
+        //         }
+        //     }   
+            
+        //     chunkMesh.visible = isVisible;
+        // }
     }
 
     getTransparentAt(x: number, y: number, z: number): boolean {
