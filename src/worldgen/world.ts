@@ -192,19 +192,6 @@ export class World {
                 await nextFrame();
             }
         }
-
-        this.chunksMap.forEach(({chunk, chunkMesh}, chunkPosKey) => {
-            if (hypo(
-                chunk.chunkPos.x - this.cameraChunkPos.x,
-                chunk.chunkPos.y - this.cameraChunkPos.y,
-                chunk.chunkPos.z - this.cameraChunkPos.z
-            ) > this.worldRadius) {
-                chunkMesh.geometry.dispose();
-                scene.remove(chunkMesh);
-                this.chunksMap.delete(chunkPosKey);
-                return;
-            }
-        });
     }
 
     private async FrustumCulling(camera: Camera) {
