@@ -315,6 +315,12 @@ export class World {
     }
     
     getBlockToGenerateAt(blockPos: BlockPos): Block {
+        let blockToPush = this.getTerrainBlockToGenerateAt(blockPos);
+        if (blockToPush == Blocks.AIR) blockToPush = this.getStructureBlockToGenerateAt(blockPos);
+        return blockToPush;
+    }
+    
+    getTerrainBlockToGenerateAt(blockPos: BlockPos): Block {
         let height: number = this.getHeightAt(blockPos.x, blockPos.z) - blockPos.y;
         let dirtHeight: number = height - this.getDirtThicknessAt(blockPos.x, blockPos.z);
 
