@@ -1,4 +1,4 @@
-import {CuboidMesh} from "../geometry/creation";
+import {CubeMesh} from "../geometry/creation";
 import {FaceMap} from "../geometry/faceMap";
 import {CompositeGeometry} from "../geometry/compositeGeometry";
 
@@ -6,9 +6,9 @@ export class Block {
     readonly name: string;
     readonly visible: boolean;
     readonly transparent: boolean;
-    readonly meshConstructor: CuboidMesh | null;
+    readonly meshConstructor: CubeMesh | null;
 
-    constructor(name: string, visible: boolean, transparent: boolean, meshConstructor: CuboidMesh | null) {
+    constructor(name: string, visible: boolean, transparent: boolean, meshConstructor: CubeMesh | null) {
         this.name = name;
         this.visible = visible;
         this.transparent = transparent;

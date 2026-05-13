@@ -2,7 +2,7 @@ import {Color, Material, MeshStandardMaterial, NearestFilter, PlaneGeometry, Tex
 import {CompositeGeometry} from "./compositeGeometry";
 import {FaceMap} from "./faceMap";
 
-export class CuboidMesh {
+export class CubeMesh {
     static planeGeometries: PlaneGeometry[] = [];
     static materialCache = new Map<string, MeshStandardMaterial>;
     static textureLoader = new TextureLoader();
@@ -13,47 +13,44 @@ export class CuboidMesh {
     opacity: number;
 
     constructor(
-        width: number, 
-        height: number, 
-        depth: number,
         opacity: number = 1.0,
     ) {
-        this.width = width;
-        this.height = height;
-        this.depth = depth;
+        this.width = 1;
+        this.height = 1;
+        this.depth = 1;
         this.opacity = opacity;
 
-        if (CuboidMesh.planeGeometries.length === 0) {
-            CuboidMesh.planeGeometries = [];
+        if (CubeMesh.planeGeometries.length === 0) {
+            CubeMesh.planeGeometries = [];
 
             const pxFace = new PlaneGeometry(1, 1);
             pxFace.rotateY(Math.PI / 2);
             pxFace.translate(0.5, 0.0, 0.0);
-            CuboidMesh.planeGeometries.push(pxFace);
+            CubeMesh.planeGeometries.push(pxFace);
 
             const nxFace = new PlaneGeometry(1, 1);
             nxFace.rotateY(-Math.PI / 2);
             nxFace.translate(-0.5, 0.0, 0.0);
-            CuboidMesh.planeGeometries.push(nxFace);
+            CubeMesh.planeGeometries.push(nxFace);
 
             const pyFace = new PlaneGeometry(1, 1);
             pyFace.rotateX(-Math.PI / 2);
             pyFace.translate(0.0, 0.5, 0.0);
-            CuboidMesh.planeGeometries.push(pyFace);
+            CubeMesh.planeGeometries.push(pyFace);
 
             const nyFace = new PlaneGeometry(1, 1);
             nyFace.rotateX(Math.PI / 2);
             nyFace.translate(0.0, -0.5, 0.0);
-            CuboidMesh.planeGeometries.push(nyFace);
+            CubeMesh.planeGeometries.push(nyFace);
 
             const pzFace = new PlaneGeometry(1, 1);
             pzFace.translate(0.0, 0.0, 0.5);
-            CuboidMesh.planeGeometries.push(pzFace);
+            CubeMesh.planeGeometries.push(pzFace);
 
             const nzFace = new PlaneGeometry(1, 1);
             nzFace.rotateY(Math.PI);
             nzFace.translate(0.0, 0.0, -0.5);
-            CuboidMesh.planeGeometries.push(nzFace);
+            CubeMesh.planeGeometries.push(nzFace);
         }
     }
 
@@ -67,7 +64,7 @@ export class CuboidMesh {
 
         const addFace = (visible: boolean, geomIndex: number, matIndex: number) => {
             if (visible && this.opacity !== 0) {
-                geometries.push(CuboidMesh.planeGeometries[geomIndex].clone());
+                geometries.push(CubeMesh.planeGeometries[geomIndex].clone());
                 materials.push(this.getMaterial(matIndex));
             }
         }
@@ -85,20 +82,17 @@ export class CuboidMesh {
     }
 }
 
-export class CuboidMeshOneColor extends CuboidMesh {
+export class CubeMeshOneColor extends CubeMesh {
     color: Color;
     isWireFrame: boolean;
     material: MeshStandardMaterial;
 
     constructor(
-        width: number, 
-        height: number, 
-        depth: number, 
-        opacity: number = 1.0,
+        opacity: number,
         color: Color, 
         isWireFrame: boolean,
     ) {
-        super(width, height, depth, opacity);
+        super(opacity);
         this.color = color;
         this.isWireFrame = isWireFrame;
 
@@ -110,30 +104,26 @@ export class CuboidMeshOneColor extends CuboidMesh {
     }
 }
 
-export class CuboidMeshOneTexture extends CuboidMesh {
+export class CubeMeshOneTexture extends CubeMesh {
     texturePath: string;
     material: MeshStandardMaterial;
 
     constructor(
-        width: number, 
-        height: number, 
-        depth: number,
-        opacity: number,
         texturePath: string,
     ) {
-        super(width, height, depth, opacity);
+        super(1);
         this.texturePath = texturePath;
 
-        let mat = CuboidMesh.materialCache.get(texturePath);
+        let mat = CubeMesh.materialCache.get(texturePath);
 
         if (!mat) {
-            const texture = CuboidMesh.textureLoader.load(import.meta.env.BASE_URL + texturePath, (tex) => {tex.needsUpdate = true});
+            const texture = CubeMesh.textureLoader.load(import.meta.env.BASE_URL + texturePath, (tex) => {tex.needsUpdate = true});
             texture.magFilter = NearestFilter;
             texture.minFilter = NearestFilter;
             texture.generateMipmaps = false;
 
             mat = new MeshStandardMaterial({map: texture, transparent: true, opacity: this.opacity});
-            CuboidMesh.materialCache.set(texturePath, mat);
+            CubeMesh.materialCache.set(texturePath, mat);
         }
 
         this.material = mat;
@@ -144,22 +134,18 @@ export class CuboidMeshOneTexture extends CuboidMesh {
     }
 }
 
-export class CuboidMeshMultiTexture extends CuboidMesh {
+export class CubeMeshMultiTexture extends CubeMesh {
     topTexturePath: string
     bottomTexturePath: string;
     sideTexturePath: string;
     materials: MeshStandardMaterial[];
 
     constructor(
-        width: number, 
-        height: number, 
-        depth: number,
-        opacity: number,
         topTexturePath: string,
         bottomTexturePath: string,
         sideTexturePath: string
     ) {
-        super(width, height, depth, opacity);
+        super(1);
         this.topTexturePath = topTexturePath;
         this.bottomTexturePath = bottomTexturePath;
         this.sideTexturePath = sideTexturePath;
@@ -176,16 +162,16 @@ export class CuboidMeshMultiTexture extends CuboidMesh {
                 path = sideTexturePath;
             }
 
-            let mat = CuboidMesh.materialCache.get(path);
+            let mat = CubeMesh.materialCache.get(path);
 
             if (!mat) {
-                const texture = CuboidMesh.textureLoader.load(import.meta.env.BASE_URL + path);
+                const texture = CubeMesh.textureLoader.load(import.meta.env.BASE_URL + path);
                 texture.magFilter = NearestFilter;
                 texture.minFilter = NearestFilter;
 
                 mat = new MeshStandardMaterial({map: texture, transparent: true, opacity: this.opacity});
                 
-                CuboidMesh.materialCache.set(path, mat);
+                CubeMesh.materialCache.set(path, mat);
             }
 
             this.materials.push(mat);
