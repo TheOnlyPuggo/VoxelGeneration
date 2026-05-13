@@ -10,29 +10,21 @@ export class Vec2 {
         this.y = y;
     }
 
-    public static fromVector2<THIS extends typeof Vec2>(vector: Vector2): InstanceType<THIS> {
-        return new (this.constructor as any)(vector.x, vector.y);
+    public static fromVector2<THIS extends Vec2>(vector: Vector2): THIS {
+        return new this(vector.x, vector.y) as THIS;
     }
 
-    public static fromVector3<THIS extends typeof Vec2>(vector: Vector3): InstanceType<THIS> {
-        return new (this.constructor as any)(vector.x, vector.y);
+    public static fromVec2<THIS extends Vec2>(vector: Vec2): THIS {
+        return new this(vector.x, vector.y) as THIS;
     }
 
-    public static fromVec2<THIS extends typeof Vec2>(vector: Vec2): InstanceType<THIS> {
-        return new (this.constructor as any)(vector.x, vector.y);
-    }
-
-    public static fromVec3<THIS extends typeof Vec2>(vector: Vec3): InstanceType<THIS> {
-        return new (this.constructor as any)(vector.x, vector.y);
-    }
-
-    public static fromKey<THIS extends typeof Vec2>(key: string): InstanceType<THIS> {
+    public static fromKey<THIS extends Vec2>(key: string): THIS {
         let keyArray = key.split(",");
         let numArray = keyArray.map(Number);
 
-        if (numArray.length >= 2) return new (this.constructor as any)(numArray[0], numArray[1]);
-        if (numArray.length == 1) return new (this.constructor as any)(numArray[0], 0);
-        return new (this.constructor as any)(0, 0);
+        if (numArray.length >= 2) return new this(numArray[0], numArray[1]) as THIS;
+        if (numArray.length == 1) return new this(numArray[0]) as THIS;
+        return new this() as THIS;
     }
 
     public getVector2(): Vector2 {
@@ -97,5 +89,13 @@ export class Vec2 {
 
     public divideY(other: number): this {
         return new (this.constructor as any)(this.x, this.y / other);
+    }
+
+    public magnitude(): number {
+        return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
+    }
+
+    public normalize(): this {
+        return new (this.divide as any)(this.magnitude());
     }
 }
