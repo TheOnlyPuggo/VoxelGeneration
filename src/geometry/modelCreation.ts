@@ -84,7 +84,7 @@ export class Model {
                 blockData.pos.z + blockOriginPos.z
             );
 
-            blocksDictionary[blockWorldPos.createKey()] = MinecraftBlockDictionary[blockData.minecraftName];
+            blocksDictionary[blockWorldPos.getKey()] = MinecraftBlockDictionary[blockData.minecraftName];
         });
 
         Model.manualModelsToLoad.push([blockOriginPos, blocksDictionary]);

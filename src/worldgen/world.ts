@@ -86,7 +86,7 @@ export class World {
         this.cucumberNoise = new SimplexNoise();
         
         this.cameraChunkPos = new ChunkPos(0, 0, 0);
-        this.previousCameraChunkPos = this.cameraChunkPos.clone();
+        this.previousCameraChunkPos = this.cameraChunkPos;
         this.isGenerating = false;
 
         this.chunksMap = new Map<string, {chunk: Chunk, chunkMesh: Mesh}>();
@@ -96,9 +96,9 @@ export class World {
         if (!camera) return;
 
         this.cameraChunkPos = Chunk.getChunkPosfromCameraPos(camera);
-        if (!this.previousCameraChunkPos.compare(this.cameraChunkPos) && !this.isGenerating)  {
+        if (!this.previousCameraChunkPos.equals(this.cameraChunkPos) && !this.isGenerating)  {
             this.isGenerating = true;
-            this.previousCameraChunkPos = this.cameraChunkPos.clone();
+            this.previousCameraChunkPos = this.cameraChunkPos;
 
             this.CreateChunks()
                 .then((newChunks) => this.CreateChunkMeshes(scene, newChunks))
@@ -114,7 +114,7 @@ export class World {
         const blockPos = new BlockPos(x, y, z);
         const chunkPos: ChunkPos = blockPos.getChunkPos();
         const subChunkPos: SubChunkPos = blockPos.getSubChunkPos();
-        const chunkEntry = this.chunksMap.get(chunkPos.createKey());
+        const chunkEntry = this.chunksMap.get(chunkPos.getKey());
         if (!chunkEntry) return this.getBlockToGenerateAt(blockPos).transparent;
 
         const block = chunkEntry.chunk.blocks[subChunkPos.x][subChunkPos.y][subChunkPos.z];
@@ -136,10 +136,10 @@ export class World {
                     ) > this.worldRadius) continue;
 
                     const chunkPos = new ChunkPos(x, y, z);
-                    if (!this.chunksMap.has(chunkPos.createKey())) {
+                    if (!this.chunksMap.has(chunkPos.getKey())) {
                         const chunk = new Chunk(this, chunkPos);
 
-                        this.chunksMap.set(chunkPos.createKey(), {
+                        this.chunksMap.set(chunkPos.getKey(), {
                             chunk,
                             chunkMesh: new Mesh()
                         });
@@ -174,7 +174,7 @@ export class World {
 
             scene.add(mesh);
 
-            this.chunksMap.get(chunk.chunkPos.createKey())!.chunkMesh = mesh;
+            this.chunksMap.get(chunk.chunkPos.getKey())!.chunkMesh = mesh;
 
             if (++createCount % 2 === 0) {
                 await nextFrame();
@@ -336,7 +336,7 @@ export class World {
 
             if (distanceCalcPos1.distanceTo(distanceCalcPos2) > 256.0) return;
 
-            let foundStructureBlock = modelData[1][blockPos.createKey()];
+            let foundStructureBlock = modelData[1][blockPos.getKey()];
             if (foundStructureBlock == null) return;
 
             structureBlock = foundStructureBlock;
