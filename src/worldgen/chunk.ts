@@ -1,5 +1,4 @@
 import {Camera, Mesh} from "three";
-import * as Blocks from "./blocks";
 import {Block} from "./block";
 import {World} from "./world";
 import {ChunkPos} from "../positions/chunkPos";
@@ -7,6 +6,7 @@ import {SubChunkPos} from "../positions/subChunkPos";
 import {BlockPos} from "../positions/blockPos";
 import {CompositeGeometry} from "../geometry/compositeGeometry";
 import {FaceMap} from "../geometry/faceMap";
+import {AIR} from "./blocks";
 
 export const chunkSize = 16;
 
@@ -25,7 +25,9 @@ export class Chunk {
             for (let y: number = 0; y < chunkSize; y++) {
                 this.blocks[x].push([]);
                 for (let z: number = 0; z < chunkSize; z++) {
-                    this.blocks[x][y].push(world.getBlockToGenerateAt(BlockPos.fromChunkPos(chunkPos, new SubChunkPos(x, y, z))));
+                    let blockToPush = world.getBlockToGenerateAt(BlockPos.fromChunkPos(chunkPos, new SubChunkPos(x, y, z)));
+                    if (blockToPush == AIR) blockToPush = world.getStructureBlockToGenerateAt(BlockPos.fromChunkPos(chunkPos, new SubChunkPos(x, y, z)));
+                    this.blocks[x][y].push(blockToPush);
                 }
             }
         }

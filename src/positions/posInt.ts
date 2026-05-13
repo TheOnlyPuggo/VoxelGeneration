@@ -5,7 +5,7 @@ export class PosInt {
     readonly y: number;
     readonly z: number;
 
-    protected constructor(x: number, y: number, z: number) {
+    protected constructor(x: number = 0, y: number = 0, z: number = 0) {
         this.x = Math.floor(x);
         this.y = Math.floor(y);
         this.z = Math.floor(z);
@@ -28,8 +28,7 @@ export class PosInt {
     }
 
     static interpretKeyToPosInt(key: string): PosInt {
-        let keyArray = key.split(",");
-        let numArray = keyArray.map(Number);
+        let numArray = key.split(",").map(Number);
 
         return new PosInt(numArray[0], numArray[1], numArray[2]);
     }

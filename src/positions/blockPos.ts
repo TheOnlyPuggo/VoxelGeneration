@@ -4,7 +4,7 @@ import {ChunkPos} from "./chunkPos";
 import {SubChunkPos} from "./subChunkPos";
 
 export class BlockPos extends PosInt {
-    constructor(x: number, y: number, z: number) {
+    constructor(x: number = 0, y: number = 0, z: number = 0) {
         super(x, y, z);
     }
 
@@ -15,6 +15,7 @@ export class BlockPos extends PosInt {
     getSubChunkPos(): SubChunkPos {
         return new ChunkPos(mod(this.x, chunkSize), mod(this.y, chunkSize), mod(this.z, chunkSize));
     }
+
 
     static fromChunkPos(chunkPos: ChunkPos, subChunkPos: SubChunkPos): BlockPos {
         return BlockPos.fromPosInt(chunkPos.multiply(chunkSize).add(subChunkPos));

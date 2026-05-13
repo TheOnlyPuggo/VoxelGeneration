@@ -1,11 +1,12 @@
-import {ACESFilmicToneMapping, AmbientLight, ArrowHelper, Box3, BoxGeometry, Camera, Color, EquirectangularReflectionMapping, Frustum, Matrix4, Mesh, MeshBasicMaterial, PerspectiveCamera, Raycaster, Scene, SRGBColorSpace, Timer, Vector3, WebGLRenderer} from "three";
+import {ACESFilmicToneMapping, Camera, EquirectangularReflectionMapping, Mesh, PerspectiveCamera, Scene, SRGBColorSpace, Timer, Vector3, WebGLRenderer} from "three";
 import {CameraControls} from './camera';
 import {World} from './worldgen/world';
 import {GroundedSkybox} from "three/examples/jsm/objects/GroundedSkybox.js";
 import {HDRLoader} from "three/examples/jsm/loaders/HDRLoader.js";
 import {CreateGUI} from "./UI";
-import {Chunk, chunkSize} from "./worldgen/chunk";
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { Model } from "./geometry/modelCreation";
+import {BlockPos} from "./positions/blockPos";
 
 export const Game: {
     scene: Scene | null,
@@ -17,7 +18,7 @@ export const Game: {
     },
     timer: Timer | null,
     world: World | null,
-
+    
     instantiatedMeshes: Mesh[] | null,
     currentFrame: number | null,
     stats: Stats | null;
@@ -40,7 +41,7 @@ export const Game: {
 init();
 animate(0.0);
 
-function init(): void {
+async function init(): Promise<void> {
     // Setup
     Game.scene = new Scene();
 
@@ -86,6 +87,15 @@ function init(): void {
     CreateGUI(Game);
 
     window.addEventListener("resize", onWindowResize, false);
+
+    let treeModel = await Model.load("model_data/plains_tree.csv");
+    treeModel.loadStructureAt(new BlockPos(10, 70, 10));
+
+    let dirtHutModel = await Model.load("model_data/dirt_hut.csv");
+    dirtHutModel.loadStructureAt(new BlockPos(20, 70, 20));
+
+    let mushroomModel = await Model.load("model_data/mushroom.csv");
+    mushroomModel.loadStructureAt(new BlockPos(30, 70, 30));
 }
 
 function animate(time: number): void {
@@ -103,7 +113,7 @@ function animate(time: number): void {
 
     Game.stats?.update();
     requestAnimationFrame(animate);
-};
+}
 
 function onWindowResize(): void {
     Game.renderer?.setSize(window.innerWidth, window.innerHeight);

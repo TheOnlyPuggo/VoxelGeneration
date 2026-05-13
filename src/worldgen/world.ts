@@ -1,4 +1,13 @@
-import {Vector3, Mesh, Camera, Scene, BoxGeometry, MeshBasicMaterial, Box3, Frustum, Matrix4, Raycaster} from "three";
+import {
+    Vector3,
+    Mesh,
+    Camera,
+    Scene,
+    Box3,
+    Frustum,
+    Matrix4,
+    Raycaster,
+} from "three";
 import * as Blocks from "./blocks";
 import {SimplexNoise} from "three/examples/jsm/Addons.js";
 import {Chunk, chunkSize} from "./chunk";
@@ -6,6 +15,7 @@ import {BlockPos} from "../positions/blockPos";
 import {ChunkPos} from "../positions/chunkPos";
 import {SubChunkPos} from "../positions/subChunkPos";
 import {Block} from "./block";
+import {Model} from "../geometry/modelCreation";
 
 const hypo = (x: number, y: number, z: number): number => Math.sqrt(x * x + y * y + z * z);
 
@@ -16,7 +26,7 @@ const nextFrame = () =>
 export const worldSize = new Vector3(5, 8, 5);
 export const heightGen = {
     base: 64,
-    amplitude: 6,
+    amplitude: 3,
     size: 32,
     mediumFactor: 0.5,
     fineFactor: 0.25
@@ -82,7 +92,7 @@ export class World {
         this.chunksMap = new Map<string, {chunk: Chunk, chunkMesh: Mesh}>();
     }
 
-    Update(camera: Camera | null, scene: Scene, currentFrame: number) {
+    Update(camera: Camera | null, scene: Scene) {
         if (!camera) return;
 
         this.cameraChunkPos = Chunk.getChunkPosfromCameraPos(camera);
@@ -314,6 +324,25 @@ export class World {
         else if (this.getCoalAt(blockPos)) return Blocks.COAL;
         else if (this.getIronAt(blockPos)) return Blocks.IRON;
         else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
-        else return Blocks.STONE;
+        return Blocks.STONE;
+    }
+
+    getStructureBlockToGenerateAt(blockPos: BlockPos): Block {
+        let structureBlock: Block | null = null;
+
+        Model.manualModelsToLoad.forEach((modelData) => {
+            let distanceCalcPos1: Vector3 = new Vector3(blockPos.x, blockPos.y, blockPos.z);
+            let distanceCalcPos2: Vector3 = new Vector3(modelData[0].x, modelData[0].y, modelData[0].z);
+
+            if (distanceCalcPos1.distanceTo(distanceCalcPos2) > 256.0) return;
+
+            let foundStructureBlock = modelData[1][blockPos.createKey()];
+            if (foundStructureBlock == null) return;
+
+            structureBlock = foundStructureBlock;
+        });
+
+        if (structureBlock != null) return structureBlock;
+        return Blocks.AIR;
     }
 }
