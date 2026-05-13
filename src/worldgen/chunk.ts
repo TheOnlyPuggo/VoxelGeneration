@@ -41,23 +41,10 @@ export class Chunk {
 
     getChunkMesh(): Mesh | null {
         const geometry = new CompositeGeometry([], []);
-        const faces = new FaceMap();
-
         for (let x: number = 0; x < chunkSize; x++) {
             for (let y: number = 0; y < chunkSize; y++) {
                 for (let z: number = 0; z < chunkSize; z++) {
-                    const worldX = this.chunkPos.x * chunkSize + x;
-                    const worldY = this.chunkPos.y * chunkSize + y;
-                    const worldZ = this.chunkPos.z * chunkSize + z;
-
-                    faces.px = this.world.getTransparentAt(worldX + 1, worldY, worldZ);
-                    faces.nx = this.world.getTransparentAt(worldX - 1, worldY, worldZ);
-                    faces.py = this.world.getTransparentAt(worldX, worldY + 1, worldZ);
-                    faces.ny = this.world.getTransparentAt(worldX, worldY - 1, worldZ);
-                    faces.pz = this.world.getTransparentAt(worldX, worldY, worldZ + 1);
-                    faces.nz = this.world.getTransparentAt(worldX, worldY, worldZ - 1);
-
-                    let newGeometry = this.blocks[x][y][z].getGeometry(faces);
+                    let newGeometry = this.blocks[x][y][z].getGeometry(new FaceMap(this.world, this.getBlockPos(new SubChunkPos(x, y, z))));
                     newGeometry?.translate(x, y, z);
                     geometry.addComposite(newGeometry);
                 }

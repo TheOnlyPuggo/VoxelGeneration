@@ -114,18 +114,6 @@ export class World {
         //this.OcclussionCulling(camera, currentFrame);
     }
 
-    getTransparentAt(x: number, y: number, z: number): boolean {
-        const blockPos = new BlockPos(x, y, z);
-        const chunkPos: ChunkPos = blockPos.getChunkPos();
-        const subChunkPos: SubChunkPos = blockPos.getSubChunkPos();
-        const chunkEntry = this.chunksMap.get(chunkPos.getKey());
-        if (!chunkEntry) return this.getBlockToGenerateAt(blockPos).transparent;
-
-        const block = chunkEntry.chunk.blocks[subChunkPos.x][subChunkPos.y][subChunkPos.z];
-        if (!block) return true;
-        return block.transparent;
-    }
-
     private async CreateChunks(): Promise<Chunk[]> {
         let newChunks: Chunk[] = [];
         let createCount = 0;
@@ -377,18 +365,35 @@ export class World {
     }
 
     public getBlockAt(blockPos: BlockPos): Block {
-        // this is a stub
+        const chunkSave = this.chunkSaveMap.get(blockPos.getChunkPos().getKey());
+        let diff: Block | undefined;
+        if (chunkSave && (diff = chunkSave.getDiff(blockPos.getSubChunkPos()))) {
+            return diff;
+        }
         return this.getBlockToGenerateAt(blockPos);
     }
 
     public setBlockAt(blockPos: BlockPos, blockType: Block, scene : Scene): void {
-        let chunkPos = blockPos.getChunkPos();
-        let chunkPosKey = chunkPos.getKey();
-        let chunkEntry = this.chunksMap.get(chunkPosKey);
-        if (!chunkEntry) return;
-        chunkEntry.chunk.setBlockAt(SubChunkPos.fromBlockPos(blockPos), blockType, blockType == this.getBlockToGenerateAt(blockPos));
+        const chunkPos = blockPos.getChunkPos();
+        const chunkPosKey = chunkPos.getKey();
+        const subChunkPos = blockPos.getSubChunkPos();
+        const chunkEntry = this.chunksMap.get(chunkPosKey);
+        if (!chunkEntry) {
+            let chunkSave = this.chunkSaveMap.get(chunkPosKey);
+            if (!chunkSave) {
+                if (this.getBlockToGenerateAt(blockPos) === blockType) return;
+                chunkSave = new ChunkSave();
+                chunkSave.setBlockAt(subChunkPos, blockType);
+                this.chunkSaveMap.set(chunkPosKey, chunkSave);
+                return;
+            }
+            if (this.getBlockToGenerateAt(blockPos) === blockType) chunkSave.setBlockAt(subChunkPos, undefined);
+            else chunkSave.setBlockAt(subChunkPos, blockType);
+            return;
+        }
+        chunkEntry.chunk.setBlockAt(subChunkPos, blockType, blockType == this.getBlockToGenerateAt(blockPos));
         this.updateChunkMesh(scene, chunkPos);
-        let save = chunkEntry.chunk.getSave();
+        const save = chunkEntry.chunk.getSave();
         if (save) this.chunkSaveMap.set(chunkPosKey, save);
         else this.chunkSaveMap.delete(chunkPosKey);
     }
@@ -398,10 +403,10 @@ export class World {
         let currentPos: BlockPos = BlockPos.roundFromVec3(startPos);
         if (!this.getBlockAt(currentPos).equals(Blocks.AIR)) return currentPos;
 
-        let endPos: Vec3 = startPos.add(direction.normalize().multiply(range));
-        let xOverlaps: number[] = World.getRaycastOverlaps(startPos.x, endPos.x, direction.x);
-        let yOverlaps: number[] = World.getRaycastOverlaps(startPos.y, endPos.y, direction.y);
-        let zOverlaps: number[] = World.getRaycastOverlaps(startPos.z, endPos.z, direction.z);
+        const endPos: Vec3 = startPos.add(direction.normalize().multiply(range));
+        const xOverlaps: number[] = World.getRaycastOverlaps(startPos.x, endPos.x, direction.x);
+        const yOverlaps: number[] = World.getRaycastOverlaps(startPos.y, endPos.y, direction.y);
+        const zOverlaps: number[] = World.getRaycastOverlaps(startPos.z, endPos.z, direction.z);
 
         for (let i = 0; i < xOverlaps.length + yOverlaps.length + zOverlaps.length; i++) {
             if (xOverlaps[0] < yOverlaps[0] && xOverlaps[0] < zOverlaps[0]) {

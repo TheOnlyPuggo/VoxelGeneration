@@ -3,24 +3,28 @@ import {FaceMap} from "../geometry/faceMap";
 import {CompositeGeometry} from "../geometry/compositeGeometry";
 
 export class Block {
-    readonly name: string;
-    readonly visible: boolean;
-    readonly transparent: boolean;
-    readonly meshConstructor: CubeMesh | null;
+    public readonly name: string;
+    public readonly meshConstructor: CubeMesh | null;
 
-    constructor(name: string, visible: boolean, transparent: boolean, meshConstructor: CubeMesh | null) {
+    public constructor(name: string, meshConstructor: CubeMesh | null) {
         this.name = name;
-        this.visible = visible;
-        this.transparent = transparent;
         this.meshConstructor = meshConstructor;
     }
 
-    getGeometry(faces: FaceMap): CompositeGeometry | null {
-        if (!this.visible) return null;
+    public getGeometry(faces: FaceMap): CompositeGeometry | null {
+        if (!this.getVisible()) return null;
         return this.meshConstructor?.constructGeometry(faces) ?? null;
     }
 
-    equals(other: Block): boolean {
+    public equals(other: Block): boolean {
         return this.name === other.name;
+    }
+
+    public getVisible(): boolean {
+        return this.meshConstructor != null;
+    }
+
+    public getTransparent(): boolean {
+        return !this.meshConstructor || this.meshConstructor.transparent;
     }
 }
