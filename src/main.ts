@@ -48,9 +48,12 @@ function init(): void {
     Game.renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(Game.renderer.domElement);
 
+    // World Creation
+    Game.world = new World();
+
     // Game Camera stuff
     Game.camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
-    Game.cameraControls = new CameraControls(Game.camera, Game.renderer.domElement, 10.0, true);
+    Game.cameraControls = new CameraControls(Game.camera, Game.renderer.domElement, Game.world, false);
 
     Game.camera.position.x = 7.0;
     Game.camera.position.z = 7.0;
@@ -64,9 +67,7 @@ function init(): void {
     // Timer
     Game.timer = new Timer();
     Game.currentFrame = 0;
-
-    // World Creation
-    Game.world = new World();
+    
 
     Game.renderer.toneMapping = ACESFilmicToneMapping;
     Game.renderer.toneMappingExposure = 1.0;
