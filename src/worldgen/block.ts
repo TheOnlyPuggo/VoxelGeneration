@@ -19,4 +19,8 @@ export class Block {
         if (!this.visible) return null;
         return this.meshConstructor?.constructGeometry(faces) ?? null;
     }
+
+    equals(other: Block): boolean {
+        return this.name === other.name;
+    }
 }
