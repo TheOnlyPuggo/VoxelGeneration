@@ -84,7 +84,10 @@ export class CameraControls {
             const front = new Vector3();
             this.camera.getWorldDirection(front);
             const raycast: BlockPos[] | undefined = this.world?.raycastForVisibleBlock(Vec3.fromVector3(this.camera.position), Vec3.fromVector3(front), 4);
-            if (raycast && raycast.length > 2) this.world?.setBlockAt(raycast[raycast.length - 2], Blocks.CUCUMBER, scene)
+            if (raycast && raycast.length > 2) {
+                const newBlockPos = raycast[raycast.length - 2];
+                if (!this.collidesWithBlockPos(newBlockPos)) this.world?.setBlockAt(newBlockPos, Blocks.CUCUMBER, scene)
+            }
         }
     }
 
@@ -276,6 +279,12 @@ export class CameraControls {
             }
         }
         return false;
+    }
+
+    private collidesWithBlockPos(blockPos: BlockPos): boolean {
+        return blockPos.x >= Math.round(this.playerPos.x - this.playerWidth / 2) && blockPos.x <= Math.round(this.playerPos.x + this.playerWidth / 2) &&
+            blockPos.y >= Math.round(this.playerPos.y - this.playerHeight) && blockPos.x <= Math.round(this.playerPos.y) &&
+            blockPos.z >= Math.round(this.playerPos.z - this.playerWidth / 2) && blockPos.z <= Math.round(this.playerPos.z + this.playerWidth / 2);
     }
 
     IsSolid(x: number, y: number, z: number): boolean {
