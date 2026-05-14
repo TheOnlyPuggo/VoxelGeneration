@@ -1,11 +1,10 @@
-import {Camera, HalfFloatType, Vector3, MathUtils, PerspectiveCamera} from "three";
+import {Camera, HalfFloatType, Vector3, MathUtils, PerspectiveCamera, Scene} from "three";
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import { World } from "./worldgen/world";
 import { TechnicolorShader } from "three/examples/jsm/Addons.js";
 import {BlockPos} from "./positions/blockPos";
 import {Vec3} from "./positions/vec3";
 import * as Blocks from "./worldgen/blocks";
-import { getShadowRenderObjectFunction } from "three/tsl";
 
 enum PlayerState {
     Normal,
@@ -65,11 +64,31 @@ export class CameraControls {
     }
     
     
-    Update(delta: number) {
+    Update(delta: number, scene: Scene | null) {
+        this.blockInteractionHandle(delta, scene);
+
         (this.isFlyingControls) ? this.FlyingHandle(delta) : this.WalkingHandle(delta);
 
 
         this.inputWrapper.ClearPressed();
+    }
+
+    private blockInteractionHandle(delta: number, scene: Scene | null): void {
+        if (this.inputWrapper.IsPressed(Input.Destroy)) {
+            const front = new Vector3();
+            this.camera.getWorldDirection(front);
+            const raycast: BlockPos[] | undefined = this.world?.raycastForVisibleBlock(Vec3.fromVector3(this.camera.position), Vec3.fromVector3(front), 4);
+            if (raycast) this.world?.setBlockAt(raycast[raycast.length - 1], Blocks.AIR, scene)
+        }
+        if (this.inputWrapper.IsPressed(Input.Place)) {
+            const front = new Vector3();
+            this.camera.getWorldDirection(front);
+            const raycast: BlockPos[] | undefined = this.world?.raycastForVisibleBlock(Vec3.fromVector3(this.camera.position), Vec3.fromVector3(front), 4);
+            if (raycast && raycast.length > 2) {
+                const newBlockPos = raycast[raycast.length - 2];
+                if (!this.collidesWithBlockPos(newBlockPos)) this.world?.setBlockAt(newBlockPos, Blocks.CUCUMBER, scene)
+            }
+        }
     }
 
     FlyingHandle(delta: number) {
@@ -262,8 +281,14 @@ export class CameraControls {
         return false;
     }
 
+    private collidesWithBlockPos(blockPos: BlockPos): boolean {
+        return blockPos.x >= Math.round(this.playerPos.x - this.playerWidth / 2) && blockPos.x <= Math.round(this.playerPos.x + this.playerWidth / 2) &&
+            blockPos.y >= Math.round(this.playerPos.y - this.playerHeight) && blockPos.x <= Math.round(this.playerPos.y) &&
+            blockPos.z >= Math.round(this.playerPos.z - this.playerWidth / 2) && blockPos.z <= Math.round(this.playerPos.z + this.playerWidth / 2);
+    }
+
     IsSolid(x: number, y: number, z: number): boolean {
-        return this.world ? !this.world.getBlockAt(BlockPos.roundFromVec3(new Vec3(x, y, z))).equals(Blocks.AIR) : false;
+        return this.world ? this.world.getBlockAt(BlockPos.roundFromVec3(new Vec3(x, y, z))).getVisible() : false;
     }
 }
 
@@ -275,6 +300,8 @@ enum Input {
     Up,
     Down,
     Sprint,
+    Destroy,
+    Place
 }
 
 export class InputWrapper {
@@ -290,7 +317,9 @@ export class InputWrapper {
             [Input.Right, false],
             [Input.Up, false],
             [Input.Down, false],    
-            [Input.Sprint, false],    
+            [Input.Sprint, false],
+            [Input.Destroy, false],
+            [Input.Place, false]
         ]);
 
         this.justPressed = new Set<Input>();
@@ -301,8 +330,10 @@ export class InputWrapper {
             ["KeyA", Input.Left],
             ["KeyD", Input.Right],
             ["Space", Input.Up],
-            ["ShiftLeft", Input.Down],
-            ["ControlLeft", Input.Sprint],
+            ["KeyC", Input.Down],
+            ["ShiftLeft", Input.Sprint],
+            ["KeyQ", Input.Destroy],
+            ["KeyE", Input.Place]
         ]);
 
         document.addEventListener('keydown', e => this.OnKeyDown(e));

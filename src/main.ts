@@ -110,7 +110,7 @@ function animate(time: number): void {
         Game.renderer?.render(Game.scene, Game.camera);
 
 
-    Game.cameraControls?.Update(Game.timer?.getDelta() ?? 0);
+    Game.cameraControls?.Update(Game.timer?.getDelta() ?? 0, Game.scene);
     Game.environment.skybox?.position.copy(Game.camera?.position as Vector3);
 
     if (Game.scene) Game.world?.Update(Game.camera, Game.scene);

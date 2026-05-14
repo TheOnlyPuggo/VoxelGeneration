@@ -10,7 +10,7 @@ import {
 } from "three";
 import * as Blocks from "./blocks";
 import {SimplexNoise} from "three/examples/jsm/Addons.js";
-import {Chunk, chunkSize} from "./chunk";
+import {Chunk} from "./chunk";
 import {BlockPos} from "../positions/blockPos";
 import {ChunkPos} from "../positions/chunkPos";
 import {SubChunkPos} from "../positions/subChunkPos";
@@ -73,7 +73,7 @@ export class World {
     readonly worldRadius = 4;
 
     //readonly chunks: Array<Array<Array<Chunk>>>;
-    readonly chunksMap: Map<string, {chunk: Chunk, chunkMesh: Mesh}>;
+    readonly chunksMap: Map<string, {chunk: Chunk, chunkMeshes: Mesh[]}>;
     readonly chunkSaveMap: Map<string, ChunkSave>;
 
     private cameraChunkPos: ChunkPos;
@@ -99,7 +99,7 @@ export class World {
         this.previousCameraChunkPos = this.cameraChunkPos;
         this.isGenerating = false;
 
-        this.chunksMap = new Map<string, {chunk: Chunk, chunkMesh: Mesh}>();
+        this.chunksMap = new Map<string, {chunk: Chunk, chunkMeshes: Mesh[]}>();
         this.chunkSaveMap = new Map<string, ChunkSave>();
 
         this.firstStructureGeneration = true;
@@ -124,6 +124,22 @@ export class World {
         this.FrustumCulling(camera);
     }
 
+    private addChunkMeshes(scene: Scene, chunkEntry: { chunk: Chunk, chunkMeshes: Mesh[] } | undefined): void {
+        if (!chunkEntry) return;
+        const meshes: Mesh[] | undefined = chunkEntry?.chunk.getChunkMeshes();
+        if (!meshes) return;
+        for (const mesh of meshes) scene.add(mesh);
+        chunkEntry.chunkMeshes = meshes;
+    }
+
+    private removeChunkMeshes(scene: Scene, chunkEntry: { chunk: Chunk, chunkMeshes: Mesh[] } | undefined): void {
+        if (!chunkEntry) return;
+        for (const mesh of chunkEntry.chunkMeshes) {
+            mesh.geometry.dispose();
+            scene.remove(mesh);
+        }
+    }
+
     private async CreateChunks(): Promise<Chunk[]> {
         let newChunks: Chunk[] = [];
         let createCount = 0;
@@ -144,7 +160,7 @@ export class World {
 
                         this.chunksMap.set(chunkPos.getKey(), {
                             chunk,
-                            chunkMesh: new Mesh()
+                            chunkMeshes: []
                         });
 
                         newChunks.push(chunk);
@@ -166,18 +182,7 @@ export class World {
         let createCount = 0;
 
         for (const chunk of newChunks) {
-            const mesh = chunk.getChunkMesh();
-            if (!mesh) continue;
-
-            mesh.position.set(
-                chunk.chunkPos.x * chunkSize,
-                chunk.chunkPos.y * chunkSize,
-                chunk.chunkPos.z * chunkSize
-            );
-
-            scene.add(mesh);
-
-            this.chunksMap.get(chunk.chunkPos.getKey())!.chunkMesh = mesh;
+            this.addChunkMeshes(scene, this.chunksMap.get(chunk.chunkPos.getKey()));
 
             if (++createCount % 2 === 0) {
                 await nextFrame();
@@ -189,14 +194,13 @@ export class World {
         let deleteCount = 0;
 
         const chunkMapEntries = Array.from(this.chunksMap);
-        for (const [chunkPosKey, {chunk, chunkMesh}] of chunkMapEntries) {
+        for (const [chunkPosKey, chunkEntry] of chunkMapEntries) {
             if (hypo(
-                chunk.chunkPos.x - this.cameraChunkPos.x,
-                chunk.chunkPos.y - this.cameraChunkPos.y,
-                chunk.chunkPos.z - this.cameraChunkPos.z
+                chunkEntry.chunk.chunkPos.x - this.cameraChunkPos.x,
+                chunkEntry.chunk.chunkPos.y - this.cameraChunkPos.y,
+                chunkEntry.chunk.chunkPos.z - this.cameraChunkPos.z
             ) > this.worldRadius) {
-                chunkMesh.geometry.dispose();
-                scene.remove(chunkMesh);
+                this.removeChunkMeshes(scene, chunkEntry);
                 this.chunksMap.delete(chunkPosKey);
             }
 
@@ -208,22 +212,12 @@ export class World {
     }
 
     private updateChunkMesh(scene: Scene, chunkPos: ChunkPos): void {
-        let chunkEntry = this.chunksMap.get(chunkPos.getKey());
-        if (!chunkEntry) return;
-        chunkEntry.chunkMesh.geometry.dispose();
-        scene.remove(chunkEntry.chunkMesh);
+        let chunkPosKey: string = chunkPos.getKey();
+        let chunkEntry = this.chunksMap.get(chunkPosKey);
 
-        let chunkMesh = chunkEntry.chunk.getChunkMesh();
-        if (!chunkMesh) return;
+        this.removeChunkMeshes(scene, chunkEntry);
 
-        chunkMesh.position.set(
-            chunkPos.x * chunkSize,
-            chunkPos.y * chunkSize,
-            chunkPos.z * chunkSize
-        );
-        scene.add(chunkMesh);
-
-        chunkEntry.chunkMesh = chunkMesh;
+        this.addChunkMeshes(scene, chunkEntry);
     }
 
     private async FrustumCulling(camera: Camera) {
@@ -237,75 +231,77 @@ export class World {
 
         frustum.setFromProjectionMatrix(matrix);
 
-        for (const { chunkMesh } of this.chunksMap.values()) {
-            if (!chunkMesh.geometry.boundingBox) chunkMesh.geometry.computeBoundingBox();
+        for (const { chunkMeshes } of this.chunksMap.values()) {
+            for (const chunkMesh of chunkMeshes) {
+                if (!chunkMesh.geometry.boundingBox) chunkMesh.geometry.computeBoundingBox();
 
-            const box = chunkMesh.geometry.boundingBox!.clone().applyMatrix4(chunkMesh.matrixWorld);
-            chunkMesh.visible = frustum.intersectsBox(box);
-        }
-    }
-
-    private async OcclussionCulling(camera: Camera, currentFrame: number) {
-        const frustum = new Frustum();
-        const matrix = new Matrix4();
-        const raycaster = new Raycaster();
-
-        if (camera.projectionMatrix != null) {
-            matrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
-            frustum.setFromProjectionMatrix(matrix);
-        }
-
-        let chunksPerFrame = 3;
-
-        const entries = Array.from(this.chunksMap.values());
-
-        const start = (currentFrame * chunksPerFrame) % entries.length;
-        const end = Math.min(start + chunksPerFrame, entries.length);
-
-        for (let i = start; i < end; i++) {
-            const {chunk, chunkMesh} = entries[i];
-
-            let isVisible = false;
-
-            let box = new Box3().setFromObject(chunkMesh);
-            if (!frustum.intersectsBox(box)) {
-                chunkMesh.visible = false;
-                continue;
+                const box = chunkMesh.geometry.boundingBox!.clone().applyMatrix4(chunkMesh.matrixWorld);
+                chunkMesh.visible = frustum.intersectsBox(box);
             }
-
-            let points = [];
-
-            points.push(chunkMesh.position.clone().add(new Vector3(chunkSize / 2.0, 0.0, chunkSize / 2.0)));
-            points.push(chunkMesh.position.clone().add(new Vector3(chunkSize / 2.0, chunkSize / 2.0, chunkSize / 2.0)));
-            points.push(chunkMesh.position.clone().add(new Vector3(chunkSize / 2.0, chunkSize, chunkSize / 2.0)));
-            points.push(chunkMesh.position.clone().add(new Vector3(chunkSize / 2.0, chunkSize * 2.0, chunkSize / 2.0)));
-
-            let cameraPos = camera.position as Vector3;
-            let occluderMeshes = entries.filter(entry => entry.chunkMesh !== chunkMesh).map(entry => entry.chunkMesh);
-
-            for (let point of points) {
-                let rayDir = new Vector3().subVectors(point, cameraPos).normalize();
-                raycaster.set(cameraPos, rayDir);
-
-                let intersects = raycaster.intersectObjects(occluderMeshes, false);
-                
-                if (intersects.length === 0) {
-                    // Nothing blocking
-                    isVisible = true;
-                    break;
-                }
-
-                let hit = intersects[0];
-                let distanceToPoint = cameraPos.distanceTo(point);
-                if (!hit || hit.distance > distanceToPoint) {
-                    isVisible = true;
-                    break;
-                }
-            }   
-            
-            chunkMesh.visible = isVisible;
         }
     }
+
+    // private async OcclussionCulling(camera: Camera, currentFrame: number) {
+    //     const frustum = new Frustum();
+    //     const matrix = new Matrix4();
+    //     const raycaster = new Raycaster();
+    //
+    //     if (camera.projectionMatrix != null) {
+    //         matrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+    //         frustum.setFromProjectionMatrix(matrix);
+    //     }
+    //
+    //     let chunksPerFrame = 3;
+    //
+    //     const entries = Array.from(this.chunksMap.values());
+    //
+    //     const start = (currentFrame * chunksPerFrame) % entries.length;
+    //     const end = Math.min(start + chunksPerFrame, entries.length);
+    //
+    //     for (let i = start; i < end; i++) {
+    //         const {chunk, chunkMesh} = entries[i];
+    //
+    //         let isVisible = false;
+    //
+    //         let box = new Box3().setFromObject(chunkMesh);
+    //         if (!frustum.intersectsBox(box)) {
+    //             chunkMesh.visible = false;
+    //             continue;
+    //         }
+    //
+    //         let points = [];
+    //
+    //         points.push(chunkMesh.position.clone().add(new Vector3(chunkSize / 2.0, 0.0, chunkSize / 2.0)));
+    //         points.push(chunkMesh.position.clone().add(new Vector3(chunkSize / 2.0, chunkSize / 2.0, chunkSize / 2.0)));
+    //         points.push(chunkMesh.position.clone().add(new Vector3(chunkSize / 2.0, chunkSize, chunkSize / 2.0)));
+    //         points.push(chunkMesh.position.clone().add(new Vector3(chunkSize / 2.0, chunkSize * 2.0, chunkSize / 2.0)));
+    //
+    //         let cameraPos = camera.position as Vector3;
+    //         let occluderMeshes = entries.filter(entry => entry.chunkMesh !== chunkMesh).map(entry => entry.chunkMesh);
+    //
+    //         for (let point of points) {
+    //             let rayDir = new Vector3().subVectors(point, cameraPos).normalize();
+    //             raycaster.set(cameraPos, rayDir);
+    //
+    //             let intersects = raycaster.intersectObjects(occluderMeshes, false);
+    //
+    //             if (intersects.length === 0) {
+    //                 // Nothing blocking
+    //                 isVisible = true;
+    //                 break;
+    //             }
+    //
+    //             let hit = intersects[0];
+    //             let distanceToPoint = cameraPos.distanceTo(point);
+    //             if (!hit || hit.distance > distanceToPoint) {
+    //                 isVisible = true;
+    //                 break;
+    //             }
+    //         }
+    //
+    //         chunkMesh.visible = isVisible;
+    //     }
+    // }
 
     public getHeightAt(x: number, z: number): number {
         return Math.round(heightGen.amplitude *
@@ -389,7 +385,7 @@ export class World {
         return this.getBlockToGenerateAt(blockPos);
     }
 
-    public setBlockAt(blockPos: BlockPos, blockType: Block, scene : Scene): void {
+    public setBlockAt(blockPos: BlockPos, blockType: Block, scene: Scene | null): void {
         const chunkPos = blockPos.getChunkPos();
         const chunkPosKey = chunkPos.getKey();
         const subChunkPos = blockPos.getSubChunkPos();
@@ -408,28 +404,40 @@ export class World {
             return;
         }
         chunkEntry.chunk.setBlockAt(subChunkPos, blockType, blockType == this.getBlockToGenerateAt(blockPos));
-        this.updateChunkMesh(scene, chunkPos);
         const save = chunkEntry.chunk.getSave();
         if (save) this.chunkSaveMap.set(chunkPosKey, save);
         else this.chunkSaveMap.delete(chunkPosKey);
+        if (scene) {
+            if (subChunkPos.x == 0) this.updateChunkMesh(scene, chunkPos.subtractX(1));
+            if (subChunkPos.x == Chunk.chunkSize - 1) this.updateChunkMesh(scene, chunkPos.addX(1));
+            if (subChunkPos.y == 0) this.updateChunkMesh(scene, chunkPos.subtractY(1));
+            if (subChunkPos.y == Chunk.chunkSize - 1) this.updateChunkMesh(scene, chunkPos.addY(1));
+            if (subChunkPos.z == 0) this.updateChunkMesh(scene, chunkPos.subtractZ(1));
+            if (subChunkPos.z == Chunk.chunkSize - 1) this.updateChunkMesh(scene, chunkPos.addZ(1));
+            this.updateChunkMesh(scene, chunkPos);
+        }
     }
 
     // Technically not a raycast but like it does the same thing but better, so I'm calling it one
-    public raycastForNonAirBlock(startPos: Vec3, direction: Vec3, range: number): BlockPos | null {
+    public raycastForVisibleBlock(startPos: Vec3, direction: Vec3, range: number): BlockPos[] | undefined {
+        let checkedBlocks: BlockPos[] = [];
         let currentPos: BlockPos = BlockPos.roundFromVec3(startPos);
-        if (!this.getBlockAt(currentPos).equals(Blocks.AIR)) return currentPos;
+        checkedBlocks.push(currentPos);
+        if (this.getBlockAt(currentPos).getVisible()) return checkedBlocks;
 
         const endPos: Vec3 = startPos.add(direction.normalize().multiply(range));
         const xOverlaps: number[] = World.getRaycastOverlaps(startPos.x, endPos.x, direction.x);
         const yOverlaps: number[] = World.getRaycastOverlaps(startPos.y, endPos.y, direction.y);
         const zOverlaps: number[] = World.getRaycastOverlaps(startPos.z, endPos.z, direction.z);
 
-        for (let i = 0; i < xOverlaps.length + yOverlaps.length + zOverlaps.length; i++) {
-            if (xOverlaps[0] < yOverlaps[0] && xOverlaps[0] < zOverlaps[0]) {
+        for (let i = 0; xOverlaps.length + yOverlaps.length + zOverlaps.length > 0; i++) {
+            if (xOverlaps.length > 0 &&
+                (yOverlaps.length == 0 || xOverlaps[0] < yOverlaps[0]) &&
+                (zOverlaps.length == 0 || xOverlaps[0] < zOverlaps[0])) {
                 if (direction.x < 0) currentPos = currentPos.subtractX(1);
                 else currentPos = currentPos.addX(1);
                 xOverlaps.shift();
-            } else if (yOverlaps[0] < zOverlaps[0]) {
+            } else if (yOverlaps.length > 0 && (zOverlaps.length == 0 || yOverlaps[0] < zOverlaps[0])) {
                 if (direction.y < 0) currentPos = currentPos.subtractY(1);
                 else currentPos = currentPos.addY(1);
                 yOverlaps.shift();
@@ -439,13 +447,16 @@ export class World {
                 zOverlaps.shift();
             }
 
-            if (!this.getBlockAt(currentPos).equals(Blocks.AIR)) return currentPos;
+            checkedBlocks.push(currentPos);
+            if (this.getBlockAt(currentPos).getVisible()) return checkedBlocks;
         }
 
-        return null;
+        return undefined;
     }
 
     private static getRaycastOverlaps(startPos: number, endPos: number, direction: number): number[] {
+        if (direction === 0) return [];
+
         let overlaps: number[] = [];
         if (direction > 0) {
             for (let pos = Math.ceil(startPos + 0.5) - 0.5; pos <= endPos; pos++) {

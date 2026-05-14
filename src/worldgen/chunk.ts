@@ -1,21 +1,21 @@
-import {Camera, Mesh, Vector2} from "three";
+import {BufferGeometry, Camera, Material, Mesh, Vector2} from "three";
 import {Block} from "./block";
 import {World} from "./world";
 import {ChunkPos} from "../positions/chunkPos";
 import {SubChunkPos} from "../positions/subChunkPos";
 import {BlockPos} from "../positions/blockPos";
 import {CompositeGeometry} from "../geometry/compositeGeometry";
-import {FaceMap} from "../geometry/faceMap";
-import {AIR} from "./blocks";
 import {ChunkSave} from "./chunkSave";
-
-export const chunkSize = 16;
+import {BlockMap} from "../geometry/blockMap";
+import {Vec3} from "../positions/vec3";
 
 export class Chunk {
     readonly world: World;
     readonly chunkPos: ChunkPos;
     readonly blocks: Array<Array<Array<Block>>>;
     readonly save: ChunkSave;
+
+    public static readonly chunkSize: number = 16;
 
     constructor(world: World, chunkPos: ChunkPos, save: ChunkSave | undefined) {
         this.world = world;
@@ -24,11 +24,11 @@ export class Chunk {
 
         this.blocks = [];
         let diffCount: number = this.save.getDiffCount();
-        for (let x: number = 0; x < chunkSize; x++) {
+        for (let x: number = 0; x < Chunk.chunkSize; x++) {
             this.blocks.push([]);
-            for (let y: number = 0; y < chunkSize; y++) {
+            for (let y: number = 0; y < Chunk.chunkSize; y++) {
                 this.blocks[x].push([]);
-                for (let z: number = 0; z < chunkSize; z++) {
+                for (let z: number = 0; z < Chunk.chunkSize; z++) {
                     let subChunkPos = new SubChunkPos(x, y, z);
                     let diff: Block | undefined;
                     if (diffCount > 0 && (diff = this.save.getDiff(subChunkPos))) {
@@ -39,23 +39,30 @@ export class Chunk {
         }
     }
 
-    getChunkMesh(): Mesh | null {
+    public getChunkMeshes(): Mesh[] | undefined {
         const geometry = new CompositeGeometry([], []);
-        for (let x: number = 0; x < chunkSize; x++) {
-            for (let y: number = 0; y < chunkSize; y++) {
-                for (let z: number = 0; z < chunkSize; z++) {
-                    let newGeometry = this.blocks[x][y][z].getGeometry(new FaceMap(this.world, this.getBlockPos(new SubChunkPos(x, y, z))));
-                    newGeometry?.translate(x, y, z);
-                    geometry.addComposite(newGeometry);
+        for (let x: number = 0; x < Chunk.chunkSize; x++) {
+            for (let y: number = 0; y < Chunk.chunkSize; y++) {
+                for (let z: number = 0; z < Chunk.chunkSize; z++) {
+                    geometry.addComposite(this.getGeometry(new SubChunkPos(x, y, z)));
                 }
             }
         }
-        if (geometry.isEmpty()) return null;
+        if (geometry.isEmpty()) return undefined;
+        geometry.translate(new Vec3(
+            this.chunkPos.x * Chunk.chunkSize,
+            this.chunkPos.y * Chunk.chunkSize,
+            this.chunkPos.z * Chunk.chunkSize
+        ));
+        return geometry.getCombinedMeshes();
+    }
 
-        let mesh = geometry.getCombinedMesh();
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-        return mesh;
+    private getGeometry(subChunkPos: SubChunkPos): CompositeGeometry | undefined {
+        const blockMap = new BlockMap(this.world, this.getBlockPos(subChunkPos));
+
+        const newGeometry = blockMap.getGeometry();
+        newGeometry?.translate(subChunkPos);
+        return newGeometry;
     }
 
     public setBlockAt(subChunkPos: SubChunkPos, blockType: Block, isSameAsGeneration: boolean): void {
@@ -75,9 +82,9 @@ export class Chunk {
 
     static getChunkPosfromCameraPos(camera: Camera): ChunkPos {
         return new ChunkPos(
-            Math.floor(camera.position.x / chunkSize), 
-            Math.floor(camera.position.y / chunkSize),
-            Math.floor(camera.position.z / chunkSize)
+            Math.floor(camera.position.x / Chunk.chunkSize),
+            Math.floor(camera.position.y / Chunk.chunkSize),
+            Math.floor(camera.position.z / Chunk.chunkSize)
         );
     }
 }
