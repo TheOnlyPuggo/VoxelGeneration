@@ -410,11 +410,13 @@ export class World {
         const zOverlaps: number[] = World.getRaycastOverlaps(startPos.z, endPos.z, direction.z);
 
         for (let i = 0; i < xOverlaps.length + yOverlaps.length + zOverlaps.length; i++) {
-            if (xOverlaps[0] < yOverlaps[0] && xOverlaps[0] < zOverlaps[0]) {
+            if (xOverlaps.length > 0 &&
+                (yOverlaps.length == 0 || xOverlaps[0] < yOverlaps[0]) &&
+                (zOverlaps.length == 0 || xOverlaps[0] < zOverlaps[0])) {
                 if (direction.x < 0) currentPos = currentPos.subtractX(1);
                 else currentPos = currentPos.addX(1);
                 xOverlaps.shift();
-            } else if (yOverlaps[0] < zOverlaps[0]) {
+            } else if (yOverlaps.length > 0 && (zOverlaps.length == 0 || yOverlaps[0] < zOverlaps[0])) {
                 if (direction.y < 0) currentPos = currentPos.subtractY(1);
                 else currentPos = currentPos.addY(1);
                 yOverlaps.shift();
@@ -432,6 +434,8 @@ export class World {
     }
 
     private static getRaycastOverlaps(startPos: number, endPos: number, direction: number): number[] {
+        if (direction === 0) return [];
+
         let overlaps: number[] = [];
         if (direction > 0) {
             for (let pos = Math.ceil(startPos + 0.5) - 0.5; pos <= endPos; pos++) {
