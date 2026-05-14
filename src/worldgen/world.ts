@@ -1,4 +1,14 @@
-import {Vector2, Vector3, Mesh, Camera, Scene, BoxGeometry, MeshBasicMaterial, Box3, Frustum, Matrix4, Raycaster} from "three";
+import {
+    Vector2,
+    Vector3,
+    Mesh,
+    Camera,
+    Scene,
+    Box3,
+    Frustum,
+    Matrix4,
+    Raycaster,
+} from "three";
 import * as Blocks from "./blocks";
 import {SimplexNoise} from "three/examples/jsm/Addons.js";
 import {Chunk, chunkSize} from "./chunk";
@@ -7,7 +17,9 @@ import {ChunkPos} from "../positions/chunkPos";
 import {SubChunkPos} from "../positions/subChunkPos";
 import {Block} from "./block";
 import { seededRandom } from "three/src/math/MathUtils.js";
-import { rand } from "three/tsl";
+import {Model} from "../geometry/modelCreation";
+import {Vec3} from "../positions/vec3";
+import {ChunkSave} from "./chunkSave";
 
 const hypo = (x: number, y: number, z: number): number => Math.sqrt(x * x + y * y + z * z);
 
@@ -86,6 +98,7 @@ export class World {
 
     //readonly chunks: Array<Array<Array<Chunk>>>;
     readonly chunksMap: Map<string, {chunk: Chunk, chunkMesh: Mesh}>;
+    readonly chunkSaveMap: Map<string, ChunkSave>;
 
     private cameraChunkPos: ChunkPos;
     private previousCameraChunkPos: ChunkPos;
@@ -103,21 +116,22 @@ export class World {
         this.worleyXNoise = new SimplexNoise();
         this.worleyZNoise = new SimplexNoise();
         this.worleyBiome = new SimplexNoise();
-        
+
         this.cameraChunkPos = new ChunkPos(0, 0, 0);
-        this.previousCameraChunkPos = this.cameraChunkPos.clone();
+        this.previousCameraChunkPos = this.cameraChunkPos;
         this.isGenerating = false;
 
         this.chunksMap = new Map<string, {chunk: Chunk, chunkMesh: Mesh}>();
+        this.chunkSaveMap = new Map<string, ChunkSave>();
     }
 
-    Update(camera: Camera | null, scene: Scene, currentFrame: number) {
+    Update(camera: Camera | null, scene: Scene) {
         if (!camera) return;
 
         this.cameraChunkPos = Chunk.getChunkPosfromCameraPos(camera);
-        if (!this.previousCameraChunkPos.compare(this.cameraChunkPos) && !this.isGenerating)  {
+        if (!this.previousCameraChunkPos.equals(this.cameraChunkPos) && !this.isGenerating)  {
             this.isGenerating = true;
-            this.previousCameraChunkPos = this.cameraChunkPos.clone();
+            this.previousCameraChunkPos = this.cameraChunkPos;
 
             this.CreateChunks()
                 .then((newChunks) => this.CreateChunkMeshes(scene, newChunks))
@@ -126,19 +140,6 @@ export class World {
         }
 
         this.FrustumCulling(camera);
-        //this.OcclussionCulling(camera, currentFrame);
-    }
-
-    getTransparentAt(x: number, y: number, z: number): boolean {
-        const blockPos = new BlockPos(x, y, z);
-        const chunkPos: ChunkPos = blockPos.getChunkPos();
-        const subChunkPos: SubChunkPos = blockPos.getSubChunkPos();
-        const chunkEntry = this.chunksMap.get(chunkPos.createKey());
-        if (!chunkEntry) return this.getBlockToGenerateAt(blockPos).transparent;
-
-        const block = chunkEntry.chunk.blocks[subChunkPos.x][subChunkPos.y][subChunkPos.z];
-        if (!block) return true;
-        return block.transparent;
     }
 
     private async CreateChunks(): Promise<Chunk[]> {
@@ -155,10 +156,11 @@ export class World {
                     ) > this.worldRadius) continue;
 
                     const chunkPos = new ChunkPos(x, y, z);
-                    if (!this.chunksMap.has(chunkPos.createKey())) {
-                        const chunk = new Chunk(this, chunkPos);
+                    let chunkPosKey = chunkPos.getKey();
+                    if (!this.chunksMap.has(chunkPosKey)) {
+                        const chunk = new Chunk(this, chunkPos, this.chunkSaveMap.get(chunkPosKey));
 
-                        this.chunksMap.set(chunkPos.createKey(), {
+                        this.chunksMap.set(chunkPos.getKey(), {
                             chunk,
                             chunkMesh: new Mesh()
                         });
@@ -193,7 +195,7 @@ export class World {
 
             scene.add(mesh);
 
-            this.chunksMap.get(chunk.chunkPos.createKey())!.chunkMesh = mesh;
+            this.chunksMap.get(chunk.chunkPos.getKey())!.chunkMesh = mesh;
 
             if (++createCount % 2 === 0) {
                 await nextFrame();
@@ -221,6 +223,25 @@ export class World {
                 await nextFrame();
             }
         }
+    }
+
+    private updateChunkMesh(scene: Scene, chunkPos: ChunkPos): void {
+        let chunkEntry = this.chunksMap.get(chunkPos.getKey());
+        if (!chunkEntry) return;
+        chunkEntry.chunkMesh.geometry.dispose();
+        scene.remove(chunkEntry.chunkMesh);
+
+        let chunkMesh = chunkEntry.chunk.getChunkMesh();
+        if (!chunkMesh) return;
+
+        chunkMesh.position.set(
+            chunkPos.x * chunkSize,
+            chunkPos.y * chunkSize,
+            chunkPos.z * chunkSize
+        );
+        scene.add(chunkMesh);
+
+        chunkEntry.chunkMesh = chunkMesh;
     }
 
     private async FrustumCulling(camera: Camera) {
@@ -333,10 +354,13 @@ export class World {
         return this.cucumberNoise.noise3d(blockPos.x / cucumberGen.size, blockPos.y / cucumberGen.size, blockPos.z / cucumberGen.size) < cucumberGen.max && blockPos.y < cucumberGen.maxHeight;
     }
     
-
-    
-
     getBlockToGenerateAt(blockPos: BlockPos): Block {
+        let blockToPush = this.getTerrainBlockToGenerateAt(blockPos);
+        if (blockToPush == Blocks.AIR) blockToPush = this.getStructureBlockToGenerateAt(blockPos);
+        return blockToPush;
+    }
+
+    getTerrainBlockToGenerateAt(blockPos: BlockPos): Block {
         //worley biomes steps
         //block coords go in, biome type comes out:
             //determine worley grid space block coords are in
@@ -359,21 +383,21 @@ export class World {
             }
         }
 
-        
+
         if (currentBiome == BiomeTypes.Mountain && blockPos.y < 71 + smallest * 10){
             return Blocks.DIRT;
         }
         if (currentBiome == BiomeTypes.Desert && blockPos.y < 71 + smallest * 10){
             return Blocks.GRASS;
         }
-        
+
         if (currentBiome == BiomeTypes.Ocean && blockPos.y < 71 + smallest * 10){
             return Blocks.IRON;
         }
-        
+
         if (currentBiome == BiomeTypes.Plains && blockPos.y < 71 + smallest * 10){
             return Blocks.CUCUMBER;
-        } 
+        }
 
         let height: number = this.getHeightAt(blockPos.x, blockPos.z) - blockPos.y;
         let dirtHeight: number = height - this.getDirtThicknessAt(blockPos.x, blockPos.z);
@@ -384,7 +408,105 @@ export class World {
         else if (this.getCoalAt(blockPos)) return Blocks.COAL;
         else if (this.getIronAt(blockPos)) return Blocks.IRON;
         else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
-        else return Blocks.STONE;
+        return Blocks.STONE;
+    }
+
+    getStructureBlockToGenerateAt(blockPos: BlockPos): Block {
+        let structureBlock: Block | null = null;
+
+        Model.manualModelsToLoad.forEach((modelData) => {
+            let distanceCalcPos1: Vector3 = new Vector3(blockPos.x, blockPos.y, blockPos.z);
+            let distanceCalcPos2: Vector3 = new Vector3(modelData[0].x, modelData[0].y, modelData[0].z);
+
+            if (distanceCalcPos1.distanceTo(distanceCalcPos2) > 256.0) return;
+
+            let foundStructureBlock = modelData[1][blockPos.getKey()];
+            if (foundStructureBlock == null) return;
+
+            structureBlock = foundStructureBlock;
+        });
+
+        if (structureBlock != null) return structureBlock;
+        return Blocks.AIR;
+    }
+
+    public getBlockAt(blockPos: BlockPos): Block {
+        const chunkSave = this.chunkSaveMap.get(blockPos.getChunkPos().getKey());
+        let diff: Block | undefined;
+        if (chunkSave && (diff = chunkSave.getDiff(blockPos.getSubChunkPos()))) {
+            return diff;
+        }
+        return this.getBlockToGenerateAt(blockPos);
+    }
+
+    public setBlockAt(blockPos: BlockPos, blockType: Block, scene : Scene): void {
+        const chunkPos = blockPos.getChunkPos();
+        const chunkPosKey = chunkPos.getKey();
+        const subChunkPos = blockPos.getSubChunkPos();
+        const chunkEntry = this.chunksMap.get(chunkPosKey);
+        if (!chunkEntry) {
+            let chunkSave = this.chunkSaveMap.get(chunkPosKey);
+            if (!chunkSave) {
+                if (this.getBlockToGenerateAt(blockPos) === blockType) return;
+                chunkSave = new ChunkSave();
+                chunkSave.setBlockAt(subChunkPos, blockType);
+                this.chunkSaveMap.set(chunkPosKey, chunkSave);
+                return;
+            }
+            if (this.getBlockToGenerateAt(blockPos) === blockType) chunkSave.setBlockAt(subChunkPos, undefined);
+            else chunkSave.setBlockAt(subChunkPos, blockType);
+            return;
+        }
+        chunkEntry.chunk.setBlockAt(subChunkPos, blockType, blockType == this.getBlockToGenerateAt(blockPos));
+        this.updateChunkMesh(scene, chunkPos);
+        const save = chunkEntry.chunk.getSave();
+        if (save) this.chunkSaveMap.set(chunkPosKey, save);
+        else this.chunkSaveMap.delete(chunkPosKey);
+    }
+
+    // Technically not a raycast but like it does the same thing but better, so I'm calling it one
+    public raycastForNonAirBlock(startPos: Vec3, direction: Vec3, range: number): BlockPos | null {
+        let currentPos: BlockPos = BlockPos.roundFromVec3(startPos);
+        if (!this.getBlockAt(currentPos).equals(Blocks.AIR)) return currentPos;
+
+        const endPos: Vec3 = startPos.add(direction.normalize().multiply(range));
+        const xOverlaps: number[] = World.getRaycastOverlaps(startPos.x, endPos.x, direction.x);
+        const yOverlaps: number[] = World.getRaycastOverlaps(startPos.y, endPos.y, direction.y);
+        const zOverlaps: number[] = World.getRaycastOverlaps(startPos.z, endPos.z, direction.z);
+
+        for (let i = 0; i < xOverlaps.length + yOverlaps.length + zOverlaps.length; i++) {
+            if (xOverlaps[0] < yOverlaps[0] && xOverlaps[0] < zOverlaps[0]) {
+                if (direction.x < 0) currentPos = currentPos.subtractX(1);
+                else currentPos = currentPos.addX(1);
+                xOverlaps.shift();
+            } else if (yOverlaps[0] < zOverlaps[0]) {
+                if (direction.y < 0) currentPos = currentPos.subtractY(1);
+                else currentPos = currentPos.addY(1);
+                yOverlaps.shift();
+            } else {
+                if (direction.z < 0) currentPos = currentPos.subtractZ(1);
+                else currentPos = currentPos.addZ(1);
+                zOverlaps.shift();
+            }
+
+            if (!this.getBlockAt(currentPos).equals(Blocks.AIR)) return currentPos;
+        }
+
+        return null;
+    }
+
+    private static getRaycastOverlaps(startPos: number, endPos: number, direction: number): number[] {
+        let overlaps: number[] = [];
+        if (direction > 0) {
+            for (let pos = Math.ceil(startPos + 0.5) - 0.5; pos <= endPos; pos++) {
+                overlaps.push((pos - startPos) / direction);
+            }
+        } else if (direction < 0) {
+            for (let pos = Math.floor(startPos - 0.5) + 0.5; pos >= endPos; pos--) {
+                overlaps.push((pos - startPos) / direction);
+            }
+        }
+        return overlaps;
     }
 
     getBiomeAtGrid(gridPos: Vector2){
@@ -409,6 +531,6 @@ export class World {
 
         //console.log(targetFP.x, targetFP.y);
         return gridPos.clone().add(worldPos).distanceTo(targetFP);
-        
+
     }
 }

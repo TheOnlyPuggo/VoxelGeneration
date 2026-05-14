@@ -1,15 +1,16 @@
-import {ACESFilmicToneMapping, AmbientLight, ArrowHelper, Box3, BoxGeometry, Camera, Color, EquirectangularReflectionMapping, Frustum, Matrix4, Mesh, MeshBasicMaterial, PerspectiveCamera, Raycaster, Scene, SRGBColorSpace, Timer, Vector3, WebGLRenderer} from "three";
+import {ACESFilmicToneMapping, Camera, EquirectangularReflectionMapping, Mesh, PerspectiveCamera, Scene, SRGBColorSpace, Timer, Vector3, WebGLRenderer} from "three";
 import {CameraControls} from './camera';
 import {World} from './worldgen/world';
 import {GroundedSkybox} from "three/examples/jsm/objects/GroundedSkybox.js";
 import {HDRLoader} from "three/examples/jsm/loaders/HDRLoader.js";
 import {CreateGUI} from "./UI";
-import {Chunk, chunkSize} from "./worldgen/chunk";
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+import { Model } from "./geometry/modelCreation";
+import {BlockPos} from "./positions/blockPos";
 
 export const Game: {
     scene: Scene | null,
-    camera: Camera | null,
+    camera: PerspectiveCamera | null,
     cameraControls: CameraControls | null,
     renderer: WebGLRenderer | null,
     environment: {
@@ -17,7 +18,7 @@ export const Game: {
     },
     timer: Timer | null,
     world: World | null,
-
+    
     instantiatedMeshes: Mesh[] | null,
     currentFrame: number | null,
     stats: Stats | null;
@@ -40,7 +41,7 @@ export const Game: {
 init();
 animate(0.0);
 
-function init(): void {
+async function init(): Promise<void> {
     // Setup
     Game.scene = new Scene();
 
@@ -48,9 +49,12 @@ function init(): void {
     Game.renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(Game.renderer.domElement);
 
+    // World Creation
+    Game.world = new World();
+
     // Game Camera stuff
     Game.camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
-    Game.cameraControls = new CameraControls(Game.camera, Game.renderer.domElement, 10.0, true);
+    Game.cameraControls = new CameraControls(Game.camera, Game.renderer.domElement, Game.world, false);
 
     Game.camera.position.x = 7.0;
     Game.camera.position.z = 7.0;
@@ -64,9 +68,7 @@ function init(): void {
     // Timer
     Game.timer = new Timer();
     Game.currentFrame = 0;
-
-    // World Creation
-    Game.world = new World();
+    
 
     Game.renderer.toneMapping = ACESFilmicToneMapping;
     Game.renderer.toneMappingExposure = 1.0;
@@ -86,6 +88,15 @@ function init(): void {
     CreateGUI(Game);
 
     window.addEventListener("resize", onWindowResize, false);
+
+    let treeModel = await Model.load("model_data/plains_tree.csv");
+    treeModel.loadStructureAt(new BlockPos(10, 70, 10));
+
+    let dirtHutModel = await Model.load("model_data/dirt_hut.csv");
+    dirtHutModel.loadStructureAt(new BlockPos(20, 70, 20));
+
+    let mushroomModel = await Model.load("model_data/mushroom.csv");
+    mushroomModel.loadStructureAt(new BlockPos(30, 70, 30));
 }
 
 function animate(time: number): void {
@@ -99,11 +110,11 @@ function animate(time: number): void {
     Game.cameraControls?.Update(Game.timer?.getDelta() ?? 0);
     Game.environment.skybox?.position.copy(Game.camera?.position as Vector3);
 
-    if (Game.scene) Game.world?.Update(Game.camera, Game.scene, Game.currentFrame);
+    if (Game.scene) Game.world?.Update(Game.camera, Game.scene);
 
     Game.stats?.update();
     requestAnimationFrame(animate);
-};
+}
 
 function onWindowResize(): void {
     Game.renderer?.setSize(window.innerWidth, window.innerHeight);
