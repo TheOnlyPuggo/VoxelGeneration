@@ -14,7 +14,15 @@ export class Vec2 {
         return new this(vector.x, vector.y) as THIS;
     }
 
+    public static fromVector3<THIS extends Vec2>(vector: Vector3): THIS {
+        return new this(vector.x, vector.y) as THIS;
+    }
+
     public static fromVec2<THIS extends Vec2>(vector: Vec2): THIS {
+        return new this(vector.x, vector.y) as THIS;
+    }
+
+    public static fromVec3<THIS extends Vec2>(vector: Vec3): THIS {
         return new this(vector.x, vector.y) as THIS;
     }
 
