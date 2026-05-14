@@ -1,14 +1,4 @@
-import {
-    Vector2,
-    Vector3,
-    Mesh,
-    Camera,
-    Scene,
-    Box3,
-    Frustum,
-    Matrix4,
-    Raycaster,
-} from "three";
+import {Vector2, Vector3, Mesh, Camera, Scene, BoxGeometry, MeshBasicMaterial, Box3, Frustum, Matrix4, Raycaster} from "three";
 import * as Blocks from "./blocks";
 import {SimplexNoise} from "three/examples/jsm/Addons.js";
 import {Chunk, chunkSize} from "./chunk";
@@ -30,10 +20,12 @@ const nextFrame = () =>
 export const worldSize = new Vector3(5, 8, 5);
 export const heightGen = {
     base: 64,
-    amplitude: 6,
-    size: 32,
+    amplitude: 2,
+    size: 128,
     mediumFactor: 0.5,
-    fineFactor: 0.25
+    fineFactor: 0.25,
+    mountainHeight: 64,
+    snowHeight: 80
 }
 export const dirtGen = {
     base: 3,
@@ -92,6 +84,8 @@ export class World {
     private readonly worleyXNoise: SimplexNoise;
     private readonly worleyZNoise: SimplexNoise;
     private readonly worleyBiome: SimplexNoise;
+    private readonly mountainHeightNoise: SimplexNoise;
+    private readonly snowHeightNoise: SimplexNoise;
 
     readonly worldRadius = 4;
     private worleyGridSize: number = 64;
@@ -116,6 +110,8 @@ export class World {
         this.worleyXNoise = new SimplexNoise();
         this.worleyZNoise = new SimplexNoise();
         this.worleyBiome = new SimplexNoise();
+        this.mountainHeightNoise = new SimplexNoise();
+        this.snowHeightNoise = new SimplexNoise();
 
         this.cameraChunkPos = new ChunkPos(0, 0, 0);
         this.previousCameraChunkPos = this.cameraChunkPos;
@@ -353,7 +349,7 @@ export class World {
     private getCucumberAt(blockPos: BlockPos): boolean {
         return this.cucumberNoise.noise3d(blockPos.x / cucumberGen.size, blockPos.y / cucumberGen.size, blockPos.z / cucumberGen.size) < cucumberGen.max && blockPos.y < cucumberGen.maxHeight;
     }
-    
+
     getBlockToGenerateAt(blockPos: BlockPos): Block {
         let blockToPush = this.getTerrainBlockToGenerateAt(blockPos);
         if (blockToPush == Blocks.AIR) blockToPush = this.getStructureBlockToGenerateAt(blockPos);
@@ -383,22 +379,78 @@ export class World {
             }
         }
 
-
-        if (currentBiome == BiomeTypes.Mountain && blockPos.y < 71 + smallest * 10){
-            return Blocks.DIRT;
+        
+        if (currentBiome == BiomeTypes.Mountain){
+            return this.mountainGetBlockAt(blockPos, smallest);
         }
-        if (currentBiome == BiomeTypes.Desert && blockPos.y < 71 + smallest * 10){
-            return Blocks.GRASS;
+        if (currentBiome == BiomeTypes.Desert){
+            return this.desertGetBlockAt(blockPos, smallest);
         }
-
-        if (currentBiome == BiomeTypes.Ocean && blockPos.y < 71 + smallest * 10){
-            return Blocks.IRON;
-        }
-
-        if (currentBiome == BiomeTypes.Plains && blockPos.y < 71 + smallest * 10){
-            return Blocks.CUCUMBER;
+        
+        if (currentBiome == BiomeTypes.Ocean){
+            return this.oceanGetBlockAt(blockPos, smallest);
         }
 
+        if (currentBiome == BiomeTypes.Plains){
+            return this.plainsGetBlockAt(blockPos, smallest);
+        }
+
+        let height: number = this.getHeightAt(blockPos.x, blockPos.z) - blockPos.y;
+        let dirtHeight: number = height - this.getDirtThicknessAt(blockPos.x, blockPos.z);
+
+        if (height < 0 || this.getCaveAt(blockPos)) return Blocks.AIR;
+        else if (height === 0) return Blocks.GRASS;
+        else if (dirtHeight <= 0) return Blocks.DIRT;
+        else if (this.getCoalAt(blockPos)) return Blocks.COAL;
+        else if (this.getIronAt(blockPos)) return Blocks.IRON;
+        else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
+        else return Blocks.STONE;
+    }
+    mountainGetBlockAt(blockPos: BlockPos, dist: number){
+        let terrainHeight: number = this.getHeightAt(blockPos.x, blockPos.z);
+        let mHeight: number = terrainHeight +
+            //mountain height calc
+            Math.round((1 - Math.min(dist + 0.5, 1)) * heightGen.mountainHeight *
+            //noise variance
+            (this.mountainHeightNoise.noise(blockPos.x / 35, blockPos.z / 35) / 4 + 0.75));
+        let height: number = mHeight - blockPos.y;
+        let snowSpawnHeight: number = heightGen.snowHeight + this.snowHeightNoise.noise(blockPos.x / 5, blockPos.z / 5) * 2
+
+        if (height < 0 || (this.getCaveAt(blockPos) && blockPos.y < terrainHeight)) return Blocks.AIR;
+        //stone for debug
+        else if (height === 0 && blockPos.y >= snowSpawnHeight) return Blocks.SNOW;
+        else if (this.getCoalAt(blockPos)) return Blocks.COAL;
+        else if (this.getIronAt(blockPos)) return Blocks.IRON;
+        else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
+        else return Blocks.STONE;
+    }
+    desertGetBlockAt(blockPos: BlockPos, dist: number){
+        let height: number = this.getHeightAt(blockPos.x, blockPos.z) - blockPos.y;
+        let dirtHeight: number = height - this.getDirtThicknessAt(blockPos.x, blockPos.z);
+
+        if (height < 0 || this.getCaveAt(blockPos)) return Blocks.AIR;
+        //iron for debug
+        else if (height === 0) return Blocks.IRON;
+        else if (dirtHeight <= 0) return Blocks.DIRT;
+        else if (this.getCoalAt(blockPos)) return Blocks.COAL;
+        else if (this.getIronAt(blockPos)) return Blocks.IRON;
+        else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
+        else return Blocks.STONE;
+    }
+    oceanGetBlockAt(blockPos: BlockPos, dist: number){
+        let height: number = this.getHeightAt(blockPos.x, blockPos.z) - blockPos.y;
+        let dirtHeight: number = height - this.getDirtThicknessAt(blockPos.x, blockPos.z);
+
+        if (height < 0 || this.getCaveAt(blockPos)) return Blocks.AIR;
+        //cucumber for debug
+        else if (height === 0) return Blocks.CUCUMBER;
+        else if (dirtHeight <= 0) return Blocks.DIRT;
+        else if (this.getCoalAt(blockPos)) return Blocks.COAL;
+        else if (this.getIronAt(blockPos)) return Blocks.IRON;
+        else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
+        else return Blocks.STONE;
+    }
+    plainsGetBlockAt(blockPos: BlockPos, dist: number){
         let height: number = this.getHeightAt(blockPos.x, blockPos.z) - blockPos.y;
         let dirtHeight: number = height - this.getDirtThicknessAt(blockPos.x, blockPos.z);
 
