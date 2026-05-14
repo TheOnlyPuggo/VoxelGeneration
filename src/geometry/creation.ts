@@ -95,7 +95,7 @@ export abstract class CubeMesh {
             texture.minFilter = NearestFilter;
             texture.generateMipmaps = false;
 
-            mat = new MeshStandardMaterial({map: texture, transparent: transparent, depthWrite: !transparent});
+            mat = new MeshStandardMaterial({map: texture, transparent: transparent, alphaTest: transparent ? 0.5 : 0});
             CubeMesh.materialCache.set(path, mat);
         }
 
