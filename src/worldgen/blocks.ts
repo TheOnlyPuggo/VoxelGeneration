@@ -24,7 +24,7 @@ export const IRON = new Block("iron", new CubeMeshOneTexture(false, "block_textu
 export const MUSHROOM_BLOCK = new Block("mushroom_block", new CubeMeshOneTexture(false, "block_textures/mushroom_textures/mushroom_block.png"));
 export const MUSHROOM_STEM = new Block("mushroom_stem", new CubeMeshOneTexture(false, "block_textures/mushroom_textures/mushroom_stem.png"));
 export const CUCUMBER = new Block("cucumber", new CubeMeshOneColor(1, new Color(0.1, 0.5, 0.2), false));
-
+export const SNOW = new Block("snow", new CubeMeshOneColor(1, new Color(0.0, 0.0, 0.0), false));
 interface BlockDictionary {
     [key: string]: Block;
 }
