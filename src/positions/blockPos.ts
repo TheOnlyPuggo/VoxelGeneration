@@ -1,30 +1,22 @@
-import {PosInt} from "./posInt";
-import {chunkSize} from "../worldgen/chunk";
+import {Vec3Int} from "./vec3Int";
 import {ChunkPos} from "./chunkPos";
 import {SubChunkPos} from "./subChunkPos";
+import {chunkSize} from "../worldgen/chunk";
 
-export class BlockPos extends PosInt {
-    constructor(x: number, y: number, z: number) {
+export class BlockPos extends Vec3Int {
+    public constructor(x: number = 0, y: number = 0, z: number = 0) {
         super(x, y, z);
     }
 
-    getChunkPos(): ChunkPos {
-        return new ChunkPos(this.x / chunkSize, this.y / chunkSize, this.z / chunkSize);
+    public static fromChunkPos<THIS extends BlockPos>(chunkPos: ChunkPos, subChunkPos: SubChunkPos): THIS {
+        return this.fromVec3(chunkPos.multiply(chunkSize).add(subChunkPos)) as THIS;
     }
 
-    getSubChunkPos(): SubChunkPos {
-        return new ChunkPos(mod(this.x, chunkSize), mod(this.y, chunkSize), mod(this.z, chunkSize));
+    public getChunkPos(): ChunkPos {
+        return ChunkPos.fromBlockPos(this);
     }
 
-    static fromChunkPos(chunkPos: ChunkPos, subChunkPos: SubChunkPos): BlockPos {
-        return BlockPos.fromPosInt(chunkPos.multiply(chunkSize).add(subChunkPos));
+    public getSubChunkPos(): SubChunkPos {
+        return SubChunkPos.fromBlockPos(this);
     }
-
-    static fromPosInt(posInt: PosInt): BlockPos {
-        return new BlockPos(posInt.x, posInt.y, posInt.z);
-    }
-}
-
-function mod(quotient: number, divisor: number): number {
-    return ((quotient % divisor) + divisor) % divisor;
 }
