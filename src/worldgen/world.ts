@@ -6,7 +6,7 @@ import {
     Box3,
     Frustum,
     Matrix4,
-    Raycaster, Vector2,
+    Raycaster,
 } from "three";
 import * as Blocks from "./blocks";
 import {SimplexNoise} from "three/examples/jsm/Addons.js";
@@ -93,7 +93,7 @@ export class World {
 
         this.structureNoiseOne = new SimplexNoise();
         this.structureNoiseTwo = new SimplexNoise();
-        
+
         this.cameraChunkPos = new ChunkPos(0, 0, 0);
         this.previousCameraChunkPos = this.cameraChunkPos;
         this.isGenerating = false;
@@ -337,7 +337,7 @@ export class World {
         if (blockToPush == Blocks.AIR) blockToPush = this.getStructureBlockToGenerateAt(blockPos);
         return blockToPush;
     }
-    
+
     getTerrainBlockToGenerateAt(blockPos: BlockPos): Block {
         let height: number = this.getHeightAt(blockPos.x, blockPos.z) - blockPos.y;
         let dirtHeight: number = height - this.getDirtThicknessAt(blockPos.x, blockPos.z);

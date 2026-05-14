@@ -2,72 +2,59 @@ import {Color, Material, MeshStandardMaterial, NearestFilter, PlaneGeometry, Tex
 import {CompositeGeometry} from "./compositeGeometry";
 import {FaceMap} from "./faceMap";
 
-export class CuboidMesh {
-    static planeGeometries: PlaneGeometry[] = [];
-    static materialCache = new Map<string, MeshStandardMaterial>;
-    static textureLoader = new TextureLoader();
+export abstract class CubeMesh {
+    protected static readonly planeGeometries: PlaneGeometry[] = [];
+    protected static readonly materialCache = new Map<string, MeshStandardMaterial>;
+    protected static readonly textureLoader = new TextureLoader();
 
-    width: number;
-    height: number;
-    depth: number;
-    opacity: number;
+    public readonly transparent: boolean;
 
-    constructor(
-        width: number, 
-        height: number, 
-        depth: number,
-        opacity: number = 1.0,
-    ) {
-        this.width = width;
-        this.height = height;
-        this.depth = depth;
-        this.opacity = opacity;
-
-        if (CuboidMesh.planeGeometries.length === 0) {
-            CuboidMesh.planeGeometries = [];
-
+    static {
+        if (CubeMesh.planeGeometries.length === 0) {
             const pxFace = new PlaneGeometry(1, 1);
             pxFace.rotateY(Math.PI / 2);
             pxFace.translate(0.5, 0.0, 0.0);
-            CuboidMesh.planeGeometries.push(pxFace);
+            CubeMesh.planeGeometries.push(pxFace);
 
             const nxFace = new PlaneGeometry(1, 1);
             nxFace.rotateY(-Math.PI / 2);
             nxFace.translate(-0.5, 0.0, 0.0);
-            CuboidMesh.planeGeometries.push(nxFace);
+            CubeMesh.planeGeometries.push(nxFace);
 
             const pyFace = new PlaneGeometry(1, 1);
             pyFace.rotateX(-Math.PI / 2);
             pyFace.translate(0.0, 0.5, 0.0);
-            CuboidMesh.planeGeometries.push(pyFace);
+            CubeMesh.planeGeometries.push(pyFace);
 
             const nyFace = new PlaneGeometry(1, 1);
             nyFace.rotateX(Math.PI / 2);
             nyFace.translate(0.0, -0.5, 0.0);
-            CuboidMesh.planeGeometries.push(nyFace);
+            CubeMesh.planeGeometries.push(nyFace);
 
             const pzFace = new PlaneGeometry(1, 1);
             pzFace.translate(0.0, 0.0, 0.5);
-            CuboidMesh.planeGeometries.push(pzFace);
+            CubeMesh.planeGeometries.push(pzFace);
 
             const nzFace = new PlaneGeometry(1, 1);
             nzFace.rotateY(Math.PI);
             nzFace.translate(0.0, 0.0, -0.5);
-            CuboidMesh.planeGeometries.push(nzFace);
+            CubeMesh.planeGeometries.push(nzFace);
         }
     }
 
-    getMaterial(index: number): Material {
-        return new MeshStandardMaterial();
+    protected constructor(transparent: boolean) {
+        this.transparent = transparent;
     }
 
-    constructGeometry(faces: FaceMap): CompositeGeometry | null {
+    protected abstract getMaterial(index: number): Material;
+
+    public constructGeometry(faces: FaceMap): CompositeGeometry | null {
         const geometries: PlaneGeometry[] = [];
         const materials: Material[] = [];
 
         const addFace = (visible: boolean, geomIndex: number, matIndex: number) => {
-            if (visible && this.opacity !== 0) {
-                geometries.push(CuboidMesh.planeGeometries[geomIndex].clone());
+            if (visible) {
+                geometries.push(CubeMesh.planeGeometries[geomIndex].clone());
                 materials.push(this.getMaterial(matIndex));
             }
         }
@@ -83,117 +70,103 @@ export class CuboidMesh {
 
         return new CompositeGeometry(geometries, materials);
     }
-}
 
-export class CuboidMeshOneColor extends CuboidMesh {
-    color: Color;
-    isWireFrame: boolean;
-    material: MeshStandardMaterial;
-
-    constructor(
-        width: number, 
-        height: number, 
-        depth: number, 
-        opacity: number = 1.0,
-        color: Color, 
-        isWireFrame: boolean,
-    ) {
-        super(width, height, depth, opacity);
-        this.color = color;
-        this.isWireFrame = isWireFrame;
-
-        this.material = new MeshStandardMaterial({color: color, transparent: true, opacity: this.opacity});
-    }
-
-    getMaterial(index: number): Material {
-        return this.material;
-    }
-}
-
-export class CuboidMeshOneTexture extends CuboidMesh {
-    texturePath: string;
-    material: MeshStandardMaterial;
-
-    constructor(
-        width: number, 
-        height: number, 
-        depth: number,
-        opacity: number,
-        texturePath: string,
-    ) {
-        super(width, height, depth, opacity);
-        this.texturePath = texturePath;
-
-        let mat = CuboidMesh.materialCache.get(texturePath);
+    protected static getTextureMaterial(transparent: boolean, path: string): Material {
+        let mat = CubeMesh.materialCache.get(path);
 
         if (!mat) {
-            const texture = CuboidMesh.textureLoader.load(import.meta.env.BASE_URL + texturePath, (tex) => {tex.needsUpdate = true});
+            const texture = CubeMesh.textureLoader.load(import.meta.env.BASE_URL + path, (tex) => {
+                tex.needsUpdate = true
+            });
             texture.magFilter = NearestFilter;
             texture.minFilter = NearestFilter;
             texture.generateMipmaps = false;
 
-            mat = new MeshStandardMaterial({map: texture, transparent: true, opacity: this.opacity});
-            CuboidMesh.materialCache.set(texturePath, mat);
+            mat = new MeshStandardMaterial({map: texture, transparent: transparent, depthWrite: !transparent});
+            CubeMesh.materialCache.set(path, mat);
         }
 
-        this.material = mat;
+        return mat;
+    }
+}
+
+export class CubeMeshOneMaterial extends CubeMesh {
+    private readonly material: Material;
+
+    public constructor(
+        transparent: boolean,
+        material: Material
+    ) {
+        super(transparent);
+
+        this.material = material;
     }
 
-    getMaterial(index: number): Material {
+    protected getMaterial(index: number): Material {
         return this.material;
     }
 }
 
-export class CuboidMeshMultiTexture extends CuboidMesh {
-    topTexturePath: string
-    bottomTexturePath: string;
-    sideTexturePath: string;
-    materials: MeshStandardMaterial[];
+export class CubeMeshMultiMaterial extends CubeMesh {
+    private readonly topMaterial: Material;
+    private readonly bottomMaterial: Material;
+    private readonly sideMaterial: Material;
 
-    constructor(
-        width: number, 
-        height: number, 
-        depth: number,
+    public constructor(
+        transparent: boolean,
+        topMaterial: Material,
+        bottomMaterial: Material,
+        sideMaterial: Material
+    ) {
+        super(transparent);
+
+        this.topMaterial = topMaterial;
+        this.bottomMaterial = bottomMaterial;
+        this.sideMaterial = sideMaterial;
+    }
+
+    protected getMaterial(index: number): Material {
+        if (index == 2) {
+            return this.topMaterial;
+        } else if (index == 3) {
+            return this.bottomMaterial;
+        } else {
+            return this.sideMaterial;
+        }
+    }
+}
+
+export class CubeMeshOneColor extends CubeMeshOneMaterial {
+    public constructor(
         opacity: number,
+        color: Color, 
+        isWireFrame: boolean
+    ) {
+        super(opacity < 1, new MeshStandardMaterial({color: color, transparent: opacity < 1, depthWrite: opacity >= 1, opacity: opacity, wireframe: isWireFrame}));
+    }
+}
+
+export class CubeMeshOneTexture extends CubeMeshOneMaterial {
+    public constructor(
+        transparent: boolean,
+        texturePath: string
+    ) {
+        super(transparent, CubeMesh.getTextureMaterial(transparent, texturePath));
+    }
+}
+
+export class CubeMeshMultiTexture extends CubeMeshMultiMaterial {
+    public constructor(
+        transparent: boolean,
         topTexturePath: string,
         bottomTexturePath: string,
         sideTexturePath: string
     ) {
-        super(width, height, depth, opacity);
-        this.topTexturePath = topTexturePath;
-        this.bottomTexturePath = bottomTexturePath;
-        this.sideTexturePath = sideTexturePath;
-        this.materials = [];
-        
-        for (let i = 0; i < 6; ++i) {
-            let path: string
-
-            if (i == 2) {
-                path = topTexturePath;
-            } else if (i == 3) {
-                path = bottomTexturePath;
-            } else {
-                path = sideTexturePath;
-            }
-
-            let mat = CuboidMesh.materialCache.get(path);
-
-            if (!mat) {
-                const texture = CuboidMesh.textureLoader.load(import.meta.env.BASE_URL + path);
-                texture.magFilter = NearestFilter;
-                texture.minFilter = NearestFilter;
-
-                mat = new MeshStandardMaterial({map: texture, transparent: true, opacity: this.opacity});
-                
-                CuboidMesh.materialCache.set(path, mat);
-            }
-
-            this.materials.push(mat);
-        }
-    }
-
-    getMaterial(index: number): Material {
-        return this.materials[index];
+        super(transparent,
+            CubeMesh.getTextureMaterial(transparent, topTexturePath),
+            CubeMesh.getTextureMaterial(transparent, bottomTexturePath),
+            CubeMesh.getTextureMaterial(transparent, sideTexturePath)
+        );
     }
 }
 
