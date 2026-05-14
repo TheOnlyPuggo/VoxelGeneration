@@ -5,7 +5,6 @@ import { TechnicolorShader } from "three/examples/jsm/Addons.js";
 import {BlockPos} from "./positions/blockPos";
 import {Vec3} from "./positions/vec3";
 import * as Blocks from "./worldgen/blocks";
-import { getShadowRenderObjectFunction } from "three/tsl";
 
 enum PlayerState {
     Normal,
@@ -301,8 +300,8 @@ export class InputWrapper {
             ["KeyA", Input.Left],
             ["KeyD", Input.Right],
             ["Space", Input.Up],
-            ["ShiftLeft", Input.Down],
-            ["ControlLeft", Input.Sprint],
+            ["KeyC", Input.Down],
+            ["ShiftLeft", Input.Sprint],
         ]);
 
         document.addEventListener('keydown', e => this.OnKeyDown(e));
