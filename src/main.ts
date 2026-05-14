@@ -54,13 +54,16 @@ async function init(): Promise<void> {
 
     // Game Camera stuff
     Game.camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
-    Game.cameraControls = new CameraControls(Game.camera, Game.renderer.domElement, Game.world, false);
-
     Game.camera.position.x = 7.0;
     Game.camera.position.z = 7.0;
-    Game.camera.position.y = 88.0;
+    Game.camera.position.y = Game.world.getHeightAt(Game.camera.position.x, Game.camera.position.z) + 5;
     Game.camera.rotateY(-Math.PI * 0.75);
     Game.camera.rotateX(-Math.PI / 4.0); Game.renderer.domElement
+
+
+    Game.cameraControls = new CameraControls(Game.camera, Game.renderer.domElement, Game.world, false);
+
+    
     
     Game.stats = new Stats();
     document.body.appendChild(Game.stats.dom);
