@@ -409,7 +409,7 @@ export class World {
         const yOverlaps: number[] = World.getRaycastOverlaps(startPos.y, endPos.y, direction.y);
         const zOverlaps: number[] = World.getRaycastOverlaps(startPos.z, endPos.z, direction.z);
 
-        for (let i = 0; i < xOverlaps.length + yOverlaps.length + zOverlaps.length; i++) {
+        for (let i = 0; xOverlaps.length + yOverlaps.length + zOverlaps.length > 0; i++) {
             if (xOverlaps.length > 0 &&
                 (yOverlaps.length == 0 || xOverlaps[0] < yOverlaps[0]) &&
                 (zOverlaps.length == 0 || xOverlaps[0] < zOverlaps[0])) {
