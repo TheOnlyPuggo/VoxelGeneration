@@ -309,8 +309,8 @@ export class InputWrapper {
             ["KeyA", Input.Left],
             ["KeyD", Input.Right],
             ["Space", Input.Up],
-            ["ShiftLeft", Input.Down],
-            ["ControlLeft", Input.Sprint],
+            ["KeyC", Input.Down],
+            ["ShiftLeft", Input.Sprint],
             ["KeyQ", Input.Destroy]
         ]);
 
