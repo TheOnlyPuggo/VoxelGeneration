@@ -54,11 +54,9 @@ export class Model {
 
             this.blockDatas.push(blockDataEntry);
         }
-
-        this.LoadModelData();
     }
 
-    private async LoadModelData(): Promise<void> {
+    public static async LoadModelData(): Promise<void> {
         Model.LoadedModels["Tree"] = await Model.load("model_data/plains_tree.csv");
         Model.LoadedModels["DirtHut"] = await Model.load("model_data/dirt_hut.csv");
         Model.LoadedModels["Mushroom"] = await Model.load("model_data/dirt_mushroom.csv");
