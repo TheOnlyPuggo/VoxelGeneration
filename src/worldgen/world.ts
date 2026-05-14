@@ -117,7 +117,6 @@ export class World {
         }
 
         this.FrustumCulling(camera);
-        //this.OcclussionCulling(camera, currentFrame);
     }
 
     private async CreateChunks(): Promise<Chunk[]> {
