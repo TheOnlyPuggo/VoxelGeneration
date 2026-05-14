@@ -271,10 +271,10 @@ export class World {
     //
     //         let points = [];
     //
-    //         points.push(chunkMesh.position.clone().add(new Vector3(chunkSize / 2.0, 0.0, chunkSize / 2.0)));
-    //         points.push(chunkMesh.position.clone().add(new Vector3(chunkSize / 2.0, chunkSize / 2.0, chunkSize / 2.0)));
-    //         points.push(chunkMesh.position.clone().add(new Vector3(chunkSize / 2.0, chunkSize, chunkSize / 2.0)));
-    //         points.push(chunkMesh.position.clone().add(new Vector3(chunkSize / 2.0, chunkSize * 2.0, chunkSize / 2.0)));
+    //         points.push(chunkMesh.position.clone().add(new Vector3(Chunk.chunkSize / 2.0, 0.0, Chunk.chunkSize / 2.0)));
+    //         points.push(chunkMesh.position.clone().add(new Vector3(Chunk.chunkSize / 2.0, Chunk.chunkSize / 2.0, Chunk.chunkSize / 2.0)));
+    //         points.push(chunkMesh.position.clone().add(new Vector3(Chunk.chunkSize / 2.0, Chunk.chunkSize, Chunk.chunkSize / 2.0)));
+    //         points.push(chunkMesh.position.clone().add(new Vector3(Chunk.chunkSize / 2.0, Chunk.chunkSize * 2.0, Chunk.chunkSize / 2.0)));
     //
     //         let cameraPos = camera.position as Vector3;
     //         let occluderMeshes = entries.filter(entry => entry.chunkMesh !== chunkMesh).map(entry => entry.chunkMesh);
@@ -475,16 +475,16 @@ export class World {
     private async generateStructureData() {
         if (this.firstStructureGeneration) await Model.LoadModelData();
 
-        let minimumX: number = (this.cameraChunkPos.x * chunkSize) - ((this.worldRadius + 1) * chunkSize);
-        let maximumX: number = (this.cameraChunkPos.x * chunkSize) + ((this.worldRadius + 1) * chunkSize) + chunkSize - 1;
-        let minimumZ: number = (this.cameraChunkPos.z * chunkSize) - ((this.worldRadius + 1) * chunkSize);
-        let maximumZ: number = (this.cameraChunkPos.z * chunkSize) + ((this.worldRadius + 1) * chunkSize) + chunkSize - 1;
+        let minimumX: number = (this.cameraChunkPos.x * Chunk.chunkSize) - ((this.worldRadius + 1) * Chunk.chunkSize);
+        let maximumX: number = (this.cameraChunkPos.x * Chunk.chunkSize) + ((this.worldRadius + 1) * Chunk.chunkSize) + Chunk.chunkSize - 1;
+        let minimumZ: number = (this.cameraChunkPos.z * Chunk.chunkSize) - ((this.worldRadius + 1) * Chunk.chunkSize);
+        let maximumZ: number = (this.cameraChunkPos.z * Chunk.chunkSize) + ((this.worldRadius + 1) * Chunk.chunkSize) + Chunk.chunkSize - 1;
 
         for (let x = minimumX; x <= maximumX; x++) {
             for (let z = minimumZ; z <= maximumZ; z++) {
                 if (!this.firstStructureGeneration &&
-                    (x >= chunkSize && x < (this.worldRadius + 1) * chunkSize + chunkSize) &&
-                    (z >= chunkSize && z < (this.worldRadius + 1) * chunkSize + chunkSize)
+                    (x >= Chunk.chunkSize && x < (this.worldRadius + 1) * Chunk.chunkSize + Chunk.chunkSize) &&
+                    (z >= Chunk.chunkSize && z < (this.worldRadius + 1) * Chunk.chunkSize + Chunk.chunkSize)
                 ) continue;
 
                 let model = this.getModelAtPos(x, z);
@@ -497,10 +497,10 @@ export class World {
 
     private async deleteOutOfRangeStructureData() {
         for (const [key, data] of Model.generatedStructureBlocksToLoad) {
-            const dx = data.pos.x - this.cameraChunkPos.x * chunkSize + Math.floor(chunkSize / 2);
-            const dz = data.pos.x - this.cameraChunkPos.z * chunkSize + Math.floor(chunkSize / 2);
+            const dx = data.pos.x - this.cameraChunkPos.x * Chunk.chunkSize + Math.floor(Chunk.chunkSize / 2);
+            const dz = data.pos.x - this.cameraChunkPos.z * Chunk.chunkSize + Math.floor(Chunk.chunkSize / 2);
 
-            let maxDistance = ((this.worldRadius + 1) * chunkSize) + chunkSize - 1;
+            let maxDistance = ((this.worldRadius + 1) * Chunk.chunkSize) + Chunk.chunkSize - 1;
 
             if (Math.abs(dx) > maxDistance || Math.abs(dz) > maxDistance) {
                 Model.generatedStructureBlocksToLoad.delete(key);

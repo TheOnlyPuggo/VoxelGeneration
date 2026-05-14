@@ -70,23 +70,6 @@ export class Model {
         return new Model(data);
     }
 
-    // not chunk based
-    // hardLoadStructureAt(scene: Scene, blockOriginPos: BlockPos) {
-    //     this.blockDatas.forEach((blockData) => {
-    //         let block = MinecraftBlockDictionary[blockData.minecraftName];
-    //         let blockGeometry = block.getGeometry(new FaceMap());
-    //         blockGeometry?.translate(
-    //             blockData.pos.x + blockOriginPos.x,
-    //             blockData.pos.y + blockOriginPos.y,
-    //             blockData.pos.z + blockOriginPos.z
-    //         );
-    //
-    //         if (blockGeometry != null) {
-    //             scene.add(blockGeometry.getCombinedMesh());
-    //         }
-    //     });
-    // }
-
     // chunk based
     loadStructureAt(blockOriginPos: BlockPos) {
         let blocksDictionary: StructureBlocksDictionary = {};
