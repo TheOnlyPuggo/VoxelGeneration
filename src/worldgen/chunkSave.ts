@@ -1,9 +1,5 @@
 import {Block} from "./block";
 import {SubChunkPos} from "../positions/subChunkPos";
-import {World} from "./world";
-import {ChunkPos} from "../positions/chunkPos";
-import {AIR} from "./blocks";
-import {chunkSize} from "./chunk";
 
 export class ChunkSave {
     private readonly blocks: Map<string, Block>;
