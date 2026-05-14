@@ -65,17 +65,27 @@ export class CameraControls {
     
     
     Update(delta: number, scene: Scene | null) {
+        this.blockInteractionHandle(delta, scene);
+
+        (this.isFlyingControls) ? this.FlyingHandle(delta) : this.WalkingHandle(delta);
+
+
+        this.inputWrapper.ClearPressed();
+    }
+
+    private blockInteractionHandle(delta: number, scene: Scene | null): void {
         if (this.inputWrapper.IsPressed(Input.Destroy)) {
             const front = new Vector3();
             this.camera.getWorldDirection(front);
             const raycast: BlockPos[] | undefined = this.world?.raycastForVisibleBlock(Vec3.fromVector3(this.camera.position), Vec3.fromVector3(front), 4);
             if (raycast) this.world?.setBlockAt(raycast[raycast.length - 1], Blocks.AIR, scene)
         }
-
-        (this.isFlyingControls) ? this.FlyingHandle(delta) : this.WalkingHandle(delta);
-
-
-        this.inputWrapper.ClearPressed();
+        if (this.inputWrapper.IsPressed(Input.Place)) {
+            const front = new Vector3();
+            this.camera.getWorldDirection(front);
+            const raycast: BlockPos[] | undefined = this.world?.raycastForVisibleBlock(Vec3.fromVector3(this.camera.position), Vec3.fromVector3(front), 4);
+            if (raycast && raycast.length > 2) this.world?.setBlockAt(raycast[raycast.length - 2], Blocks.CUCUMBER, scene)
+        }
     }
 
     FlyingHandle(delta: number) {
@@ -281,7 +291,8 @@ enum Input {
     Up,
     Down,
     Sprint,
-    Destroy
+    Destroy,
+    Place
 }
 
 export class InputWrapper {
@@ -297,8 +308,9 @@ export class InputWrapper {
             [Input.Right, false],
             [Input.Up, false],
             [Input.Down, false],    
-            [Input.Sprint, false],    
-            [Input.Destroy, false]
+            [Input.Sprint, false],
+            [Input.Destroy, false],
+            [Input.Place, false]
         ]);
 
         this.justPressed = new Set<Input>();
@@ -311,7 +323,8 @@ export class InputWrapper {
             ["Space", Input.Up],
             ["KeyC", Input.Down],
             ["ShiftLeft", Input.Sprint],
-            ["KeyQ", Input.Destroy]
+            ["KeyQ", Input.Destroy],
+            ["KeyE", Input.Place]
         ]);
 
         document.addEventListener('keydown', e => this.OnKeyDown(e));

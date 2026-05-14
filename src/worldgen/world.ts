@@ -10,7 +10,7 @@ import {
 } from "three";
 import * as Blocks from "./blocks";
 import {SimplexNoise} from "three/examples/jsm/Addons.js";
-import {Chunk, chunkSize} from "./chunk";
+import {Chunk} from "./chunk";
 import {BlockPos} from "../positions/blockPos";
 import {ChunkPos} from "../positions/chunkPos";
 import {SubChunkPos} from "../positions/subChunkPos";
@@ -113,15 +113,15 @@ export class World {
         this.FrustumCulling(camera);
     }
 
-    private addChunkMeshes(scene: Scene, chunkPosKey: string, meshes: Mesh[] | undefined): void {
-        const chunkEntry = this.chunksMap.get(chunkPosKey);
-        if (!chunkEntry || !meshes) return;
+    private addChunkMeshes(scene: Scene, chunkEntry: { chunk: Chunk, chunkMeshes: Mesh[] } | undefined): void {
+        if (!chunkEntry) return;
+        const meshes: Mesh[] | undefined = chunkEntry?.chunk.getChunkMeshes();
+        if (!meshes) return;
         for (const mesh of meshes) scene.add(mesh);
         chunkEntry.chunkMeshes = meshes;
     }
 
-    private removeChunkMeshes(scene: Scene, chunkPosKey: string): void {
-        const chunkEntry = this.chunksMap.get(chunkPosKey);
+    private removeChunkMeshes(scene: Scene, chunkEntry: { chunk: Chunk, chunkMeshes: Mesh[] } | undefined): void {
         if (!chunkEntry) return;
         for (const mesh of chunkEntry.chunkMeshes) {
             mesh.geometry.dispose();
@@ -171,7 +171,7 @@ export class World {
         let createCount = 0;
 
         for (const chunk of newChunks) {
-            this.addChunkMeshes(scene, chunk.chunkPos.getKey(), chunk.getChunkMeshes());
+            this.addChunkMeshes(scene, this.chunksMap.get(chunk.chunkPos.getKey()));
 
             if (++createCount % 2 === 0) {
                 await nextFrame();
@@ -183,13 +183,13 @@ export class World {
         let deleteCount = 0;
 
         const chunkMapEntries = Array.from(this.chunksMap);
-        for (const [chunkPosKey, {chunk, chunkMeshes}] of chunkMapEntries) {
+        for (const [chunkPosKey, chunkEntry] of chunkMapEntries) {
             if (hypo(
-                chunk.chunkPos.x - this.cameraChunkPos.x,
-                chunk.chunkPos.y - this.cameraChunkPos.y,
-                chunk.chunkPos.z - this.cameraChunkPos.z
+                chunkEntry.chunk.chunkPos.x - this.cameraChunkPos.x,
+                chunkEntry.chunk.chunkPos.y - this.cameraChunkPos.y,
+                chunkEntry.chunk.chunkPos.z - this.cameraChunkPos.z
             ) > this.worldRadius) {
-                this.removeChunkMeshes(scene, chunkPosKey);
+                this.removeChunkMeshes(scene, chunkEntry);
                 this.chunksMap.delete(chunkPosKey);
             }
 
@@ -203,10 +203,10 @@ export class World {
     private updateChunkMesh(scene: Scene, chunkPos: ChunkPos): void {
         let chunkPosKey: string = chunkPos.getKey();
         let chunkEntry = this.chunksMap.get(chunkPosKey);
-        if (!chunkEntry) return;
-        this.removeChunkMeshes(scene, chunkPosKey);
 
-        this.addChunkMeshes(scene, chunkPosKey, chunkEntry.chunk.getChunkMeshes());
+        this.removeChunkMeshes(scene, chunkEntry);
+
+        this.addChunkMeshes(scene, chunkEntry);
     }
 
     private async FrustumCulling(camera: Camera) {
@@ -387,10 +387,18 @@ export class World {
             return;
         }
         chunkEntry.chunk.setBlockAt(subChunkPos, blockType, blockType == this.getBlockToGenerateAt(blockPos));
-        if (scene) this.updateChunkMesh(scene, chunkPos);
         const save = chunkEntry.chunk.getSave();
         if (save) this.chunkSaveMap.set(chunkPosKey, save);
         else this.chunkSaveMap.delete(chunkPosKey);
+        if (scene) {
+            if (subChunkPos.x == 0) this.updateChunkMesh(scene, chunkPos.subtractX(1));
+            if (subChunkPos.x == Chunk.chunkSize - 1) this.updateChunkMesh(scene, chunkPos.addX(1));
+            if (subChunkPos.y == 0) this.updateChunkMesh(scene, chunkPos.subtractY(1));
+            if (subChunkPos.y == Chunk.chunkSize - 1) this.updateChunkMesh(scene, chunkPos.addY(1));
+            if (subChunkPos.z == 0) this.updateChunkMesh(scene, chunkPos.subtractZ(1));
+            if (subChunkPos.z == Chunk.chunkSize - 1) this.updateChunkMesh(scene, chunkPos.addZ(1));
+            this.updateChunkMesh(scene, chunkPos);
+        }
     }
 
     // Technically not a raycast but like it does the same thing but better, so I'm calling it one
