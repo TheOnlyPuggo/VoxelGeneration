@@ -18,7 +18,6 @@ import {Block} from "./block";
 import {Model} from "../geometry/modelCreation";
 import {Vec3} from "../positions/vec3";
 import {ChunkSave} from "./chunkSave";
-import {Game} from "../main";
 
 const hypo = (x: number, y: number, z: number): number => Math.sqrt(x * x + y * y + z * z);
 
@@ -373,7 +372,7 @@ export class World {
         return this.getBlockToGenerateAt(blockPos);
     }
 
-    public setBlockAt(blockPos: BlockPos, blockType: Block): void {
+    public setBlockAt(blockPos: BlockPos, blockType: Block, scene: Scene): void {
         const chunkPos = blockPos.getChunkPos();
         const chunkPosKey = chunkPos.getKey();
         const subChunkPos = blockPos.getSubChunkPos();
@@ -392,7 +391,7 @@ export class World {
             return;
         }
         chunkEntry.chunk.setBlockAt(subChunkPos, blockType, blockType == this.getBlockToGenerateAt(blockPos));
-        if (Game.scene) this.updateChunkMesh(Game.scene, chunkPos);
+        this.updateChunkMesh(scene, chunkPos);
         const save = chunkEntry.chunk.getSave();
         if (save) this.chunkSaveMap.set(chunkPosKey, save);
         else this.chunkSaveMap.delete(chunkPosKey);
