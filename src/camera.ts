@@ -64,7 +64,7 @@ export class CameraControls {
     }
     
     
-    Update(delta: number, scene: Scene) {
+    Update(delta: number, scene: Scene | null) {
         if (this.inputWrapper.IsPressed(Input.Destroy)) {
             const front = new Vector3();
             this.camera.getWorldDirection(front);
