@@ -18,6 +18,7 @@ import {Block} from "./block";
 import {Model} from "../geometry/modelCreation";
 import {Vec3} from "../positions/vec3";
 import {ChunkSave} from "./chunkSave";
+import {Game} from "../main";
 
 const hypo = (x: number, y: number, z: number): number => Math.sqrt(x * x + y * y + z * z);
 
@@ -372,7 +373,7 @@ export class World {
         return this.getBlockToGenerateAt(blockPos);
     }
 
-    public setBlockAt(blockPos: BlockPos, blockType: Block, scene : Scene): void {
+    public setBlockAt(blockPos: BlockPos, blockType: Block): void {
         const chunkPos = blockPos.getChunkPos();
         const chunkPosKey = chunkPos.getKey();
         const subChunkPos = blockPos.getSubChunkPos();
@@ -391,16 +392,18 @@ export class World {
             return;
         }
         chunkEntry.chunk.setBlockAt(subChunkPos, blockType, blockType == this.getBlockToGenerateAt(blockPos));
-        this.updateChunkMesh(scene, chunkPos);
+        if (Game.scene) this.updateChunkMesh(Game.scene, chunkPos);
         const save = chunkEntry.chunk.getSave();
         if (save) this.chunkSaveMap.set(chunkPosKey, save);
         else this.chunkSaveMap.delete(chunkPosKey);
     }
 
     // Technically not a raycast but like it does the same thing but better, so I'm calling it one
-    public raycastForNonAirBlock(startPos: Vec3, direction: Vec3, range: number): BlockPos | null {
+    public raycastForNonAirBlock(startPos: Vec3, direction: Vec3, range: number): BlockPos[] | undefined {
+        let checkedBlocks: BlockPos[] = [];
         let currentPos: BlockPos = BlockPos.roundFromVec3(startPos);
-        if (!this.getBlockAt(currentPos).equals(Blocks.AIR)) return currentPos;
+        checkedBlocks.push(currentPos);
+        if (!this.getBlockAt(currentPos).equals(Blocks.AIR)) return checkedBlocks;
 
         const endPos: Vec3 = startPos.add(direction.normalize().multiply(range));
         const xOverlaps: number[] = World.getRaycastOverlaps(startPos.x, endPos.x, direction.x);
@@ -422,10 +425,11 @@ export class World {
                 zOverlaps.shift();
             }
 
-            if (!this.getBlockAt(currentPos).equals(Blocks.AIR)) return currentPos;
+            checkedBlocks.push(currentPos);
+            if (!this.getBlockAt(currentPos).equals(Blocks.AIR)) return checkedBlocks;
         }
 
-        return null;
+        return undefined;
     }
 
     private static getRaycastOverlaps(startPos: number, endPos: number, direction: number): number[] {

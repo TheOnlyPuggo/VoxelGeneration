@@ -63,6 +63,14 @@ export class CameraControls {
     
     
     Update(delta: number) {
+        if (this.inputWrapper.IsPressed(Input.Destroy)) {
+            console.log("HI");
+            const front = new Vector3();
+            this.camera.getWorldDirection(front);
+            const raycast: BlockPos[] | undefined = this.world?.raycastForNonAirBlock(Vec3.fromVector3(this.camera.position), Vec3.fromVector3(front), 4);
+            if (raycast) this.world?.setBlockAt(raycast[raycast.length - 1], Blocks.AIR)
+        }
+
         (this.isFlyingControls) ? this.FlyingHandle(delta) : this.WalkingHandle(delta);
     }
 
@@ -256,6 +264,7 @@ enum Input {
     Up,
     Down,
     Sprint,
+    Destroy
 }
 
 export class InputWrapper {
@@ -272,6 +281,7 @@ export class InputWrapper {
             [Input.Up, false],
             [Input.Down, false],    
             [Input.Sprint, false],    
+            [Input.Destroy, false]
         ]);
 
         this.justPressed = new Set<Input>();
@@ -284,6 +294,7 @@ export class InputWrapper {
             ["Space", Input.Up],
             ["ShiftLeft", Input.Down],
             ["ControlLeft", Input.Sprint],
+            ["KeyQ", Input.Destroy]
         ]);
 
         document.addEventListener('keydown', e => this.OnKeyDown(e));
