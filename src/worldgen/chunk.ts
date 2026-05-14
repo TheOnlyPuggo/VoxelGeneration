@@ -1,4 +1,4 @@
-import {Camera, Mesh} from "three";
+import {Camera, Mesh, Vector2} from "three";
 import {Block} from "./block";
 import {World} from "./world";
 import {ChunkPos} from "../positions/chunkPos";
@@ -29,6 +29,12 @@ export class Chunk {
                     if (blockToPush == AIR) blockToPush = world.getStructureBlockToGenerateAt(BlockPos.fromChunkPos(chunkPos, new SubChunkPos(x, y, z)));
                     this.blocks[x][y].push(blockToPush);
                 }
+            }
+        }
+
+        for (let x: number = 0; x < chunkSize; x++) {
+            for (let z: number = 0; z < chunkSize; z++) {
+                world.getModelAtPos(new Vector2(x, z));
             }
         }
     }

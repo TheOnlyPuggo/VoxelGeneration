@@ -13,8 +13,13 @@ interface StructureBlocksDictionary {
     [blockPosStringKey: string]: Block;
 }
 
+interface ModelNamesDictionary {
+    [modelName: string]: Model;
+}
+
 export class Model {
     public static manualModelsToLoad: [BlockPos, StructureBlocksDictionary][] = [];
+    public static LoadedModels: ModelNamesDictionary = {};
 
     private blockOriginPos: BlockPos;
     private modelData: string;
@@ -49,6 +54,14 @@ export class Model {
 
             this.blockDatas.push(blockDataEntry);
         }
+
+        this.LoadModelData();
+    }
+
+    private async LoadModelData(): Promise<void> {
+        Model.LoadedModels["Tree"] = await Model.load("model_data/plains_tree.csv");
+        Model.LoadedModels["DirtHut"] = await Model.load("model_data/dirt_hut.csv");
+        Model.LoadedModels["Mushroom"] = await Model.load("model_data/dirt_mushroom.csv");
     }
 
     static async load(modelDataPath: string): Promise<Model> {
