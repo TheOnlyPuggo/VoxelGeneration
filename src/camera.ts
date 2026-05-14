@@ -5,6 +5,7 @@ import { TechnicolorShader } from "three/examples/jsm/Addons.js";
 import {BlockPos} from "./positions/blockPos";
 import {Vec3} from "./positions/vec3";
 import * as Blocks from "./worldgen/blocks";
+import { getShadowRenderObjectFunction } from "three/tsl";
 
 enum PlayerState {
     Normal,
@@ -54,6 +55,8 @@ export class CameraControls {
         this.canvas = canvas;
         this.world = world;
         this.isFlyingControls = isFlyingControls;
+
+        this.playerPos = this.camera.position.clone();
 
         this.pointerLockControls = new PointerLockControls(this.camera, this.canvas);
         document.addEventListener('click', () => this.pointerLockControls.lock());
@@ -184,11 +187,25 @@ export class CameraControls {
     }
 
     MoveAndCollide(delta: number) {
+        this.velocity.y -= this.gravity * delta;
+        
+        let safeStepSize = 0.4;
+        let speed = this.velocity.length();
+        let steps = Math.max(1, Math.ceil(speed * delta / safeStepSize));
+        let subDelta = delta/steps;
+
+        let groundedThisFrame = false;
+        for(let i = 0; i < steps; ++i) {
+            if (this.CollisionStep(subDelta)) groundedThisFrame = true;
+        }
+        this.isGrounded = groundedThisFrame;
+    }
+
+    CollisionStep(delta: number): boolean {
         const EPSILON = 0.001;
         const hw = this.playerWidth / 2;
         const hh = this.playerHeight / 2;
-
-        this.velocity.y -= this.gravity * delta;
+        let grounded = false;
 
         // X Axis
         this.playerPos.x += this.velocity.x * delta;
@@ -207,13 +224,11 @@ export class CameraControls {
             if (this.velocity.y > 0) {
                 this.playerPos.y = Math.round(this.playerPos.y) - 0.5 - EPSILON;
             } else {
-                this.isGrounded = true;
+                grounded = true;
                 const feetY = this.playerPos.y - this.playerHeight;
                 this.playerPos.y = Math.round(feetY) + 0.5 + EPSILON + this.playerHeight;
             }
             this.velocity.y = 0;
-        } else {
-            this.isGrounded = false;
         }
 
 
@@ -227,6 +242,8 @@ export class CameraControls {
             }
             this.velocity.z = 0;
         }
+
+        return grounded;
     }
 
     CollidesWithWorld(position: Vector3): boolean {

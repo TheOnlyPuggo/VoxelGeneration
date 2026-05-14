@@ -296,7 +296,7 @@ export class World {
         }
     }
 
-    private getHeightAt(x: number, z: number): number {
+    public getHeightAt(x: number, z: number): number {
         return Math.round(heightGen.amplitude *
             this.heightNoiseCoarse.noise(x / heightGen.size, z / heightGen.size) +
             heightGen.amplitude * heightGen.mediumFactor *
