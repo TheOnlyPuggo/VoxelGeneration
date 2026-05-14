@@ -67,6 +67,9 @@ export class CameraControls {
     
     Update(delta: number) {
         (this.isFlyingControls) ? this.FlyingHandle(delta) : this.WalkingHandle(delta);
+
+
+        this.inputWrapper.ClearPressed();
     }
 
     FlyingHandle(delta: number) {
@@ -115,7 +118,7 @@ export class CameraControls {
         this.MoveAndCollide(delta);
         this.HeadBob(delta, dir);
         
-        this.inputWrapper.ClearPressed();
+        
     }
 
     CrouchingHeight(delta: number) {
@@ -230,7 +233,6 @@ export class CameraControls {
             }
             this.velocity.y = 0;
         }
-
 
         // Z Axis
         this.playerPos.z += this.velocity.z * delta;
