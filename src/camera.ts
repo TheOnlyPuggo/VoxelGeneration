@@ -10,8 +10,9 @@ export class CameraControls {
     world: World | null = null;
     pointerLockControls: PointerLockControls;
     inputWrapper: InputWrapper;
+    playerPos: Vector3 = new Vector3();
 
-    private readonly height: number = 1.2;
+    private readonly height: number = 1.8;
     private readonly playerWidth: number = 0.4;
     private readonly jumpForce: number = 8;
     private readonly gravity: number = 25;
@@ -81,6 +82,7 @@ export class CameraControls {
     MoveAndCollide(delta: number) {
         const EPSILON = 0.001;
         const hw = this.playerWidth / 2;
+        const hh = this.height / 2;
 
         this.velocity.y -= this.gravity * delta;
 
@@ -98,18 +100,19 @@ export class CameraControls {
         // Y Axis
         this.camera.position.y += this.velocity.y * delta;
         if (this.CollidesWithWorld(this.camera.position)) {
-            if (this.velocity.y <= 0) {
-                const feetY = this.camera.position.y - this.height;
-                this.camera.position.y = Math.floor(feetY) + 1 + this.height + EPSILON;
-                this.isGrounded = true;
+            if (this.velocity.y > 0) {
+                this.camera.position.y = Math.round(this.camera.position.y) - 0.5 - EPSILON;
             } else {
-                console.log("Collided with ceiling");
-                this.camera.position.y = Math.floor(this.camera.position.y) - EPSILON;
+                this.isGrounded = true;
+                const feetY = this.camera.position.y - this.height;
+                this.camera.position.y = Math.round(feetY) + 0.5 + EPSILON + this.height;
             }
             this.velocity.y = 0;
         } else {
             this.isGrounded = false;
         }
+
+        console.log(this.isGrounded);
 
         // Z Axis
         this.camera.position.z += this.velocity.z * delta;
@@ -126,8 +129,8 @@ export class CameraControls {
     CollidesWithWorld(position: Vector3): boolean {
         const hw = this.playerWidth / 2;
         const { x, y, z } = position;
-
-        for (let dy = this.height/2; dy >= -this.height; dy -= this.height / 2) {
+        var numRan = 0;
+        for (let dy = 0; dy >= -this.height; dy -= this.height / 2) {
             for (const dx of [-hw, hw]) {
                 for (const dz of [-hw, hw]) {
                     if (this.IsSolid(x + dx, y + dy, z + dz)) return true;
@@ -138,7 +141,7 @@ export class CameraControls {
     }
 
     IsSolid(x: number, y: number, z: number): boolean {
-        return this.world ? !this.world.getTransparentAt(Math.round(x), Math.floor(y), Math.round(z)) : false;
+        return this.world ? !this.world.getTransparentAt(Math.round(x), Math.round(y), Math.round(z)) : false;
     }
 }
 
