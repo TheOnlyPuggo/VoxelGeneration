@@ -68,8 +68,7 @@ export class World {
     private readonly ironNoise: SimplexNoise;
     private readonly cucumberNoise: SimplexNoise;
 
-    private readonly structureNoiseOne: SimplexNoise;
-    private readonly structureNoiseTwo: SimplexNoise;
+    private readonly structureNoise: SimplexNoise;
 
     readonly worldRadius = 4;
 
@@ -91,8 +90,7 @@ export class World {
         this.ironNoise = new SimplexNoise();
         this.cucumberNoise = new SimplexNoise();
 
-        this.structureNoiseOne = new SimplexNoise();
-        this.structureNoiseTwo = new SimplexNoise();
+        this.structureNoise = new SimplexNoise();
         
         this.cameraChunkPos = new ChunkPos(0, 0, 0);
         this.previousCameraChunkPos = this.cameraChunkPos;
@@ -404,8 +402,8 @@ export class World {
     }
 
     public getModelAtPos(pos: Vector2): void {
-        let structureNoiseVal = this.structureNoiseOne.noise(pos.x, pos.y) + this.structureNoiseOne.noise(pos.x, pos.y);
-        if (structureNoiseVal == 1.7) console.log("STRUCTURE");
+        let structureNoiseVal = this.structureNoise.noise(pos.x, pos.y);
+        if (structureNoiseVal > 1.9) console.log("STRUCTURE");
     }
 
     // Technically not a raycast but like it does the same thing but better, so I'm calling it one

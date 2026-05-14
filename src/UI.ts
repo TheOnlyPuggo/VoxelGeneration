@@ -1,5 +1,6 @@
 
 import {Camera} from "three";
+// @ts-ignore
 import {GUI} from 'lil-gui';
 import {CameraControls} from './camera';
 
