@@ -22,3 +22,5 @@ export const IRON = new Block("iron", true, false,
     new CuboidMeshOneTexture(1, 1, 1, 1.0, "one_texture/iron.png"));
 export const CUCUMBER = new Block("cucumber", true, false,
     new CuboidMeshOneColor(1, 1, 1, 1, new Color(0.1, 0.5, 0.2), false));
+export const SNOW = new Block("snow", true, false,
+    new CuboidMeshOneColor(1, 1, 1, 1, new Color(1, 1, 1), false));
