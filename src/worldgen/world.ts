@@ -404,7 +404,7 @@ export class World {
         else this.chunkSaveMap.delete(chunkPosKey);
     }
 
-    public getModelAtPos(pos: Vector2): void {
+    public getModelAtPos(pos: Vector3): void {
         let structureNoiseVal = this.structureNoiseOne.noise(pos.x, pos.y) + this.structureNoiseOne.noise(pos.x, pos.y);
         if (structureNoiseVal == 1.7) console.log("STRUCTURE");
     }
