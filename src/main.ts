@@ -9,7 +9,7 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 export const Game: {
     scene: Scene | null,
-    camera: Camera | null,
+    camera: PerspectiveCamera | null,
     cameraControls: CameraControls | null,
     renderer: WebGLRenderer | null,
     environment: {

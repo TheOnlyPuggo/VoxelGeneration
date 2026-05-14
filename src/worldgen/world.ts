@@ -97,7 +97,6 @@ export class World {
         }
 
         this.FrustumCulling(camera);
-        //this.OcclussionCulling(camera, currentFrame);
     }
 
     getTransparentAt(x: number, y: number, z: number): boolean {
