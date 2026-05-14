@@ -1,9 +1,10 @@
 import {Camera, HalfFloatType, Vector3, MathUtils, PerspectiveCamera} from "three";
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import { World } from "./worldgen/world";
-import { EPSILON } from "three/tsl";
 import { TechnicolorShader } from "three/examples/jsm/Addons.js";
-
+import {BlockPos} from "./positions/blockPos";
+import {Vec3} from "./positions/vec3";
+import * as Blocks from "./worldgen/blocks";
 
 enum PlayerState {
     Normal,
@@ -243,7 +244,7 @@ export class CameraControls {
     }
 
     IsSolid(x: number, y: number, z: number): boolean {
-        return this.world ? !this.world.getTransparentAt(Math.round(x), Math.round(y), Math.round(z)) : false;
+        return this.world ? !this.world.getBlockAt(BlockPos.roundFromVec3(new Vec3(x, y, z))).equals(Blocks.AIR) : false;
     }
 }
 

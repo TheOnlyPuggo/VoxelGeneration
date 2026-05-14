@@ -196,18 +196,6 @@ export class World {
         }
     }
 
-    getTransparentAt(x: number, y: number, z: number): boolean {
-        const blockPos = new BlockPos(x, y, z);
-        const chunkPos: ChunkPos = blockPos.getChunkPos();
-        const subChunkPos: SubChunkPos = blockPos.getSubChunkPos();
-        const chunkEntry = this.chunksMap.get(chunkPos.getKey());
-        if (!chunkEntry) return this.getBlockToGenerateAt(blockPos).getTransparent();
-
-        const block = chunkEntry.chunk.blocks[subChunkPos.x][subChunkPos.y][subChunkPos.z];
-        if (!block) return true;
-        return block.getTransparent();
-    }
-
     private updateChunkMesh(scene: Scene, chunkPos: ChunkPos): void {
         let chunkEntry = this.chunksMap.get(chunkPos.getKey());
         if (!chunkEntry) return;
