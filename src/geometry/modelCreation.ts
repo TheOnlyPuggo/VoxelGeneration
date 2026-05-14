@@ -17,20 +17,22 @@ interface ModelNamesDictionary {
     [modelName: string]: Model;
 }
 
+interface GeneratedStructureBlock {
+    pos: BlockPos;
+    block: Block;
+}
+
 export class Model {
     public static manualModelsToLoad: [BlockPos, StructureBlocksDictionary][] = [];
+    public static generatedStructureBlocksToLoad: Map<string, GeneratedStructureBlock> = new Map<string, GeneratedStructureBlock>();
     public static LoadedModels: ModelNamesDictionary = {};
 
     private blockOriginPos: BlockPos;
-    private modelData: string;
     private blockDatas: ModelBlockData[];
 
     constructor(modelData: string) {
-        this.modelData = modelData;
-        
         const dataLines: string[] = modelData.split(/\r?\n/);
 
-        console.log(dataLines)
         const originBlockPosValues: number[] = dataLines[0].split(";")[1].split(",").map(Number);
         this.blockOriginPos = new BlockPos(
             originBlockPosValues[0],
@@ -60,7 +62,7 @@ export class Model {
     public static async LoadModelData(): Promise<void> {
         Model.LoadedModels["Tree"] = await Model.load("model_data/plains_tree.csv");
         Model.LoadedModels["DirtHut"] = await Model.load("model_data/dirt_hut.csv");
-        Model.LoadedModels["Mushroom"] = await Model.load("model_data/dirt_mushroom.csv");
+        Model.LoadedModels["Mushroom"] = await Model.load("model_data/mushroom.csv");
     }
 
     static async load(modelDataPath: string): Promise<Model> {
@@ -100,6 +102,21 @@ export class Model {
         });
 
         Model.manualModelsToLoad.push([blockOriginPos, blocksDictionary]);
+    }
+
+    public loadModelInformation(blockOriginPos: BlockPos) {
+        this.blockDatas.forEach((blockData) => {
+            let blockWorldPos: BlockPos = new BlockPos(
+                blockData.pos.x + blockOriginPos.x,
+                blockData.pos.y + blockOriginPos.y,
+                blockData.pos.z + blockOriginPos.z
+            );
+
+            Model.generatedStructureBlocksToLoad.set(
+                blockWorldPos.getKey(),
+                {pos: blockWorldPos, block: MinecraftBlockDictionary[blockData.minecraftName]}
+            );
+        });
     }
 }
 

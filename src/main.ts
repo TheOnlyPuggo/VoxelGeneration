@@ -92,8 +92,6 @@ async function init(): Promise<void> {
 
     window.addEventListener("resize", onWindowResize, false);
 
-    Model.LoadModelData();
-
     let treeModel = await Model.load("model_data/plains_tree.csv");
     treeModel.loadStructureAt(new BlockPos(10, 70, 10));
 

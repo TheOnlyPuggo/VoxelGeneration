@@ -80,6 +80,9 @@ export class World {
     private previousCameraChunkPos: ChunkPos;
     private isGenerating: boolean;
 
+    private firstStructureGeneration: boolean;
+    private readonly maxAmountOfStoredStructureBlocks: number = 1000;
+
     constructor() {
         this.heightNoiseCoarse = new SimplexNoise();
         this.heightNoiseMedium = new SimplexNoise();
@@ -98,9 +101,11 @@ export class World {
 
         this.chunksMap = new Map<string, {chunk: Chunk, chunkMesh: Mesh}>();
         this.chunkSaveMap = new Map<string, ChunkSave>();
+
+        this.firstStructureGeneration = true;
     }
 
-    Update(camera: Camera | null, scene: Scene) {
+    async Update(camera: Camera | null, scene: Scene) {
         if (!camera) return;
 
         this.cameraChunkPos = Chunk.getChunkPosfromCameraPos(camera);
@@ -108,9 +113,11 @@ export class World {
             this.isGenerating = true;
             this.previousCameraChunkPos = this.cameraChunkPos;
 
-            this.CreateChunks()
+            this.generateStructureData()
+                .then(() => this.CreateChunks())
                 .then((newChunks) => this.CreateChunkMeshes(scene, newChunks))
                 .then(() => this.DeleteOutOfRenderChunks(scene))
+                .then(() => this.deleteOutOfRangeStructureData())
                 .finally(() => this.isGenerating = false);
         }
 
@@ -351,6 +358,7 @@ export class World {
     getStructureBlockToGenerateAt(blockPos: BlockPos): Block {
         let structureBlock: Block | null = null;
 
+        // Manual Structure Loading
         Model.manualModelsToLoad.forEach((modelData) => {
             let distanceCalcPos1: Vector3 = new Vector3(blockPos.x, blockPos.y, blockPos.z);
             let distanceCalcPos2: Vector3 = new Vector3(modelData[0].x, modelData[0].y, modelData[0].z);
@@ -362,6 +370,11 @@ export class World {
 
             structureBlock = foundStructureBlock;
         });
+
+        // Generated Structure Loading
+        if (structureBlock == null) {
+            structureBlock = Model.generatedStructureBlocksToLoad.get(blockPos.getKey())?.block ?? null;
+        }
 
         if (structureBlock != null) return structureBlock;
         return Blocks.AIR;
@@ -399,11 +412,6 @@ export class World {
         const save = chunkEntry.chunk.getSave();
         if (save) this.chunkSaveMap.set(chunkPosKey, save);
         else this.chunkSaveMap.delete(chunkPosKey);
-    }
-
-    public getModelAtPos(pos: Vector2): void {
-        let structureNoiseVal = this.structureNoise.noise(pos.x, pos.y);
-        if (structureNoiseVal >= 0.99999) console.log("STRUCTURE");
     }
 
     // Technically not a raycast but like it does the same thing but better, so I'm calling it one
@@ -449,5 +457,49 @@ export class World {
             }
         }
         return overlaps;
+    }
+
+    // STRUCTURES
+
+    private async generateStructureData() {
+        if (this.firstStructureGeneration) await Model.LoadModelData();
+
+        let minimumX: number = (this.cameraChunkPos.x * chunkSize) - ((this.worldRadius + 1) * chunkSize);
+        let maximumX: number = (this.cameraChunkPos.x * chunkSize) + ((this.worldRadius + 1) * chunkSize) + chunkSize - 1;
+        let minimumZ: number = (this.cameraChunkPos.z * chunkSize) - ((this.worldRadius + 1) * chunkSize);
+        let maximumZ: number = (this.cameraChunkPos.z * chunkSize) + ((this.worldRadius + 1) * chunkSize) + chunkSize - 1;
+
+        for (let x = minimumX; x <= maximumX; x++) {
+            for (let z = minimumZ; z <= maximumZ; z++) {
+                if (!this.firstStructureGeneration &&
+                    (x >= chunkSize && x < (this.worldRadius + 1) * chunkSize + chunkSize) &&
+                    (z >= chunkSize && z < (this.worldRadius + 1) * chunkSize + chunkSize)
+                ) continue;
+
+                let model = this.getModelAtPos(x, z);
+                if (model != null) model.loadModelInformation(new BlockPos(x, this.getHeightAt(x, z) + 1, z));
+            }
+        }
+
+        if (this.firstStructureGeneration) this.firstStructureGeneration = false;
+    }
+
+    private async deleteOutOfRangeStructureData() {
+        for (const [key, data] of Model.generatedStructureBlocksToLoad) {
+            const dx = data.pos.x - this.cameraChunkPos.x * chunkSize + Math.floor(chunkSize / 2);
+            const dz = data.pos.x - this.cameraChunkPos.z * chunkSize + Math.floor(chunkSize / 2);
+
+            let maxDistance = ((this.worldRadius + 1) * chunkSize) + chunkSize - 1;
+
+            if (Math.abs(dx) > maxDistance || Math.abs(dz) > maxDistance) {
+                Model.generatedStructureBlocksToLoad.delete(key);
+            }
+        }
+    }
+
+    public getModelAtPos(x: number, z: number): Model | null {
+        let structureNoiseVal = this.structureNoise.noise(x, z);
+        if (structureNoiseVal >= 0.95) return Model.LoadedModels["Tree"];
+        else return null;
     }
 }

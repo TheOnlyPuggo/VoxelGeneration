@@ -37,12 +37,6 @@ export class Chunk {
                 }
             }
         }
-
-        for (let x: number = 0; x < chunkSize; x++) {
-            for (let z: number = 0; z < chunkSize; z++) {
-                world.getModelAtPos(new Vector2(x, z));
-            }
-        }
     }
 
     getChunkMesh(): Mesh | null {
