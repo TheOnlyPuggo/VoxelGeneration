@@ -18,7 +18,7 @@ export class CompositeGeometry {
         if (composite === undefined) return;
         for (const [key, value] of composite.geometries) {
             const geometriesWithMaterial: BufferGeometry[] | undefined = this.geometries.get(key);
-            if (geometriesWithMaterial) geometriesWithMaterial.concat(value);
+            if (geometriesWithMaterial) for (const geometry of value) geometriesWithMaterial.push(geometry);
             else this.geometries.set(key, value);
         }
     }
