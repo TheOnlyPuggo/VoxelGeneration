@@ -29,7 +29,8 @@ export class Model {
         this.modelData = modelData;
         
         const dataLines: string[] = modelData.split(/\r?\n/);
-        
+
+        console.log(dataLines)
         const originBlockPosValues: number[] = dataLines[0].split(";")[1].split(",").map(Number);
         this.blockOriginPos = new BlockPos(
             originBlockPosValues[0],

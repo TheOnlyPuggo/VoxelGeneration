@@ -403,7 +403,7 @@ export class World {
 
     public getModelAtPos(pos: Vector2): void {
         let structureNoiseVal = this.structureNoise.noise(pos.x, pos.y);
-        if (structureNoiseVal > 1.9) console.log("STRUCTURE");
+        if (structureNoiseVal >= 0.99999) console.log("STRUCTURE");
     }
 
     // Technically not a raycast but like it does the same thing but better, so I'm calling it one
