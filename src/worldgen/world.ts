@@ -482,9 +482,15 @@ export class World {
 
         for (let x = minimumX; x <= maximumX; x++) {
             for (let z = minimumZ; z <= maximumZ; z++) {
+                const blockPos = new BlockPos(x, this.getHeightAt(x, z), z);
+
+                /*const dy = blockPos.y - (this.cameraChunkPos.y * Chunk.chunkSize + Math.floor(Chunk.chunkSize / 2));
+                let maxDistance = ((this.worldRadius + 1) * Chunk.chunkSize) + Chunk.chunkSize - 1;
+                if (Math.abs(dy) > maxDistance) continue;*/
+
                 if (!this.firstStructureGeneration &&
-                    (x >= Chunk.chunkSize && x < (this.worldRadius + 1) * Chunk.chunkSize + Chunk.chunkSize) &&
-                    (z >= Chunk.chunkSize && z < (this.worldRadius + 1) * Chunk.chunkSize + Chunk.chunkSize)
+                    (x >= minimumX + Chunk.chunkSize && x <= maximumX - Chunk.chunkSize) &&
+                    (z >= minimumZ + Chunk.chunkSize && z <= maximumZ - Chunk.chunkSize)
                 ) continue;
 
                 let model = this.getModelAtPos(x, z);
@@ -496,21 +502,35 @@ export class World {
     }
 
     private async deleteOutOfRangeStructureData() {
+        const keysToDelete: string[] = [];
+
         for (const [key, data] of Model.generatedStructureBlocksToLoad) {
-            const dx = data.pos.x - this.cameraChunkPos.x * Chunk.chunkSize + Math.floor(Chunk.chunkSize / 2);
-            const dz = data.pos.x - this.cameraChunkPos.z * Chunk.chunkSize + Math.floor(Chunk.chunkSize / 2);
+            const dx = data.pos.x - (this.cameraChunkPos.x * Chunk.chunkSize + Math.floor(Chunk.chunkSize / 2));
+            const dy = data.pos.y - (this.cameraChunkPos.y * Chunk.chunkSize + Math.floor(Chunk.chunkSize / 2));
+            const dz = data.pos.z - (this.cameraChunkPos.z * Chunk.chunkSize + Math.floor(Chunk.chunkSize / 2));
 
             let maxDistance = ((this.worldRadius + 1) * Chunk.chunkSize) + Chunk.chunkSize - 1;
 
-            if (Math.abs(dx) > maxDistance || Math.abs(dz) > maxDistance) {
-                Model.generatedStructureBlocksToLoad.delete(key);
+            if (Math.abs(dx) > maxDistance || Math.abs(dy) > maxDistance || Math.abs(dz) > maxDistance) {
+                keysToDelete.push(key);
             }
+        }
+
+        for (const key of keysToDelete) {
+            Model.generatedStructureBlocksToLoad.delete(key);
         }
     }
 
     public getModelAtPos(x: number, z: number): Model | null {
         let structureNoiseVal = this.structureNoise.noise(x, z);
         if (structureNoiseVal >= 0.95) return Model.LoadedModels["Tree"];
+        if (structureNoiseVal >= 0.90 && structureNoiseVal <= 0.901) return Model.LoadedModels["Mushroom"];
+        if (structureNoiseVal >= 0.85 && structureNoiseVal <= 0.8501) return Model.LoadedModels["DirtHut"];
         else return null;
+        // CURSED else return Model.LoadedModels["DirtHut"];
+    }
+
+    public SetStructureGenFirstTime(state: boolean) {
+        this.firstStructureGeneration = state;
     }
 }
