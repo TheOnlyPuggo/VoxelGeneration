@@ -1,7 +1,6 @@
 import {BlockPos} from "../positions/blockPos";
 import {World} from "../worldgen/world";
 import {Block} from "../worldgen/block";
-import {BufferGeometry, Material} from "three";
 import {CompositeGeometry} from "./compositeGeometry";
 
 export class BlockMap {
