@@ -9,6 +9,7 @@ import {
     TextureLoader
 } from "three";
 import {CompositeGeometry} from "./compositeGeometry";
+import {BlockPos} from "../positions/blockPos";
 
 export abstract class CubeMesh {
     protected static readonly planeMatrices: Matrix4[] = [];
@@ -53,7 +54,7 @@ export abstract class CubeMesh {
         this.transparent = transparent;
     }
 
-    public abstract addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry): void;
+    public abstract addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry, blockPos: BlockPos): void;
 
     protected static getTextureMaterial(transparent: boolean, path: string): Material {
         let mat = CubeMesh.materialCache.get(path);
@@ -89,7 +90,7 @@ export class CubeMeshOneMaterial extends CubeMesh {
         this.material = material;
     }
 
-    public addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry): void {
+    public addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry, blockPos: BlockPos): void {
         compositeGeometry.addGeometryInstance(this.instanceIndex, CubeMesh.planeMatrices[index].clone());
     }
 }
@@ -112,7 +113,7 @@ export class CubeMeshMultiMaterial extends CubeMesh {
         this.sideInstanceIndex = CompositeGeometry.addInstancedGeometryType(CubeMeshOneMaterial.planeGeometry.clone(), sideMaterial);
     }
 
-    public addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry): void {
+    public addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry, blockPos: BlockPos): void {
         if (index === 2) compositeGeometry.addGeometryInstance(this.topInstanceIndex, CubeMesh.planeMatrices[index].clone());
         else if (index === 3) compositeGeometry.addGeometryInstance(this.bottomInstanceIndex, CubeMesh.planeMatrices[index].clone());
         else compositeGeometry.addGeometryInstance(this.sideInstanceIndex, CubeMesh.planeMatrices[index].clone());

@@ -31,7 +31,7 @@ export class BlockMap {
     private addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry): void {
         const blockPos = this.getPos(index);
         if (!blockPos || !this.showBlock(blockPos)) return;
-        this.world.getBlockAt(blockPos).meshConstructor?.addFaceToCompositeGeometry(index, compositeGeometry);
+        this.world.getBlockAt(blockPos).meshConstructor?.addFaceToCompositeGeometry(index, compositeGeometry, blockPos);
     }
 
     private showBlock(blockPos: BlockPos): boolean {
