@@ -1,44 +1,52 @@
-import {Color, Material, MeshStandardMaterial, NearestFilter, PlaneGeometry, TextureLoader} from "three";
+import {
+    Color,
+    Material,
+    Matrix4,
+    MeshStandardMaterial,
+    NearestFilter,
+    PlaneGeometry,
+    SRGBColorSpace,
+    TextureLoader
+} from "three";
 import {CompositeGeometry} from "./compositeGeometry";
 import {FaceMap} from "./faceMap";
 
 export abstract class CubeMesh {
-    protected static readonly planeGeometries: PlaneGeometry[] = [];
+    protected static readonly planeMatrices: Matrix4[] = [];
     protected static readonly materialCache = new Map<string, MeshStandardMaterial>;
     protected static readonly textureLoader = new TextureLoader();
+    protected static readonly planeGeometry: PlaneGeometry = new PlaneGeometry(1, 1);
 
     public readonly transparent: boolean;
 
     static {
-        if (CubeMesh.planeGeometries.length === 0) {
-            const pxFace = new PlaneGeometry(1, 1);
-            pxFace.rotateY(Math.PI / 2);
-            pxFace.translate(-0.5, 0.0, 0.0);
-            CubeMesh.planeGeometries.push(pxFace);
+        if (CubeMesh.planeMatrices.length === 0) {
+            const translation = new Matrix4();
+            const rotation = new Matrix4();
 
-            const nxFace = new PlaneGeometry(1, 1);
-            nxFace.rotateY(-Math.PI / 2);
-            nxFace.translate(0.5, 0.0, 0.0);
-            CubeMesh.planeGeometries.push(nxFace);
+            translation.makeTranslation(-0.5, 0.0, 0.0);
+            rotation.makeRotationY(Math.PI / 2);
+            CubeMesh.planeMatrices.push(new Matrix4().multiplyMatrices(translation, rotation));
 
-            const pyFace = new PlaneGeometry(1, 1);
-            pyFace.rotateX(-Math.PI / 2);
-            pyFace.translate(0.0, -0.5, 0.0);
-            CubeMesh.planeGeometries.push(pyFace);
+            translation.makeTranslation(0.5, 0.0, 0.0);
+            rotation.makeRotationY(-Math.PI / 2);
+            CubeMesh.planeMatrices.push(new Matrix4().multiplyMatrices(translation, rotation));
 
-            const nyFace = new PlaneGeometry(1, 1);
-            nyFace.rotateX(Math.PI / 2);
-            nyFace.translate(0.0, 0.5, 0.0);
-            CubeMesh.planeGeometries.push(nyFace);
+            translation.makeTranslation(0.0, -0.5, 0.0);
+            rotation.makeRotationX(-Math.PI / 2);
+            CubeMesh.planeMatrices.push(new Matrix4().multiplyMatrices(translation, rotation));
 
-            const pzFace = new PlaneGeometry(1, 1);
-            pzFace.translate(0.0, 0.0, -0.5);
-            CubeMesh.planeGeometries.push(pzFace);
+            translation.makeTranslation(0.0, 0.5, 0.0);
+            rotation.makeRotationX(Math.PI / 2);
+            CubeMesh.planeMatrices.push(new Matrix4().multiplyMatrices(translation, rotation));
 
-            const nzFace = new PlaneGeometry(1, 1);
-            nzFace.rotateY(Math.PI);
-            nzFace.translate(0.0, 0.0, 0.5);
-            CubeMesh.planeGeometries.push(nzFace);
+            translation.makeTranslation(0.0, 0.0, -0.5);
+            rotation.makeRotationY(0);
+            CubeMesh.planeMatrices.push(new Matrix4().multiplyMatrices(translation, rotation));
+
+            translation.makeTranslation(0.0, 0.0, 0.5);
+            rotation.makeRotationY(Math.PI);
+            CubeMesh.planeMatrices.push(new Matrix4().multiplyMatrices(translation, rotation));
         }
     }
 
@@ -46,35 +54,7 @@ export abstract class CubeMesh {
         this.transparent = transparent;
     }
 
-    public abstract getMaterial(index: number): Material;
-
-    // obsolete, we are now rendering the cubes inside out
-    public constructGeometry(faces: FaceMap): CompositeGeometry | null {
-        const geometries: PlaneGeometry[] = [];
-        const materials: Material[] = [];
-
-        const addFace = (visible: boolean, geomIndex: number, matIndex: number) => {
-            if (visible) {
-                geometries.push(CubeMesh.planeGeometries[geomIndex].clone());
-                materials.push(this.getMaterial(matIndex));
-            }
-        }
-
-        addFace(faces.px, 0, 0);
-        addFace(faces.nx, 1, 1);
-        addFace(faces.py, 2, 2);
-        addFace(faces.ny, 3, 3);
-        addFace(faces.pz, 4, 4);
-        addFace(faces.nz, 5, 5);
-
-        if (geometries.length === 0) return null;
-
-        return new CompositeGeometry(geometries, materials);
-    }
-
-    getFaceCompositeGeometry(index: number): CompositeGeometry {
-        return new CompositeGeometry([CubeMesh.planeGeometries[index].clone()], [this.getMaterial(index)]);
-    }
+    public abstract addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry): void;
 
     protected static getTextureMaterial(transparent: boolean, path: string): Material {
         let mat = CubeMesh.materialCache.get(path);
@@ -108,8 +88,8 @@ export class CubeMeshOneMaterial extends CubeMesh {
         this.material = material;
     }
 
-    public getMaterial(index: number): Material {
-        return this.material;
+    addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry): void {
+        compositeGeometry.addGeometry(CubeMesh.planeGeometry.clone().applyMatrix4(CubeMesh.planeMatrices[index]), this.material);
     }
 }
 
@@ -131,14 +111,10 @@ export class CubeMeshMultiMaterial extends CubeMesh {
         this.sideMaterial = sideMaterial;
     }
 
-    public getMaterial(index: number): Material {
-        if (index == 2) {
-            return this.topMaterial;
-        } else if (index == 3) {
-            return this.bottomMaterial;
-        } else {
-            return this.sideMaterial;
-        }
+    addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry): void {
+        if (index == 2) compositeGeometry.addGeometry(CubeMesh.planeGeometry.clone().applyMatrix4(CubeMesh.planeMatrices[index]), this.topMaterial);
+        else if (index == 3) compositeGeometry.addGeometry(CubeMesh.planeGeometry.clone().applyMatrix4(CubeMesh.planeMatrices[index]), this.bottomMaterial);
+        else compositeGeometry.addGeometry(CubeMesh.planeGeometry.clone().applyMatrix4(CubeMesh.planeMatrices[index]), this.sideMaterial);
     }
 }
 

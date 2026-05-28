@@ -10,9 +10,7 @@ export class CompositeGeometry {
     castShadow: boolean;
     receiveShadow: boolean;
 
-    public constructor(geometries: BufferGeometry[], materials: Material[]) {
-        this.addGeometries(geometries, materials);
-
+    public constructor() {
         this.castShadow = true;
         this.receiveShadow = true;
     }
