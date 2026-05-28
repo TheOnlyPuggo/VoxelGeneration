@@ -9,7 +9,6 @@ import {
     TextureLoader
 } from "three";
 import {CompositeGeometry} from "./compositeGeometry";
-import {FaceMap} from "./faceMap";
 
 export abstract class CubeMesh {
     protected static readonly planeMatrices: Matrix4[] = [];
@@ -77,6 +76,7 @@ export abstract class CubeMesh {
 }
 
 export class CubeMeshOneMaterial extends CubeMesh {
+    private readonly instanceIndex: number;
     private readonly material: Material;
 
     public constructor(
@@ -85,18 +85,20 @@ export class CubeMeshOneMaterial extends CubeMesh {
     ) {
         super(transparent);
 
+        this.instanceIndex = CompositeGeometry.addInstancedGeometryType(CubeMeshOneMaterial.planeGeometry.clone(), material);
         this.material = material;
     }
 
-    addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry): void {
-        compositeGeometry.addGeometry(CubeMesh.planeGeometry.clone().applyMatrix4(CubeMesh.planeMatrices[index]), this.material);
+    public addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry): void {
+        //compositeGeometry.addGeometry(CubeMesh.planeGeometry.clone().applyMatrix4(CubeMesh.planeMatrices[index]), this.material);
+        compositeGeometry.addGeometryInstance(this.instanceIndex, CubeMesh.planeMatrices[index].clone());
     }
 }
 
 export class CubeMeshMultiMaterial extends CubeMesh {
-    private readonly topMaterial: Material;
-    private readonly bottomMaterial: Material;
-    private readonly sideMaterial: Material;
+    private readonly topInstanceIndex: number;
+    private readonly bottomInstanceIndex: number;
+    private readonly sideInstanceIndex: number;
 
     public constructor(
         transparent: boolean,
@@ -106,15 +108,18 @@ export class CubeMeshMultiMaterial extends CubeMesh {
     ) {
         super(transparent);
 
-        this.topMaterial = topMaterial;
-        this.bottomMaterial = bottomMaterial;
-        this.sideMaterial = sideMaterial;
+        this.topInstanceIndex = CompositeGeometry.addInstancedGeometryType(CubeMeshOneMaterial.planeGeometry.clone(), topMaterial);
+        this.bottomInstanceIndex = CompositeGeometry.addInstancedGeometryType(CubeMeshOneMaterial.planeGeometry.clone(), bottomMaterial);
+        this.sideInstanceIndex = CompositeGeometry.addInstancedGeometryType(CubeMeshOneMaterial.planeGeometry.clone(), sideMaterial);
     }
 
-    addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry): void {
-        if (index == 2) compositeGeometry.addGeometry(CubeMesh.planeGeometry.clone().applyMatrix4(CubeMesh.planeMatrices[index]), this.topMaterial);
-        else if (index == 3) compositeGeometry.addGeometry(CubeMesh.planeGeometry.clone().applyMatrix4(CubeMesh.planeMatrices[index]), this.bottomMaterial);
-        else compositeGeometry.addGeometry(CubeMesh.planeGeometry.clone().applyMatrix4(CubeMesh.planeMatrices[index]), this.sideMaterial);
+    public addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry): void {
+        //if (index == 2) compositeGeometry.addGeometry(CubeMesh.planeGeometry.clone().applyMatrix4(CubeMesh.planeMatrices[index]), this.topMaterial);
+        //else if (index == 3) compositeGeometry.addGeometry(CubeMesh.planeGeometry.clone().applyMatrix4(CubeMesh.planeMatrices[index]), this.bottomMaterial);
+        //else compositeGeometry.addGeometry(CubeMesh.planeGeometry.clone().applyMatrix4(CubeMesh.planeMatrices[index]), this.sideMaterial);
+        if (index === 2) compositeGeometry.addGeometryInstance(this.topInstanceIndex, CubeMesh.planeMatrices[index].clone());
+        else if (index === 3) compositeGeometry.addGeometryInstance(this.bottomInstanceIndex, CubeMesh.planeMatrices[index].clone());
+        else compositeGeometry.addGeometryInstance(this.sideInstanceIndex, CubeMesh.planeMatrices[index].clone());
     }
 }
 

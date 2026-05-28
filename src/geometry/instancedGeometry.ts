@@ -1,4 +1,4 @@
-import {BufferGeometry, InstancedMesh, Material, Matrix4, Mesh} from "three";
+import {BufferGeometry, InstancedMesh, Material, Matrix4, Mesh, Sphere, Vector3} from "three";
 import {CompositeGeometry} from "./compositeGeometry";
 import {Vec3} from "../positions/vec3";
 
@@ -12,7 +12,7 @@ export class InstancedGeometry {
     }
 
     public addInstances(transforms: Matrix4 | Matrix4[]): void {
-        if (transforms instanceof Array) for (let i = 0; i < transforms.length; i++) this.instances.push(transforms[i]);
+        if (transforms instanceof Array) for (const transform of transforms) this.instances.push(transform);
         else this.instances.push(transforms);
     }
 
@@ -23,21 +23,27 @@ export class InstancedGeometry {
     }
 
     public createMesh(): Mesh {
-        const mesh = new InstancedMesh(this.geometryType.geometry, this.geometryType.material, this.instances.length);
+        const mesh = new InstancedMesh(this.geometryType.geometry.clone(), this.geometryType.material, this.instances.length);
 
         for (let i = 0; i < this.instances.length; i++) {
             mesh.setMatrixAt(i, this.instances[i]);
+            //mesh.setMatrixAt(i, new Matrix4().makeTranslation(0, i, 0));
         }
+
+        mesh.frustumCulled = false;
+        mesh.geometry.boundingSphere = new Sphere(
+            new Vector3(0, 0, 0),
+            1000000
+        );
+        mesh.computeBoundingBox();
+        mesh.computeBoundingSphere();
 
         return mesh;
     }
 
     public translate(pos: Vec3): void {
-        const translation: Matrix4 = new Matrix4();
-        for (const instance of this.instances) {
-            translation.makeTranslation(pos.x, pos.y, pos.z);
-            instance.multiply(translation);
-        }
+        const translation: Matrix4 = new Matrix4().makeTranslation(pos.x, pos.y, pos.z);
+        for (const instance of this.instances) instance.premultiply(translation);
     }
 }
 
