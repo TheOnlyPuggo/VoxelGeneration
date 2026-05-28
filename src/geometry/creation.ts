@@ -1,12 +1,4 @@
-import {
-    BufferGeometry,
-    Color,
-    Material,
-    MeshStandardMaterial,
-    NearestFilter,
-    PlaneGeometry,
-    TextureLoader
-} from "three";
+import {Color, Material, MeshStandardMaterial, NearestFilter, PlaneGeometry, TextureLoader} from "three";
 import {CompositeGeometry} from "./compositeGeometry";
 import {FaceMap} from "./faceMap";
 

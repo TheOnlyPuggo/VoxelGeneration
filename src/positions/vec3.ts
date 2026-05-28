@@ -125,4 +125,8 @@ export class Vec3 {
     public normalize(): this {
         return (this.divide as any)(this.magnitude());
     }
+
+    public distanceTo(other: Vec3): number {
+        return this.subtract(other).magnitude();
+    }
 }

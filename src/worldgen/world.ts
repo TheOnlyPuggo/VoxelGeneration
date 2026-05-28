@@ -1,19 +1,9 @@
-import {
-    Vector3,
-    Mesh,
-    Camera,
-    Scene,
-    Box3,
-    Frustum,
-    Matrix4,
-    Raycaster, Vector2,
-} from "three";
+import {Mesh, Camera, Scene, Frustum, Matrix4} from "three";
 import * as Blocks from "./blocks";
 import {SimplexNoise} from "three/examples/jsm/Addons.js";
 import {Chunk} from "./chunk";
 import {BlockPos} from "../positions/blockPos";
 import {ChunkPos} from "../positions/chunkPos";
-import {SubChunkPos} from "../positions/subChunkPos";
 import {Block} from "./block";
 import {Model} from "../geometry/modelCreation";
 import {Vec3} from "../positions/vec3";
@@ -25,7 +15,6 @@ const nextFrame = () =>
     new Promise<void>(resolve =>
         requestAnimationFrame(() => resolve())
     );
-export const worldSize = new Vector3(5, 8, 5);
 export const heightGen = {
     base: 64,
     amplitude: 3,
@@ -356,8 +345,8 @@ export class World {
 
         // Manual Structure Loading
         Model.manualModelsToLoad.forEach((modelData) => {
-            let distanceCalcPos1: Vector3 = new Vector3(blockPos.x, blockPos.y, blockPos.z);
-            let distanceCalcPos2: Vector3 = new Vector3(modelData[0].x, modelData[0].y, modelData[0].z);
+            let distanceCalcPos1: Vec3 = new Vec3(blockPos.x, blockPos.y, blockPos.z);
+            let distanceCalcPos2: Vec3 = new Vec3(modelData[0].x, modelData[0].y, modelData[0].z);
 
             if (distanceCalcPos1.distanceTo(distanceCalcPos2) > 256.0) return;
 

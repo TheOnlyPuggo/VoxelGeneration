@@ -1,7 +1,6 @@
-import {Camera, HalfFloatType, Vector3, MathUtils, PerspectiveCamera, Scene} from "three";
-import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
-import { World } from "./worldgen/world";
-import { TechnicolorShader } from "three/examples/jsm/Addons.js";
+import {Vector3, MathUtils, PerspectiveCamera, Scene} from "three";
+import {PointerLockControls} from 'three/examples/jsm/controls/PointerLockControls.js';
+import {World} from "./worldgen/world";
 import {BlockPos} from "./positions/blockPos";
 import {Vec3} from "./positions/vec3";
 import * as Blocks from "./worldgen/blocks";

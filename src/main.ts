@@ -5,7 +5,7 @@ import {GroundedSkybox} from "three/examples/jsm/objects/GroundedSkybox.js";
 import {HDRLoader} from "three/examples/jsm/loaders/HDRLoader.js";
 import {CreateGUI} from "./UI";
 import Stats from 'three/examples/jsm/libs/stats.module.js';
-import { Model } from "./geometry/modelCreation";
+import {Model} from "./geometry/modelCreation";
 import {BlockPos} from "./positions/blockPos";
 
 export const Game: {

@@ -1,4 +1,4 @@
-import {BufferGeometry, Camera, Material, Mesh, Vector2} from "three";
+import {Camera, Mesh} from "three";
 import {Block} from "./block";
 import {World} from "./world";
 import {ChunkPos} from "../positions/chunkPos";

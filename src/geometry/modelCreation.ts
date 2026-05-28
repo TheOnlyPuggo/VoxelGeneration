@@ -1,7 +1,5 @@
-import {Scene} from "three";
 import {BlockPos} from "../positions/blockPos";
 import {MinecraftBlockDictionary} from "../worldgen/blocks";
-import {FaceMap} from "./faceMap";
 import {Block} from "../worldgen/block";
 
 interface ModelBlockData {
