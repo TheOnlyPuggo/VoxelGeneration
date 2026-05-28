@@ -1,4 +1,4 @@
-import {BufferGeometry, InstancedMesh, Material, Matrix4, Mesh, Sphere, Vector3} from "three";
+import {BufferGeometry, InstancedMesh, Material, Matrix4, Mesh} from "three";
 import {CompositeGeometry} from "./compositeGeometry";
 import {Vec3} from "../positions/vec3";
 
@@ -27,7 +27,6 @@ export class InstancedGeometry {
 
         for (let i = 0; i < this.instances.length; i++) {
             mesh.setMatrixAt(i, this.instances[i]);
-            //mesh.setMatrixAt(i, new Matrix4().makeTranslation(0, i, 0));
         }
 
         return mesh;

@@ -90,7 +90,6 @@ export class CubeMeshOneMaterial extends CubeMesh {
     }
 
     public addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry): void {
-        //compositeGeometry.addGeometry(CubeMesh.planeGeometry.clone().applyMatrix4(CubeMesh.planeMatrices[index]), this.material);
         compositeGeometry.addGeometryInstance(this.instanceIndex, CubeMesh.planeMatrices[index].clone());
     }
 }
@@ -114,9 +113,6 @@ export class CubeMeshMultiMaterial extends CubeMesh {
     }
 
     public addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry): void {
-        //if (index == 2) compositeGeometry.addGeometry(CubeMesh.planeGeometry.clone().applyMatrix4(CubeMesh.planeMatrices[index]), this.topMaterial);
-        //else if (index == 3) compositeGeometry.addGeometry(CubeMesh.planeGeometry.clone().applyMatrix4(CubeMesh.planeMatrices[index]), this.bottomMaterial);
-        //else compositeGeometry.addGeometry(CubeMesh.planeGeometry.clone().applyMatrix4(CubeMesh.planeMatrices[index]), this.sideMaterial);
         if (index === 2) compositeGeometry.addGeometryInstance(this.topInstanceIndex, CubeMesh.planeMatrices[index].clone());
         else if (index === 3) compositeGeometry.addGeometryInstance(this.bottomInstanceIndex, CubeMesh.planeMatrices[index].clone());
         else compositeGeometry.addGeometryInstance(this.sideInstanceIndex, CubeMesh.planeMatrices[index].clone());

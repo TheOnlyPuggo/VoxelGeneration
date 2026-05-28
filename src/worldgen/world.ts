@@ -156,9 +156,7 @@ export class World {
 
                         ++createCount;
 
-                        if (createCount % 2 === 0) {
-                            await nextFrame();
-                        }
+                        await nextFrame();
                     }
                 }
             }
