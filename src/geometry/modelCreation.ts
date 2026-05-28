@@ -21,7 +21,6 @@ interface GeneratedStructureBlock {
 }
 
 export class Model {
-    public static manualModelsToLoad: [BlockPos, StructureBlocksDictionary][] = [];
     public static generatedStructureBlocksToLoad: Map<string, GeneratedStructureBlock> = new Map<string, GeneratedStructureBlock>();
     public static LoadedModels: ModelNamesDictionary = {};
 
@@ -66,23 +65,6 @@ export class Model {
     static async load(modelDataPath: string): Promise<Model> {
         const data = await loadCSV(import.meta.env.BASE_URL + modelDataPath);
         return new Model(data);
-    }
-
-    // chunk based
-    loadStructureAt(blockOriginPos: BlockPos) {
-        let blocksDictionary: StructureBlocksDictionary = {};
-
-        this.blockDatas.forEach((blockData) => {
-            let blockWorldPos: BlockPos = new BlockPos(
-                blockData.pos.x + blockOriginPos.x,
-                blockData.pos.y + blockOriginPos.y,
-                blockData.pos.z + blockOriginPos.z
-            );
-
-            blocksDictionary[blockWorldPos.getKey()] = MinecraftBlockDictionary[blockData.minecraftName];
-        });
-
-        Model.manualModelsToLoad.push([blockOriginPos, blocksDictionary]);
     }
 
     public loadModelInformation(blockOriginPos: BlockPos) {
