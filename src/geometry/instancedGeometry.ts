@@ -1,15 +1,24 @@
 import {BufferGeometry, InstancedMesh, Material, Matrix4} from "three";
+import {CompositeGeometry} from "./compositeGeometry";
 
 export class InstancedGeometry {
     geometryType: InstancedGeometryType;
     instances: Matrix4[] = [];
 
-    constructor(geometryType: InstancedGeometryType) {
-        this.geometryType = geometryType;
+    constructor(geometryType: InstancedGeometryType | number) {
+        if (geometryType instanceof InstancedGeometryType) this.geometryType = geometryType;
+        else this.geometryType = CompositeGeometry.instancedGeometryTypes[geometryType];
     }
 
-    addInstance(transform: Matrix4): void {
-        this.instances.push(transform);
+    addInstances(transforms: Matrix4 | Matrix4[]): void {
+        if (transforms instanceof Array) for (let i = 0; i < transforms.length; i++) this.instances.push(transforms[i]);
+        else this.instances.push(transforms);
+    }
+
+    addInstancedGeometry(instancedGeometry: InstancedGeometry): void {
+        if (this.geometryType.index !== instancedGeometry.geometryType.index) return;
+
+        this.addInstances(instancedGeometry.instances);
     }
 
     createMesh(): InstancedMesh {
@@ -24,10 +33,12 @@ export class InstancedGeometry {
 }
 
 export class InstancedGeometryType {
+    readonly index: number;
     readonly geometry: BufferGeometry;
     readonly material: Material;
 
-    constructor(geometry: BufferGeometry, material: Material) {
+    constructor(index: number, geometry: BufferGeometry, material: Material) {
+        this.index = index;
         this.geometry = geometry;
         this.material = material;
     }

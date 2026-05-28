@@ -18,27 +18,63 @@ export class CompositeGeometry {
     }
 
     static addInstancedGeometryType(geometry: BufferGeometry, material: Material): number {
-        this.instancedGeometryTypes.push(new InstancedGeometryType(geometry, material));
+        this.instancedGeometryTypes.push(new InstancedGeometryType(this.instancedGeometryTypes.length, geometry, material));
 
         return this.instancedGeometryTypes.length - 1;
     }
 
-    addInstancedGeometry(geometryTypeIndex: number, transform: Matrix4): void {
+    addInstancedGeometry(instancedGeometry: InstancedGeometry | undefined): void {
+        if (instancedGeometry === undefined) return;
+        let existingGeometry: InstancedGeometry | undefined = this.instancedGeometries.get(instancedGeometry.geometryType.index);
+        if (existingGeometry) existingGeometry.addInstancedGeometry(instancedGeometry);
+        else this.instancedGeometries.set(instancedGeometry.geometryType.index, instancedGeometry);
+    }
+
+    addGeometryInstance(geometryTypeIndex: number, transform: Matrix4): void {
         let instancedGeometry: InstancedGeometry | undefined = this.instancedGeometries.get(geometryTypeIndex);
         if (!instancedGeometry) {
-            instancedGeometry = new InstancedGeometry(CompositeGeometry.instancedGeometryTypes[geometryTypeIndex]);
+            instancedGeometry = new InstancedGeometry(geometryTypeIndex);
             this.instancedGeometries.set(geometryTypeIndex, instancedGeometry);
         }
-        instancedGeometry.addInstance(transform);
+        instancedGeometry.addInstances(transform);
     }
+
+    /*addGeometryInstances(geometryTypeIndexes: number | number[], transforms: Matrix4 | Matrix4[]): void {
+        if (transforms instanceof Array) {
+            if (geometryTypeIndexes instanceof Array) {
+                for (let i = 0; i < Math.min(geometryTypeIndexes.length, transforms.length); i++) {
+                    this.addGeometryInstance(geometryTypeIndexes[i], transforms[i]);
+                }
+            } else {
+                let instancedGeometry: InstancedGeometry | undefined = this.instancedGeometries.get(geometryTypeIndexes);
+                if (!instancedGeometry) {
+                    instancedGeometry = new InstancedGeometry(geometryTypeIndexes);
+                    this.instancedGeometries.set(geometryTypeIndexes, instancedGeometry);
+                }
+                instancedGeometry.addInstances(transforms);
+            }
+        } else {
+            if (geometryTypeIndexes instanceof Array) {
+                geometryTypeIndexes = geometryTypeIndexes[0];
+            }
+            this.addGeometryInstance(geometryTypeIndexes, transforms);
+        }
+    }*/
 
     addComposite(composite: CompositeGeometry | undefined): void {
         if (composite === undefined) return;
-        for (const [key, value] of composite.geometries) {
-            const geometriesWithMaterial: BufferGeometry[] | undefined = this.geometries.get(key);
-            if (geometriesWithMaterial) for (const geometry of value) geometriesWithMaterial.push(geometry);
-            else this.geometries.set(key, value);
+        for (const [material, geometries] of composite.geometries) {
+            this.addGeometries(geometries, material);
         }
+        for (const [index, instancedGeometry] of composite.instancedGeometries) {
+            this.addInstancedGeometry(instancedGeometry);
+        }
+    }
+
+    addGeometry(geometry: BufferGeometry, material: Material): void {
+        const geometriesWithMaterial: BufferGeometry[] | undefined = this.geometries.get(material);
+        if (geometriesWithMaterial) geometriesWithMaterial.push(geometry);
+        else this.geometries.set(material, [geometry]);
     }
 
     addGeometries(geometries: BufferGeometry | BufferGeometry[], materials: Material | Material[]): void {
@@ -49,11 +85,9 @@ export class CompositeGeometry {
                 }
             } else {
                 let geometriesWithMaterial: BufferGeometry[] | undefined = this.geometries.get(materials);
-                if (!geometriesWithMaterial) {
-                    geometriesWithMaterial = [];
-                    this.geometries.set(materials, geometriesWithMaterial);
-                }
-                for (let i = 0; i < geometries.length; i++) geometriesWithMaterial.push(geometries[i]);
+                if (geometriesWithMaterial)
+                    for (let i = 0; i < geometries.length; i++) geometriesWithMaterial.push(geometries[i]);
+                else this.geometries.set(materials, geometries);
             }
         } else {
             if (materials instanceof Array) {
@@ -61,12 +95,6 @@ export class CompositeGeometry {
             }
             this.addGeometry(geometries, materials);
         }
-    }
-
-    addGeometry(geometry: BufferGeometry, material: Material): void {
-        const geometriesWithMaterial: BufferGeometry[] | undefined = this.geometries.get(material);
-        if (geometriesWithMaterial) geometriesWithMaterial.push(geometry);
-        else this.geometries.set(material, [geometry]);
     }
 
     getCombinedMeshes(): Mesh[] {
