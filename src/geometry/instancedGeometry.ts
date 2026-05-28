@@ -1,27 +1,28 @@
-import {BufferGeometry, InstancedMesh, Material, Matrix4} from "three";
+import {BufferGeometry, InstancedMesh, Material, Matrix4, Mesh} from "three";
 import {CompositeGeometry} from "./compositeGeometry";
+import {Vec3} from "../positions/vec3";
 
 export class InstancedGeometry {
     geometryType: InstancedGeometryType;
     instances: Matrix4[] = [];
 
-    constructor(geometryType: InstancedGeometryType | number) {
+    public constructor(geometryType: InstancedGeometryType | number) {
         if (geometryType instanceof InstancedGeometryType) this.geometryType = geometryType;
         else this.geometryType = CompositeGeometry.instancedGeometryTypes[geometryType];
     }
 
-    addInstances(transforms: Matrix4 | Matrix4[]): void {
+    public addInstances(transforms: Matrix4 | Matrix4[]): void {
         if (transforms instanceof Array) for (let i = 0; i < transforms.length; i++) this.instances.push(transforms[i]);
         else this.instances.push(transforms);
     }
 
-    addInstancedGeometry(instancedGeometry: InstancedGeometry): void {
+    public addInstancedGeometry(instancedGeometry: InstancedGeometry): void {
         if (this.geometryType.index !== instancedGeometry.geometryType.index) return;
 
         this.addInstances(instancedGeometry.instances);
     }
 
-    createMesh(): InstancedMesh {
+    public createMesh(): Mesh {
         const mesh = new InstancedMesh(this.geometryType.geometry, this.geometryType.material, this.instances.length);
 
         for (let i = 0; i < this.instances.length; i++) {
@@ -29,6 +30,14 @@ export class InstancedGeometry {
         }
 
         return mesh;
+    }
+
+    public translate(pos: Vec3): void {
+        const translation: Matrix4 = new Matrix4();
+        for (const instance of this.instances) {
+            translation.makeTranslation(pos.x, pos.y, pos.z);
+            instance.multiply(translation);
+        }
     }
 }
 
