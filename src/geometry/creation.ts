@@ -80,8 +80,8 @@ export abstract class CubeMesh {
         return new CompositeGeometry(geometries, materials);
     }
 
-    public getFaceGeometry(index: number): BufferGeometry {
-        return CubeMesh.planeGeometries[index].clone();
+    getFaceCompositeGeometry(index: number): CompositeGeometry {
+        return new CompositeGeometry([CubeMesh.planeGeometries[index].clone()], [this.getMaterial(index)]);
     }
 
     protected static getTextureMaterial(transparent: boolean, path: string): Material {

@@ -15,21 +15,13 @@ export class BlockMap {
         this.blockPos = blockPos;
         this.block = world.getBlockAt(blockPos);
 
-        const geometries: BufferGeometry[] = [];
-        const materials: Material[] = [];
-
         if (!this.block.getTransparent()) {
             this.geometry = undefined;
         } else {
+            this.geometry = new CompositeGeometry([], []);
             for (let i = 0; i < 6; i++) {
-                const newGeometry = this.getFaceGeometry(i);
-                const newMaterial = this.getFaceMaterial(i);
-                if (newGeometry && newMaterial) {
-                    geometries.push(newGeometry);
-                    materials.push(newMaterial);
-                }
+                this.geometry.addComposite(this.getFaceCompositeGeometry(i));
             }
-            this.geometry = new CompositeGeometry(geometries, materials);
         }
     }
 
@@ -37,18 +29,11 @@ export class BlockMap {
         return this.geometry;
     }
 
-    private getFaceGeometry(index: number): BufferGeometry | undefined {
+    private getFaceCompositeGeometry(index: number): CompositeGeometry | undefined {
         const blockPos = this.getPos(index);
         if (!blockPos) return undefined;
         if (!this.showBlock(blockPos)) return undefined;
-        return this.world.getBlockAt(blockPos).meshConstructor?.getFaceGeometry(index);
-    }
-
-    private getFaceMaterial(index: number): Material | undefined {
-        const blockPos = this.getPos(index);
-        if (!blockPos) return undefined;
-        if (!this.showBlock(blockPos)) return undefined;
-        return this.world.getBlockAt(blockPos).meshConstructor?.getMaterial(index);
+        return this.world.getBlockAt(blockPos).meshConstructor?.getFaceCompositeGeometry(index);
     }
 
     private showBlock(blockPos: BlockPos): boolean {
