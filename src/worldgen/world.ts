@@ -70,7 +70,7 @@ export class World {
 
     private readonly structureNoise: SimplexNoise;
 
-    readonly worldRadius = 4;
+    readonly worldRadius = 2;
 
     //readonly chunks: Array<Array<Array<Chunk>>>;
     readonly chunksMap: Map<string, {chunk: Chunk, chunkMeshes: Mesh[]}>;
@@ -121,7 +121,7 @@ export class World {
                 .finally(() => this.isGenerating = false);
         }
 
-        this.FrustumCulling(camera);
+        //this.FrustumCulling(camera);
     }
 
     private addChunkMeshes(scene: Scene, chunkEntry: { chunk: Chunk, chunkMeshes: Mesh[] } | undefined): void {

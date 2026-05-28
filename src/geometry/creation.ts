@@ -1,14 +1,28 @@
 import {
     BufferGeometry,
     Color,
+    Float32BufferAttribute,
     Material,
+    ShaderMaterial,
     MeshStandardMaterial,
+    MeshNormalMaterial,
     NearestFilter,
     PlaneGeometry,
-    TextureLoader
+    SphereGeometry,
+    TextureLoader,
+    DoubleSide,
+    Vector3,
+    Sphere,
+    MathUtils,
+    UniformsUtils,
+    UniformsLib,
 } from "three";
 import {CompositeGeometry} from "./compositeGeometry";
 import {FaceMap} from "./faceMap";
+import Buffer from "three/src/renderers/common/Buffer.js";
+import {SimplexNoise} from "three/examples/jsm/Addons.js";
+import grassVertexShader from '../shaders/grassVertexShader.glsl?raw';
+import grassFragmentShader from '../shaders/grassFragmentShader.glsl?raw';
 
 export abstract class CubeMesh {
     protected static readonly planeGeometries: PlaneGeometry[] = [];
@@ -182,6 +196,120 @@ export class CubeMeshMultiTexture extends CubeMeshMultiMaterial {
         );
     }
 }
+
+export class CubeMeshGrassBlock extends CubeMeshMultiTexture {
+    static grassGeometry: BufferGeometry;
+    static grassMaterial: ShaderMaterial;
+    static grassNoise: SimplexNoise;
+
+    static {
+        let segments = 4;
+        let positions = [], uvs = [], indices = [];
+
+        for(let i = 0; i <= segments; ++i) {
+            let t = i / segments;
+            let width = 0.1 * (1 - t);
+            let height = t * 0.5;
+            let bend = t * t * 0.3;
+
+            positions.push(-width, height, bend);
+            positions.push(width, height, bend);
+            uvs.push(0, t, 1, t);
+
+            if (i < segments) {
+                let base = i * 2;
+                indices.push(base, base + 1, base + 2, base + 1, base + 3, base + 2);
+            }
+        }
+
+        CubeMeshGrassBlock.grassNoise = new SimplexNoise();
+
+        let geo = new BufferGeometry();
+        geo.setAttribute('position', new Float32BufferAttribute(positions, 3));
+        geo.setAttribute('uv', new Float32BufferAttribute(uvs, 2));
+        geo.setIndex(indices);
+        geo.computeVertexNormals();
+        geo.computeBoundingBox();
+        geo.computeBoundingSphere(); 
+        CubeMeshGrassBlock.grassGeometry = geo;
+
+
+        CubeMeshGrassBlock.grassMaterial = new ShaderMaterial({
+            vertexShader: grassVertexShader,
+            fragmentShader: grassFragmentShader,
+            uniforms: UniformsUtils.merge([
+                UniformsLib.lights,
+                {
+                    uTime:         { value: 0 },
+                    //uWindDir:      { value: new Vector3(1, 0, 0.5).normalize() },
+                    uWindSpeed:    { value: 1.2 },
+                    uWindStrength: { value: 0.2 },
+                }
+            ]),
+            side: DoubleSide,
+            lights: true,
+            alphaTest: 0.1,
+        });
+    }
+
+
+    public constructor(
+        transparent: boolean,
+        topTexturePath: string,
+        bottomTexturePath: string,
+        sideTexturePath: string
+    ) {
+        super(transparent,
+            topTexturePath,
+            bottomTexturePath,
+            sideTexturePath
+        );
+    }
+
+
+    override getFaceCompositeGeometry(index: number): CompositeGeometry {
+        if (index === 2) {
+            let topFaceGeometry = new CompositeGeometry([CubeMesh.planeGeometries[index].clone()], [this.getMaterial(index)]);
+            
+
+            for(let x = 0; x < 1; x += 0.1) {
+                for(let y = 0; y < 1; y += 0.1) {
+                    let myGrassGeometry = CubeMeshGrassBlock.grassGeometry.clone();
+                    let randScale = 0.6 + CubeMeshGrassBlock.grassNoise.noise(x, y + 15) * 0.3;
+                    myGrassGeometry.scale(randScale, randScale, randScale);
+                    myGrassGeometry.rotateY(CubeMeshGrassBlock.grassNoise.noise(x + 100, y) * Math.PI * 2);
+
+                    let noiseScale = 10;
+                    myGrassGeometry.translate((CubeMeshGrassBlock.grassNoise.noise((x + 100) * noiseScale, (y + 50) * noiseScale) + 1) / 2 - 0.5, -0.5, (CubeMeshGrassBlock.grassNoise.noise((x - 100) * noiseScale, (y - 50) * noiseScale) + 1) / 2 - 0.5);
+
+                    topFaceGeometry.addGeometries([myGrassGeometry], [CubeMeshGrassBlock.grassMaterial]);
+                }
+            }
+    
+            /*
+            for (let i = 0; i < 100; ++i) {
+                let myGrassGeometry = CubeMeshGrassBlock.grassGeometry.clone();
+                let randScale = 0.6 + Math.random() * 0.3;
+                myGrassGeometry.scale(randScale, randScale, randScale);
+                myGrassGeometry.rotateY(Math.random() * Math.PI * 2);
+                myGrassGeometry.translate(MathUtils.randFloat(-0.5, 0.5), -0.5, MathUtils.randFloat(-0.5, 0.5));
+
+                
+                topFaceGeometry.addGeometries([myGrassGeometry], [CubeMeshGrassBlock.grassMaterial]);
+            }
+                */
+
+            
+            return topFaceGeometry;
+        }
+
+
+        return new CompositeGeometry([CubeMesh.planeGeometries[index].clone()], [this.getMaterial(index)]);
+    }
+}
+
+
+
 
 // // The pbr are outdated rn, i will fix them when we get to using pbr textures.
 // export class CuboidMeshPBR extends CuboidMesh {
