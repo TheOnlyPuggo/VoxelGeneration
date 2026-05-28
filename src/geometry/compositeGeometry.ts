@@ -1,4 +1,4 @@
-import {BufferGeometry, Material, Mesh} from "three";
+import {BufferGeometry, InstancedMesh, Material, Matrix4, Mesh} from "three";
 import {BufferGeometryUtils} from "three/examples/jsm/Addons.js";
 import {Vec3} from "../positions/vec3";
 
@@ -23,30 +23,32 @@ export class CompositeGeometry {
         }
     }
 
-    addGeometries(geometry: BufferGeometry | BufferGeometry[], material: Material | Material[]): void {
-        if (geometry instanceof Array) {
-            if (material instanceof Array) {
-                for (let i = 0; i < Math.min(geometry.length, material.length); i++) {
-                    const geometriesWithMaterial: BufferGeometry[] | undefined = this.geometries.get(material[i]);
-                    if (geometriesWithMaterial) geometriesWithMaterial.push(geometry[i]);
-                    else this.geometries.set(material[i], [geometry[i]]);
+    addGeometries(geometries: BufferGeometry | BufferGeometry[], materials: Material | Material[]): void {
+        if (geometries instanceof Array) {
+            if (materials instanceof Array) {
+                for (let i = 0; i < Math.min(geometries.length, materials.length); i++) {
+                    this.addGeometry(geometries[i], materials[i]);
                 }
             } else {
-                let geometriesWithMaterial: BufferGeometry[] | undefined = this.geometries.get(material);
+                let geometriesWithMaterial: BufferGeometry[] | undefined = this.geometries.get(materials);
                 if (!geometriesWithMaterial) {
                     geometriesWithMaterial = [];
-                    this.geometries.set(material, geometriesWithMaterial);
+                    this.geometries.set(materials, geometriesWithMaterial);
                 }
-                for (let i = 0; i < geometry.length; i++) geometriesWithMaterial.push(geometry[i]);
+                for (let i = 0; i < geometries.length; i++) geometriesWithMaterial.push(geometries[i]);
             }
         } else {
-            if (material instanceof Array) {
-                material = material[0];
+            if (materials instanceof Array) {
+                materials = materials[0];
             }
-            const geometriesWithMaterial: BufferGeometry[] | undefined = this.geometries.get(material);
-            if (geometriesWithMaterial) geometriesWithMaterial.push(geometry);
-            else this.geometries.set(material, [geometry]);
+            this.addGeometry(geometries, materials);
         }
+    }
+
+    addGeometry(geometry: BufferGeometry, material: Material): void {
+        const geometriesWithMaterial: BufferGeometry[] | undefined = this.geometries.get(material);
+        if (geometriesWithMaterial) geometriesWithMaterial.push(geometry);
+        else this.geometries.set(material, [geometry]);
     }
 
     getCombinedMeshes(): Mesh[] {
@@ -70,5 +72,30 @@ export class CompositeGeometry {
 
     isEmpty(): boolean {
         return this.geometries.size === 0;
+    }
+}
+
+export class InstancedGeometry {
+    geometry: BufferGeometry;
+    material: Material;
+    instances: Matrix4[] = [];
+
+    constructor(geometry: BufferGeometry, material: Material) {
+        this.geometry = geometry;
+        this.material = material;
+    }
+
+    addInstance(transform: Matrix4): void {
+        this.instances.push(transform);
+    }
+
+    createMesh(): InstancedMesh {
+        const mesh = new InstancedMesh(this.geometry, this.material, this.instances.length);
+
+        for (let i = 0; i < this.instances.length; i++) {
+            mesh.setMatrixAt(i, this.instances[i]);
+        }
+
+        return mesh;
     }
 }
