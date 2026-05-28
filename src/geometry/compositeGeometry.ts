@@ -7,13 +7,6 @@ export class CompositeGeometry {
     static readonly instancedGeometryTypes: InstancedGeometryType[] = [];
     readonly geometries: Map<Material, BufferGeometry[]> = new Map();
     readonly instancedGeometries: Map<number, InstancedGeometry> = new Map();
-    castShadow: boolean;
-    receiveShadow: boolean;
-
-    public constructor() {
-        this.castShadow = true;
-        this.receiveShadow = true;
-    }
 
     public static addInstancedGeometryType(geometry: BufferGeometry, material: Material): number {
         this.instancedGeometryTypes.push(new InstancedGeometryType(this.instancedGeometryTypes.length, geometry, material));
@@ -99,14 +92,16 @@ export class CompositeGeometry {
         const meshes: Mesh[] = [];
         for (const [material, geometries] of this.geometries) {
             const mesh = new Mesh(BufferGeometryUtils.mergeGeometries(geometries, false), material);
-            mesh.castShadow = this.castShadow;
-            mesh.receiveShadow = this.receiveShadow;
+            mesh.castShadow = material.visible;
+            mesh.receiveShadow = material.visible;
+            material.visible = true;
             meshes.push(mesh);
         }
         for (const [index, instancedGeometry] of this.instancedGeometries) {
             const mesh = instancedGeometry.createMesh();
-            mesh.castShadow = this.castShadow;
-            mesh.receiveShadow = this.receiveShadow;
+            mesh.castShadow = instancedGeometry.geometryType.material.visible;
+            mesh.receiveShadow = instancedGeometry.geometryType.material.visible;
+            instancedGeometry.geometryType.material.visible = true;
             meshes.push(mesh);
         }
         return meshes;
