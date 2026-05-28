@@ -110,7 +110,7 @@ export class World {
                 .finally(() => this.isGenerating = false);
         }
 
-        this.FrustumCulling(camera);
+        //this.FrustumCulling(camera);
     }
 
     private addChunkMeshes(scene: Scene, chunkEntry: { chunk: Chunk, chunkMeshes: Mesh[] } | undefined): void {

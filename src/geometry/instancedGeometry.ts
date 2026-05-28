@@ -30,14 +30,6 @@ export class InstancedGeometry {
             //mesh.setMatrixAt(i, new Matrix4().makeTranslation(0, i, 0));
         }
 
-        mesh.frustumCulled = false;
-        mesh.geometry.boundingSphere = new Sphere(
-            new Vector3(0, 0, 0),
-            1000000
-        );
-        mesh.computeBoundingBox();
-        mesh.computeBoundingSphere();
-
         return mesh;
     }
 
