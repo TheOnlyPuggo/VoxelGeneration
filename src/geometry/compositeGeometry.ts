@@ -1,9 +1,12 @@
-import {BufferGeometry, InstancedMesh, Material, Matrix4, Mesh} from "three";
+import {BufferGeometry, Material, Matrix4, Mesh} from "three";
 import {BufferGeometryUtils} from "three/examples/jsm/Addons.js";
 import {Vec3} from "../positions/vec3";
+import {InstancedGeometry, InstancedGeometryType} from "./instancedGeometry";
 
 export class CompositeGeometry {
+    static readonly instancedGeometryTypes: InstancedGeometryType[] = [];
     readonly geometries: Map<Material, BufferGeometry[]> = new Map();
+    readonly instancedGeometries: Map<number, InstancedGeometry> = new Map();
     castShadow: boolean;
     receiveShadow: boolean;
 
@@ -12,6 +15,21 @@ export class CompositeGeometry {
 
         this.castShadow = true;
         this.receiveShadow = true;
+    }
+
+    static addInstancedGeometryType(geometry: BufferGeometry, material: Material): number {
+        this.instancedGeometryTypes.push(new InstancedGeometryType(geometry, material));
+
+        return this.instancedGeometryTypes.length - 1;
+    }
+
+    addInstancedGeometry(geometryTypeIndex: number, transform: Matrix4): void {
+        let instancedGeometry: InstancedGeometry | undefined = this.instancedGeometries.get(geometryTypeIndex);
+        if (!instancedGeometry) {
+            instancedGeometry = new InstancedGeometry(CompositeGeometry.instancedGeometryTypes[geometryTypeIndex]);
+            this.instancedGeometries.set(geometryTypeIndex, instancedGeometry);
+        }
+        instancedGeometry.addInstance(transform);
     }
 
     addComposite(composite: CompositeGeometry | undefined): void {
@@ -72,30 +90,5 @@ export class CompositeGeometry {
 
     isEmpty(): boolean {
         return this.geometries.size === 0;
-    }
-}
-
-export class InstancedGeometry {
-    geometry: BufferGeometry;
-    material: Material;
-    instances: Matrix4[] = [];
-
-    constructor(geometry: BufferGeometry, material: Material) {
-        this.geometry = geometry;
-        this.material = material;
-    }
-
-    addInstance(transform: Matrix4): void {
-        this.instances.push(transform);
-    }
-
-    createMesh(): InstancedMesh {
-        const mesh = new InstancedMesh(this.geometry, this.material, this.instances.length);
-
-        for (let i = 0; i < this.instances.length; i++) {
-            mesh.setMatrixAt(i, this.instances[i]);
-        }
-
-        return mesh;
     }
 }
