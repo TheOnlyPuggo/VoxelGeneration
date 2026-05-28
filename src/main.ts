@@ -58,7 +58,7 @@ async function init(): Promise<void> {
     Game.camera.position.z = 7.0;
     Game.camera.position.y = Game.world.getHeightAt(Game.camera.position.x, Game.camera.position.z) + 5;
     Game.camera.rotateY(-Math.PI * 0.75);
-    Game.camera.rotateX(-Math.PI / 4.0); Game.renderer.domElement
+    Game.camera.rotateX(-Math.PI / 4.0);
 
 
     Game.cameraControls = new CameraControls(Game.camera, Game.renderer.domElement, Game.world, false);

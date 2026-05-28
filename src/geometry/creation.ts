@@ -86,6 +86,7 @@ export abstract class CubeMesh {
             texture.magFilter = NearestFilter;
             texture.minFilter = NearestFilter;
             texture.generateMipmaps = false;
+            texture.colorSpace = SRGBColorSpace;
 
             mat = new MeshStandardMaterial({map: texture, transparent: transparent, alphaTest: transparent ? 0.5 : 0});
             CubeMesh.materialCache.set(path, mat);
