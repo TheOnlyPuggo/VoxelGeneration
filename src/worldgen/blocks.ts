@@ -5,24 +5,24 @@ import {CubeMeshMultiTexture, CubeMeshOneColor, CubeMeshOneTexture} from "../geo
 export const AIR = new Block("air", null);
 export const GRASS = new Block("grass",
     new CubeMeshMultiTexture(false,
-        "block_textures/grass_textures/grass_top.png",
-        "block_textures/grass_textures/grass_bottom.png",
-        "block_textures/grass_textures/grass_side.png",
+        "block_textures/grass/grass_top.png",
+        "block_textures/grass/grass_bottom.png",
+        "block_textures/grass/grass_side.png",
     ));
-export const OAKLOG = new Block("oak_log",
+export const OAKLOG = new Block("log",
     new CubeMeshMultiTexture(false,
-        "block_textures/oak_tree_textures/oak_log_top_bottom.png",
-        "block_textures/oak_tree_textures/oak_log_top_bottom.png",
-        "block_textures/oak_tree_textures/oak_log_middle.png",
+        "block_textures/log/log_top.png",
+        "block_textures/log/log_top.png",
+        "block_textures/log/log_side.png",
     ));
-export const OAKLEAVES = new Block("oak_leaves", new CubeMeshOneTexture(true, "block_textures/oak_tree_textures/oak_leaves.png"));
-export const DIRT = new Block("dirt", new CubeMeshOneTexture(false, "block_textures/one_texture/dirt.png"));
-export const STONE = new Block("stone", new CubeMeshOneTexture(false, "block_textures/one_texture/stone.png"));
-export const GLASS = new Block("glass", new CubeMeshOneTexture(true, "block_textures/one_texture/glass.png"));
-export const COAL = new Block("coal", new CubeMeshOneTexture(false, "block_textures/one_texture/coal.png"));
-export const IRON = new Block("iron", new CubeMeshOneTexture(false, "block_textures/one_texture/iron.png"));
-export const MUSHROOM_BLOCK = new Block("mushroom_block", new CubeMeshOneTexture(false, "block_textures/mushroom_textures/mushroom_block.png"));
-export const MUSHROOM_STEM = new Block("mushroom_stem", new CubeMeshOneTexture(false, "block_textures/mushroom_textures/mushroom_stem.png"));
+export const OAKLEAVES = new Block("oak_leaves", new CubeMeshOneTexture(true, "block_textures/leaves.png"));
+export const DIRT = new Block("dirt", new CubeMeshOneTexture(false, "block_textures/dirt.png"));
+export const STONE = new Block("stone", new CubeMeshOneTexture(false, "block_textures/stone.png"));
+export const GLASS = new Block("glass", new CubeMeshOneTexture(true, "block_textures/glass.png"));
+export const COAL = new Block("coal", new CubeMeshOneTexture(false, "block_textures/coal.png"));
+export const IRON = new Block("iron", new CubeMeshOneTexture(false, "block_textures/iron.png"));
+export const MUSHROOM_BLOCK = new Block("mushroom_block", new CubeMeshOneTexture(false, "block_textures/mushroom_block.png"));
+export const MUSHROOM_STEM = new Block("mushroom_stem", new CubeMeshOneTexture(false, "block_textures/mushroom_stem.png"));
 export const CUCUMBER = new Block("cucumber", new CubeMeshOneColor(1, new Color(0.1, 0.5, 0.2), false));
 export const SNOW = new Block("snow", new CubeMeshOneColor(1, new Color(1, 1, 1), false));
 export const RED = new Block("snow", new CubeMeshOneColor(1, new Color(1, 0, 0), false));

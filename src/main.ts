@@ -54,13 +54,16 @@ async function init(): Promise<void> {
 
     // Game Camera stuff
     Game.camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
-    Game.cameraControls = new CameraControls(Game.camera, Game.renderer.domElement, Game.world, false);
-
     Game.camera.position.x = 7.0;
     Game.camera.position.z = 7.0;
-    Game.camera.position.y = 88.0;
+    Game.camera.position.y = Game.world.getHeightAt(Game.camera.position.x, Game.camera.position.z) + 5;
     Game.camera.rotateY(-Math.PI * 0.75);
     Game.camera.rotateX(-Math.PI / 4.0); Game.renderer.domElement
+
+
+    Game.cameraControls = new CameraControls(Game.camera, Game.renderer.domElement, Game.world, false);
+
+    
     
     Game.stats = new Stats();
     document.body.appendChild(Game.stats.dom);
@@ -97,6 +100,9 @@ async function init(): Promise<void> {
 
     let mushroomModel = await Model.load("model_data/mushroom.csv");
     mushroomModel.loadStructureAt(new BlockPos(30, 70, 30));
+
+    let smiley = await Model.load("model_data/smiley.csv");
+    smiley.loadStructureAt(new BlockPos(30, 100, 30));
 }
 
 function animate(time: number): void {
@@ -107,7 +113,7 @@ function animate(time: number): void {
         Game.renderer?.render(Game.scene, Game.camera);
 
 
-    Game.cameraControls?.Update(Game.timer?.getDelta() ?? 0);
+    Game.cameraControls?.Update(Game.timer?.getDelta() ?? 0, Game.scene);
     Game.environment.skybox?.position.copy(Game.camera?.position as Vector3);
 
     if (Game.scene) Game.world?.Update(Game.camera, Game.scene);

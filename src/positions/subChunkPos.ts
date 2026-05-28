@@ -1,6 +1,6 @@
 import {Vec3Int} from "./vec3Int";
-import {chunkSize} from "../worldgen/chunk";
 import {ChunkPos} from "./chunkPos";
+import {Chunk} from "../worldgen/chunk";
 
 export class SubChunkPos extends Vec3Int {
     public constructor(x: number = 0, y: number = 0, z: number = 0) {
@@ -8,7 +8,7 @@ export class SubChunkPos extends Vec3Int {
     }
 
     public static fromBlockPos<THIS extends ChunkPos>(blockPos: ChunkPos): THIS {
-        return new this(mod(blockPos.x, chunkSize), mod(blockPos.y, chunkSize), mod(blockPos.z, chunkSize)) as THIS;
+        return new this(mod(blockPos.x, Chunk.chunkSize), mod(blockPos.y, Chunk.chunkSize), mod(blockPos.z, Chunk.chunkSize)) as THIS;
     }
 }
 

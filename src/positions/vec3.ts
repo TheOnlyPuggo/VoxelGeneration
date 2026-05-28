@@ -123,6 +123,6 @@ export class Vec3 {
     }
 
     public normalize(): this {
-        return new (this.divide as any)(this.magnitude());
+        return (this.divide as any)(this.magnitude());
     }
 }
