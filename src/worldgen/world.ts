@@ -88,7 +88,7 @@ export class World {
     private readonly snowHeightNoise: SimplexNoise;
 
     readonly worldRadius = 4;
-    private worleyGridSize: number = 64;
+    private worleyGridSize: number = 16;
 
     //readonly chunks: Array<Array<Array<Chunk>>>;
     readonly chunksMap: Map<string, {chunk: Chunk, chunkMesh: Mesh}>;
@@ -357,13 +357,6 @@ export class World {
     }
 
     getTerrainBlockToGenerateAt(blockPos: BlockPos): Block {
-        //worley biomes steps
-        //block coords go in, biome type comes out:
-            //determine worley grid space block coords are in
-            //get distances to worley points in nearest 12 grid spaces to determine minimum
-            //get biome type of that point
-        //Use biome type to determine which biome generation algorithm to use
-
         let worleyWorldPos = new Vector2(blockPos.x / this.worleyGridSize, blockPos.z / this.worleyGridSize);
         let worleyGridPos: Vector2 = new Vector2(Math.floor(worleyWorldPos.x), Math.floor(worleyWorldPos.y));
         let posWithinGrid: Vector2 = worleyWorldPos.clone().sub(worleyGridPos);
@@ -378,33 +371,27 @@ export class World {
                 currentBiome = this.getBiomeAtGrid(worleyGridPos.clone().add(worleyGridOffsets[i]));
             }
         }
-
-        
-        if (currentBiome == BiomeTypes.Mountain){
+        if (currentBiome == BiomeTypes.Mountain && blockPos.y < 70){
             return this.mountainGetBlockAt(blockPos, smallest);
+            //return Blocks.RED;
         }
-        if (currentBiome == BiomeTypes.Desert){
+        if (currentBiome == BiomeTypes.Desert && blockPos.y < 70){
             return this.desertGetBlockAt(blockPos, smallest);
+            //return Blocks.BLUE;
         }
         
-        if (currentBiome == BiomeTypes.Ocean){
+        if (currentBiome == BiomeTypes.Ocean && blockPos.y < 70){
             return this.oceanGetBlockAt(blockPos, smallest);
+            //return Blocks.GREY;
         }
 
-        if (currentBiome == BiomeTypes.Plains){
+        if (currentBiome == BiomeTypes.Plains && blockPos.y < 70){
             return this.plainsGetBlockAt(blockPos, smallest);
+            //return Blocks.GREEN;
         }
-
-        let height: number = this.getHeightAt(blockPos.x, blockPos.z) - blockPos.y;
-        let dirtHeight: number = height - this.getDirtThicknessAt(blockPos.x, blockPos.z);
-
-        if (height < 0 || this.getCaveAt(blockPos)) return Blocks.AIR;
-        else if (height === 0) return Blocks.GRASS;
-        else if (dirtHeight <= 0) return Blocks.DIRT;
-        else if (this.getCoalAt(blockPos)) return Blocks.COAL;
-        else if (this.getIronAt(blockPos)) return Blocks.IRON;
-        else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
-        else return Blocks.STONE;
+        else {
+            return Blocks.AIR;
+        }
     }
     mountainGetBlockAt(blockPos: BlockPos, dist: number){
         let terrainHeight: number = this.getHeightAt(blockPos.x, blockPos.z);
@@ -417,7 +404,6 @@ export class World {
         let snowSpawnHeight: number = heightGen.snowHeight + this.snowHeightNoise.noise(blockPos.x / 5, blockPos.z / 5) * 2
 
         if (height < 0 || (this.getCaveAt(blockPos) && blockPos.y < terrainHeight)) return Blocks.AIR;
-        //stone for debug
         else if (height === 0 && blockPos.y >= snowSpawnHeight) return Blocks.SNOW;
         else if (this.getCoalAt(blockPos)) return Blocks.COAL;
         else if (this.getIronAt(blockPos)) return Blocks.IRON;
@@ -574,14 +560,13 @@ export class World {
         }
     }
     getWorleyFP(gridPos: Vector2){
-        let target: Vector2 = new Vector2(this.worleyXNoise.noise(gridPos.x, gridPos.y) / 2 + 1, this.worleyZNoise.noise(gridPos.x, gridPos.y) / 2 + 1);
+        let target: Vector2 = new Vector2(this.worleyXNoise.noise(gridPos.x, gridPos.y) / 2 + 1,
+            this.worleyZNoise.noise(gridPos.x, gridPos.y) / 2 + 1);
         return target;
     }
     getFPDistFromOffset(worldPos: Vector2, gridPos: Vector2, offset: Vector2){
         let targetGridPos: Vector2 = gridPos.clone().add(offset);
         let targetFP = targetGridPos.add(this.getWorleyFP(targetGridPos));
-
-        //console.log(targetFP.x, targetFP.y);
         return gridPos.clone().add(worldPos).distanceTo(targetFP);
 
     }
