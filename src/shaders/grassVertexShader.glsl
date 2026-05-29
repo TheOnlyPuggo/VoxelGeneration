@@ -88,29 +88,29 @@ void main() {
     vUv = uv;
     vHeight = uv.y;
 
-    vec3 pos = position;
+    vec4 instancePos = instanceMatrix * vec4(position, 1.0);
 
     float influence = vHeight * vHeight;
 
     float windAngle = uTime * uWindSpeed;
-    float mainWave  = sin(windAngle + pos.x * 0.5 + pos.z * 0.5) * uWindStrength;
+    float mainWave  = sin(windAngle + instancePos.x * 0.5 + instancePos.z * 0.5) * uWindStrength;
     //   float flutter   = sin(windAngle * 3.7 + pos.x * 10.0) * uWindStrength * 0.25;
 
-    float noiseSampleX = snoise(vec2(uTime * 0.001 + pos.x * 0.1, uTime * 0.001 + 100. + pos.z * 0.1));
-    float noiseSampleZ = snoise(vec2((uTime + 100.) * 0.001 + pos.x * 0.1, (uTime + 100.) * 0.001 + 100. + pos.z * 0.1));
-    //float noiseSampleZ = snoise(vec2(uTime + 100. + pos.x, uTime + 200. + pos.z));
+    float noiseSampleX = snoise(vec2(uTime * 0.001 + instancePos.x * 0.1, uTime * 0.001 + 100. + instancePos.z * 0.1));
+    float noiseSampleZ = snoise(vec2((uTime + 100.) * 0.001 + instancePos.x * 0.1, (uTime + 100.) * 0.001 + 100. + instancePos.z * 0.1));
+    //float noiseSampleZ = snoise(vec2(uTime + 100. + instancePos.x, uTime + 200. + instancePos.z));
     vec3 windDir = vec3(noiseSampleX, 0., noiseSampleZ);
     windDir = normalize(windDir);
 
-    pos.x += windDir.x * (mainWave) * influence;
-    pos.z += windDir.z * (mainWave) * influence;
-    pos.y -= abs(mainWave) * influence * 0.15;
+    //instancePos.x += windDir.x * (mainWave) * influence;
+    //instancePos.z += windDir.z * (mainWave) * influence;
+    //instancePos.y -= abs(mainWave) * influence * 0.15;
 
 
     vec3 transformedNormal = (modelMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz;
-    vec4 worldPosition = modelMatrix * vec4(pos, 1.0);
+    //vec4 worldPosition = modelMatrix * vec4(pos, 1.0);
 
     //#include <shadowmap_vertex>
 
-    gl_Position = projectionMatrix * modelViewMatrix * worldPosition;
+    gl_Position = projectionMatrix * modelViewMatrix * instancePos;
 }

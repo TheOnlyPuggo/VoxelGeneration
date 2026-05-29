@@ -18,6 +18,7 @@ import {
     UniformsLib,
     Matrix4,
     SRGBColorSpace,
+    MeshBasicMaterial,
 } from "three";
 import {CompositeGeometry} from "./compositeGeometry";
 import {BlockPos} from "../positions/blockPos";
@@ -183,8 +184,8 @@ export class CubeMeshGrassBlock extends CubeMeshMultiTexture {
 
         for(let i = 0; i <= segments; ++i) {
             let t = i / segments;
-            let width = 0.1 * (1 - t);
-            let height = t * 0.5;
+            let width = 0.15 * (1 - t);
+            let height = t * 0.6;
             let bend = t * t * 0.3;
 
             positions.push(-width, height, bend);
@@ -209,6 +210,7 @@ export class CubeMeshGrassBlock extends CubeMeshMultiTexture {
         CubeMeshGrassBlock.grassGeometry = geo;
 
 
+        
         CubeMeshGrassBlock.grassMaterial = new ShaderMaterial({
             vertexShader: grassVertexShader,
             fragmentShader: grassFragmentShader,
@@ -225,6 +227,7 @@ export class CubeMeshGrassBlock extends CubeMeshMultiTexture {
             lights: true,
             alphaTest: 0.1,
         });
+        
     }
 
     public constructor(
@@ -243,12 +246,14 @@ export class CubeMeshGrassBlock extends CubeMeshMultiTexture {
     }
 
 
-    override addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry, blockPos: BlockPos): CompositeGeometry {
-        if (index === 2) {
-            compositeGeometry.addGeometryInstance(this.topInstanceIndex, CubeMesh.planeMatrices[index].clone());
+    override addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry, blockPos: BlockPos): void {
+        
+        super.addFaceToCompositeGeometry(index, compositeGeometry, blockPos);
 
-            for(let x = 0; x < 1; x += 0.1) {
-                for(let y = 0; y < 1; y += 0.1) {
+
+        if (index === 2) {
+            for(let x = 0; x < 1; x += 0.15) {
+                for(let y = 0; y < 1; y += 0.15) {
                     let grassMatrix = new Matrix4();
                     let modifyMatrix = new Matrix4();
 
@@ -257,24 +262,20 @@ export class CubeMeshGrassBlock extends CubeMeshMultiTexture {
 
 
                     modifyMatrix.makeScale(randScale, randScale, randScale);
-                    grassMatrix.multiply(modifyMatrix);
+                    grassMatrix.premultiply(modifyMatrix);
 
                     //myGrassGeometry.scale(randScale, randScale, randScale);
                     //myGrassGeometry.rotateY(CubeMeshGrassBlock.grassNoise.noise(x + 100, y) * Math.PI * 2);
 
                     modifyMatrix.makeRotationY(CubeMeshGrassBlock.grassNoise.noise(x + 100, y) * Math.PI * 2);
-                    grassMatrix.multiply(modifyMatrix);
+                    grassMatrix.premultiply(modifyMatrix);
 
                     let noiseScale = 10;
                     //myGrassGeometry.translate((CubeMeshGrassBlock.grassNoise.noise((x + 100) * noiseScale, (y + 50) * noiseScale) + 1) / 2 - 0.5, -0.5, (CubeMeshGrassBlock.grassNoise.noise((x - 100) * noiseScale, (y - 50) * noiseScale) + 1) / 2 - 0.5);
-                    modifyMatrix.makeTranslation((CubeMeshGrassBlock.grassNoise.noise((x + 100) * noiseScale, (y + 50) * noiseScale) + 1) / 2 - 0.5, -0.5, (CubeMeshGrassBlock.grassNoise.noise((x - 100) * noiseScale, (y - 50) * noiseScale) + 1) / 2 - 0.5);
-                    grassMatrix.multiply(modifyMatrix);
+                    modifyMatrix.makeTranslation((CubeMeshGrassBlock.grassNoise.noise((x + blockPos.x + 100) * noiseScale, (y + blockPos.z + 50) * noiseScale) + 1) * 50 % 1 - 0.5, -0.5, (CubeMeshGrassBlock.grassNoise.noise((x + blockPos.x - 100) * noiseScale, (y + blockPos.z - 50) * noiseScale) + 1) * 50 % 1 - 0.5);
+                    grassMatrix.premultiply(modifyMatrix);
 
                     //topFaceGeometry.addGeometries([myGrassGeometry], [CubeMeshGrassBlock.grassMaterial]);
-
-                    
-                    
-
 
                     compositeGeometry.addGeometryInstance(this.grassInstanceIndex, grassMatrix);
                 }
@@ -292,13 +293,7 @@ export class CubeMeshGrassBlock extends CubeMeshMultiTexture {
                 topFaceGeometry.addGeometries([myGrassGeometry], [CubeMeshGrassBlock.grassMaterial]);
             }
                 */
-
-            
-            return topFaceGeometry;
         }
-
-
-        return new CompositeGeometry([CubeMesh.planeGeometries[index].clone()], [this.getMaterial(index)]);
     }
 }
 
