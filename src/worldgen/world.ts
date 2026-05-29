@@ -455,7 +455,7 @@ export class World {
 
         if (Math.abs(chunkPosShift.y) == 1) return;
 
-        if (!this.firstStructureGeneration) {
+        if (!this.firstStructureGeneration && (Math.abs(chunkPosShift.x) == 1 || Math.abs(chunkPosShift.z) == 1)) {
             if (chunkPosShift.x == -1) maximumX = minimumX + Chunk.chunkSize;
             else if (chunkPosShift.x == 1) minimumX = maximumX - Chunk.chunkSize;
             else if (chunkPosShift.z == -1) maximumZ = minimumZ + Chunk.chunkSize;
