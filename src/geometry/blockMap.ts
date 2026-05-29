@@ -17,9 +17,9 @@ export class BlockMap {
         if (!this.block.getTransparent()) {
             this.geometry = undefined;
         } else {
-            this.geometry = new CompositeGeometry([], []);
+            this.geometry = new CompositeGeometry();
             for (let i = 0; i < 6; i++) {
-                this.geometry.addComposite(this.getFaceCompositeGeometry(i));
+                this.addFaceToCompositeGeometry(i, this.geometry);
             }
         }
     }
@@ -28,11 +28,10 @@ export class BlockMap {
         return this.geometry;
     }
 
-    private getFaceCompositeGeometry(index: number): CompositeGeometry | undefined {
+    private addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry): void {
         const blockPos = this.getPos(index);
-        if (!blockPos) return undefined;
-        if (!this.showBlock(blockPos)) return undefined;
-        return this.world.getBlockAt(blockPos).meshConstructor?.getFaceCompositeGeometry(index);
+        if (!blockPos || !this.showBlock(blockPos)) return;
+        this.world.getBlockAt(blockPos).meshConstructor?.addFaceToCompositeGeometry(index, compositeGeometry, blockPos);
     }
 
     private showBlock(blockPos: BlockPos): boolean {

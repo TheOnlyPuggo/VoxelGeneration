@@ -40,7 +40,7 @@ export class Chunk {
     }
 
     public getChunkMeshes(): Mesh[] | undefined {
-        const geometry = new CompositeGeometry([], []);
+        const geometry = new CompositeGeometry();
         for (let x: number = 0; x < Chunk.chunkSize; x++) {
             for (let y: number = 0; y < Chunk.chunkSize; y++) {
                 for (let z: number = 0; z < Chunk.chunkSize; z++) {
