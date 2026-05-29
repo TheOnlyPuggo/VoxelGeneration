@@ -67,6 +67,7 @@ export class World {
 
     private cameraChunkPos: ChunkPos;
     private previousCameraChunkPos: ChunkPos;
+    private previousStructureCameraChunkPos: ChunkPos;
     private isGenerating: boolean;
 
     private firstStructureGeneration: boolean;
@@ -86,6 +87,7 @@ export class World {
         
         this.cameraChunkPos = new ChunkPos(0, 0, 0);
         this.previousCameraChunkPos = this.cameraChunkPos;
+        this.previousStructureCameraChunkPos = this.cameraChunkPos;
         this.isGenerating = false;
 
         this.chunksMap = new Map<string, {chunk: Chunk, chunkMeshes: Mesh[]}>();
@@ -102,13 +104,13 @@ export class World {
         if (!this.previousCameraChunkPos.equals(this.cameraChunkPos) && !this.isGenerating)  {
             this.isGenerating = true;
 
-            this.generateStructureData()
-                .then(() => this.CreateChunks())
-                .then((newChunks) => this.CreateChunkMeshes(scene, newChunks))
-                .then(() => this.DeleteOutOfRenderChunks(scene))
-                .then(() => this.deleteOutOfRangeStructureData())
-                .finally(() => this.isGenerating = false);
+            await this.generateStructureData();
+            const newChunks = await this.CreateChunks();
+            await this.CreateChunkMeshes(scene, newChunks);
+            await this.DeleteOutOfRenderChunks(scene);
+            await this.deleteOutOfRangeStructureData();
 
+            this.isGenerating = false;
             this.previousCameraChunkPos = this.cameraChunkPos;
         }
 
@@ -451,27 +453,28 @@ export class World {
         let minimumZ = (this.cameraChunkPos.z * Chunk.chunkSize) - ((this.worldRadius + 1) * Chunk.chunkSize);
         let maximumZ = (this.cameraChunkPos.z * Chunk.chunkSize) + ((this.worldRadius + 1) * Chunk.chunkSize) + Chunk.chunkSize - 1;
 
-        let chunkPosShift: ChunkPos = this.cameraChunkPos.subtract(this.previousCameraChunkPos);
+        let chunkPosShift: ChunkPos = this.cameraChunkPos.subtract(this.previousStructureCameraChunkPos);
+        this.previousStructureCameraChunkPos = this.cameraChunkPos;
 
-        if (Math.abs(chunkPosShift.y) == 1) return;
+        if (Math.abs(chunkPosShift.y) == 1 && chunkPosShift.x == 0 && chunkPosShift.z == 0) return;
 
-        if (!this.firstStructureGeneration && (Math.abs(chunkPosShift.x) == 1 || Math.abs(chunkPosShift.z) == 1)) {
+        if (
+            !this.firstStructureGeneration &&
+            ((Math.abs(chunkPosShift.x) == 1 || Math.abs(chunkPosShift.z) == 1)) &&
+            Math.abs(chunkPosShift.x) != Math.abs(chunkPosShift.z)
+        ) {
             if (chunkPosShift.x == -1) maximumX = minimumX + Chunk.chunkSize;
             else if (chunkPosShift.x == 1) minimumX = maximumX - Chunk.chunkSize;
             else if (chunkPosShift.z == -1) maximumZ = minimumZ + Chunk.chunkSize;
             else if (chunkPosShift.z == 1) minimumZ = maximumZ - Chunk.chunkSize;
         }
 
-        let i = 0;
         for (let x = minimumX; x <= maximumX; x++) {
             for (let z = minimumZ; z <= maximumZ; z++) {
-                i++;
                 let model = this.getModelAtPos(x, z);
-                if (model != null) model.loadModelInformation(new BlockPos(x, this.getHeightAt(x, z) + 1, z));
+                if (model != null) await model.loadModelInformation(new BlockPos(x, this.getHeightAt(x, z) + 1, z));
             }
         }
-
-        console.log(i);
 
         if (this.firstStructureGeneration) this.firstStructureGeneration = false;
     }
