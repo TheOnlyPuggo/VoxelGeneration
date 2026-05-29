@@ -462,12 +462,16 @@ export class World {
             else if (chunkPosShift.z == 1) minimumZ = maximumZ - Chunk.chunkSize;
         }
 
+        let i = 0;
         for (let x = minimumX; x <= maximumX; x++) {
             for (let z = minimumZ; z <= maximumZ; z++) {
+                i++;
                 let model = this.getModelAtPos(x, z);
                 if (model != null) model.loadModelInformation(new BlockPos(x, this.getHeightAt(x, z) + 1, z));
             }
         }
+
+        console.log(i);
 
         if (this.firstStructureGeneration) this.firstStructureGeneration = false;
     }
@@ -477,12 +481,12 @@ export class World {
 
         for (const [key, data] of Model.generatedStructureBlocksToLoad) {
             const dx = data.pos.x - (this.cameraChunkPos.x * Chunk.chunkSize + Math.floor(Chunk.chunkSize / 2));
-            const dy = data.pos.y - (this.cameraChunkPos.y * Chunk.chunkSize + Math.floor(Chunk.chunkSize / 2));
+            //const dy = data.pos.y - (this.cameraChunkPos.y * Chunk.chunkSize + Math.floor(Chunk.chunkSize / 2));
             const dz = data.pos.z - (this.cameraChunkPos.z * Chunk.chunkSize + Math.floor(Chunk.chunkSize / 2));
 
             let maxDistance = ((this.worldRadius + 1) * Chunk.chunkSize) + Chunk.chunkSize - 1;
 
-            if (Math.abs(dx) > maxDistance || Math.abs(dy) > maxDistance || Math.abs(dz) > maxDistance) {
+            if (Math.abs(dx) > maxDistance || Math.abs(dz) > maxDistance) {
                 keysToDelete.push(key);
             }
         }
