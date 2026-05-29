@@ -218,9 +218,8 @@ export class CubeMeshGrassBlock extends CubeMeshMultiTexture {
                 UniformsLib.lights,
                 {
                     uTime:         { value: 0 },
+                    uPlayerFeetPos: { value : new Vector3(0, 0, 0) },
                     //uWindDir:      { value: new Vector3(1, 0, 0.5).normalize() },
-                    uWindSpeed:    { value: 1.2 },
-                    uWindStrength: { value: 0.2 },
                 }
             ]),
             side: DoubleSide,

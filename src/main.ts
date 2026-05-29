@@ -139,6 +139,7 @@ function animate(time: number): void {
 
     // #region AnimateGrass
     CubeMeshGrassBlock.grassMaterial.uniforms.uTime.value = Game.timer?.getElapsed();
+    CubeMeshGrassBlock.grassMaterial.uniforms.uPlayerFeetPos.value = Game.cameraControls?.getPlayerFeetPos();
     // #endregion
 
     Game.stats?.update();
