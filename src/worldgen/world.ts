@@ -79,6 +79,14 @@ export enum BiomeTypes {
     Mountain,
     Ocean
 }
+class BiomeDistance {
+    public distance: number;
+    public biome: BiomeTypes;
+    constructor(d: number, b: BiomeTypes){
+        this.distance = d;
+        this.biome = b;
+    }
+}
 
 export class World {
     private readonly heightNoiseCoarse: SimplexNoise;
@@ -372,13 +380,15 @@ export class World {
         return blockToPush;
     }
 
+    // BIOMES
+
     getTerrainBlockToGenerateAt(blockPos: BlockPos): Block {
         let worleyWorldPos = new Vector2(blockPos.x / this.worleyGridSize, blockPos.z / this.worleyGridSize);
         let worleyGridPos: Vector2 = new Vector2(Math.floor(worleyWorldPos.x), Math.floor(worleyWorldPos.y));
         let posWithinGrid: Vector2 = worleyWorldPos.clone().sub(worleyGridPos);
 
-        let smallest: number = this.getFPDistFromOffset(posWithinGrid, worleyGridPos, new Vector2(0, 0));
-        let smol: number = smallest;
+        let smallestBiomes: BiomeDistance = new BiomeDistance(this.getFPDistFromOffset(posWithinGrid, worleyGridPos, new Vector2(0, 0)), this.getBiomeAtGrid(worleyGridPos));
+        
         let currentBiome: BiomeTypes = this.getBiomeAtGrid(worleyGridPos);
         for ( var i = 0; i < worleyGridOffsets.length; i++){
             let s: number = this.getFPDistFromOffset(posWithinGrid, worleyGridPos, worleyGridOffsets[i]);
