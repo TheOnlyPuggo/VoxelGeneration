@@ -26,6 +26,10 @@ export const heightGen = {
     mountainHeight: 64,
     snowHeight: 80
 }
+export const biomeGen = {
+    shorelineFactor: 0.8,
+    oceanDepth: 3
+}
 export const dirtGen = {
     base: 3,
     amplitude: 2,
@@ -243,7 +247,19 @@ export class World {
         }
     }
 
-    private updateChunkMesh(scene: Scene, chunkPos: ChunkPos): void {
+    public async updateChunkMesh(scene: Scene, chunkPos: ChunkPos) {
+        let minimumX = chunkPos.x * Chunk.chunkSize - Chunk.chunkSize;
+        let maximumX = chunkPos.x * Chunk.chunkSize + (Chunk.chunkSize * 2) - 1;
+        let minimumZ = chunkPos.z * Chunk.chunkSize - Chunk.chunkSize;
+        let maximumZ = chunkPos.z * Chunk.chunkSize + (Chunk.chunkSize * 2) - 1;
+
+        for (let x = minimumX; x <= maximumX; x++) {
+            for (let z = minimumZ; z <= maximumZ; z++) {
+                let modelAndHeight = this.getModelAtPos(x, z);
+                if (modelAndHeight != undefined) await modelAndHeight[0].loadModelInformation(new BlockPos(x, modelAndHeight[1] + 1, z));
+            }
+        }
+
         let chunkPosKey: string = chunkPos.getKey();
         let chunkEntry = this.chunksMap.get(chunkPosKey);
 
@@ -369,7 +385,7 @@ export class World {
         if (blockToPush == Blocks.AIR) blockToPush = this.getStructureBlockToGenerateAt(blockPos);
         return blockToPush;
     }
-    
+
     //USED BY EVERYTHING ELSE
     getBlockToGenerateAt(blockPos: BlockPos): Block {
         let blockToPush = this.getTerrainBlockToGenerateAt(blockPos);
@@ -378,6 +394,28 @@ export class World {
     }
 
     // BIOMES
+
+    public getHeightAndBiomeFromXZ(x: number, z: number){
+        let blockPos: BlockPos = new BlockPos(x, 0, z);
+        let bD: BiomeDistance[] = this.getBiomeData(blockPos);
+        let dFract = bD[0].distance / ((bD[0].distance + bD[1].distance) / 2);
+        let biome: BiomeTypes = bD[0].biome;
+        switch(biome){
+            case BiomeTypes.Mountain:
+                return [biome, this.getMountainHeight(blockPos, dFract)];
+            case BiomeTypes.Desert:
+                return [biome, this.getDesertHeight(blockPos, dFract)];
+            case BiomeTypes.Ocean:
+                if (dFract > biomeGen.shorelineFactor){
+                    return [biome, this.getOceanHeight(blockPos, dFract)];
+                } else {
+                    return [biome, null];
+                }
+            case BiomeTypes.Plains:
+                return [biome, this.getPlainsHeight(blockPos)];
+        }
+
+    }
 
     public getBiomeData(blockPos: BlockPos){
         let worleyWorldPos = new Vec2(blockPos.x / this.worleyGridSize, blockPos.z / this.worleyGridSize);
@@ -391,7 +429,7 @@ export class World {
             if (s < closestBiome.distance){
                 secondClosestBiome.distance = closestBiome.distance;
                 secondClosestBiome.biome = closestBiome.biome;
-                
+
                 closestBiome.distance = s;
                 closestBiome.biome = this.getBiomeAtGrid(worleyGridPos.add(worleyGridOffsets[i]));
             }
@@ -408,7 +446,7 @@ export class World {
     getTerrainBlockToGenerateAtFromChunk(blockPos: BlockPos, biomeData: BiomeDistance[]): Block {
 
         if (biomeData[0].biome == BiomeTypes.Mountain){
-            return this.mountainGetBlockAt(blockPos, biomeData[0].distance, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
+            return this.mountainGetBlockAt(blockPos, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
             //return Blocks.RED;
         }
         if (biomeData[0].biome == BiomeTypes.Desert){
@@ -417,7 +455,7 @@ export class World {
         }
 
         if (biomeData[0].biome == BiomeTypes.Ocean){
-            return this.oceanGetBlockAt(blockPos, biomeData[1].biome, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
+            return this.oceanGetBlockAt(blockPos, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
             //return Blocks.GREY;
         }
 
@@ -432,11 +470,11 @@ export class World {
             return Blocks.AIR;
         }
     }
-    //CALLED BY LITERALLY EVERYTHING ELSE T-T 
+    //CALLED BY LITERALLY EVERYTHING ELSE T-T
     getTerrainBlockToGenerateAt(blockPos: BlockPos): Block {
         let biomeData: BiomeDistance[] = this.getBiomeData(blockPos);
         if (biomeData[0].biome == BiomeTypes.Mountain){
-            return this.mountainGetBlockAt(blockPos, biomeData[0].distance, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
+            return this.mountainGetBlockAt(blockPos, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
             //return Blocks.RED;
         }
         if (biomeData[0].biome == BiomeTypes.Desert && blockPos.y < 70){
@@ -445,7 +483,7 @@ export class World {
         }
 
         if (biomeData[0].biome == BiomeTypes.Ocean){
-            return this.oceanGetBlockAt(blockPos, biomeData[1].biome, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
+            return this.oceanGetBlockAt(blockPos, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
             //return Blocks.GREY;
         }
 
@@ -464,25 +502,26 @@ export class World {
         else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
         else return Blocks.STONE;
     }
-    mountainGetBlockAt(blockPos: BlockPos, d: number, dFract: number){
-        let terrainHeight: number = this.getHeightAt(blockPos.x, blockPos.z);
-        let mHeight: number = terrainHeight +
-            //mountain height calc
-            Math.round((1 - dFract) * heightGen.mountainHeight *
-            //noise variance
-            (this.mountainHeightNoise.noise(blockPos.x / 35, blockPos.z / 35) / 4 + 0.75));
-        let height: number = mHeight - blockPos.y;
+    mountainGetBlockAt(blockPos: BlockPos, dFract: number){
+        let height: number = this.getMountainHeight(blockPos, dFract) - blockPos.y;
         let snowSpawnHeight: number = heightGen.snowHeight + this.snowHeightNoise.noise(blockPos.x / 5, blockPos.z / 5) * 2;
 
-        if (height < 0 || (this.getCaveAt(blockPos) && blockPos.y < terrainHeight)) return Blocks.AIR;
+        if (height < 0 || (this.getCaveAt(blockPos) && blockPos.y < heightGen.base)) return Blocks.AIR;
         else if (height === 0 && blockPos.y >= snowSpawnHeight) return Blocks.SNOW;
         else if (this.getCoalAt(blockPos)) return Blocks.COAL;
         else if (this.getIronAt(blockPos)) return Blocks.IRON;
         else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
         else return Blocks.STONE;
     }
-    desertGetBlockAt(blockPos: BlockPos, dist: number){
-        let height: number = this.getHeightAt(blockPos.x, blockPos.z) - blockPos.y;
+    getMountainHeight(blockPos: BlockPos, dFract: number){
+        return this.getHeightAt(blockPos.x, blockPos.z) +
+            //mountain height calc
+            Math.round((1 - dFract) * heightGen.mountainHeight *
+            //noise variance
+            (this.mountainHeightNoise.noise(blockPos.x / 35, blockPos.z / 35) / 4 + 0.75));
+    }
+    desertGetBlockAt(blockPos: BlockPos, dFract: number){
+        let height: number = this.getDesertHeight(blockPos, dFract) - blockPos.y;
         let dirtHeight: number = height - this.getDirtThicknessAt(blockPos.x, blockPos.z);
 
         if (height < 0 || this.getCaveAt(blockPos)) return Blocks.AIR;
@@ -494,19 +533,11 @@ export class World {
         else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
         else return Blocks.STONE;
     }
-    oceanGetBlockAt(blockPos: BlockPos, neighbour: BiomeTypes, dFract: number){
-        let terrainHeight: number = this.getHeightAt(blockPos.x, blockPos.z);
-        let oHeight = 0;
-
-        let shoreLine: number = 0.8;
-        let depth: number = 3
-        if (dFract > shoreLine && neighbour != BiomeTypes.Ocean){
-            oHeight = (terrainHeight - heightGen.base) * ((dFract - shoreLine) * 5) + heightGen.base;
-        } else {
-            //seabed height is world base heigh - (extra noise * (1 - normalised distance from biome center) * multiplier)
-            oHeight = heightGen.base - (terrainHeight - heightGen.base) * ((shoreLine - dFract) * (1 / shoreLine)) * depth; 
-        }
-        oHeight = Math.round(oHeight) - blockPos.y;
+    getDesertHeight(blockPos: BlockPos, dFract: number){
+        return this.getHeightAt(blockPos.x, blockPos.z);
+    }
+    oceanGetBlockAt(blockPos: BlockPos, dFract: number){
+        let oHeight = this.getOceanHeight(blockPos, dFract) - blockPos.y;
         let sandDepth: number = this.getDirtThicknessAt(blockPos.x, blockPos.z);
 
 
@@ -524,8 +555,17 @@ export class World {
         else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
         else return Blocks.STONE;
     }
+    getOceanHeight(blockPos: BlockPos, dFract: number){
+        let terrainHeight: number = this.getHeightAt(blockPos.x, blockPos.z);
+        if (dFract > biomeGen.shorelineFactor){
+            return Math.round((terrainHeight - heightGen.base) * ((dFract - biomeGen.shorelineFactor) * 5) + heightGen.base);
+        } else {
+            //seabed height is world base heigh - (extra noise * (1 - normalised distance from biome center) * multiplier)
+            return Math.round(heightGen.base - (terrainHeight - heightGen.base) * ((biomeGen.shorelineFactor - dFract) * (1 / biomeGen.shorelineFactor)) * biomeGen.oceanDepth);
+        }
+    }
     plainsGetBlockAt(blockPos: BlockPos, dist: number){
-        let height: number = this.getHeightAt(blockPos.x, blockPos.z) - blockPos.y;
+        let height: number = this.getPlainsHeight(blockPos) - blockPos.y;
         let dirtHeight: number = height - this.getDirtThicknessAt(blockPos.x, blockPos.z);
 
         if (height < 0 || this.getCaveAt(blockPos)) return Blocks.AIR;
@@ -535,6 +575,9 @@ export class World {
         else if (this.getIronAt(blockPos)) return Blocks.IRON;
         else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
         return Blocks.STONE;
+    }
+    getPlainsHeight(blockPos: BlockPos){
+        return this.getHeightAt(blockPos.x, blockPos.z);
     }
 
     getStructureBlockToGenerateAt(blockPos: BlockPos): Block {
@@ -553,7 +596,7 @@ export class World {
         return this.getBlockToGenerateAt(blockPos);
     }
 
-    public setBlockAt(blockPos: BlockPos, blockType: Block, scene: Scene | null): void {
+    public async setBlockAt(blockPos: BlockPos, blockType: Block, scene: Scene | null) {
         const chunkPos = blockPos.getChunkPos();
         const chunkPosKey = chunkPos.getKey();
         const subChunkPos = blockPos.getSubChunkPos();
@@ -576,13 +619,13 @@ export class World {
         if (save) this.chunkSaveMap.set(chunkPosKey, save);
         else this.chunkSaveMap.delete(chunkPosKey);
         if (scene) {
-            if (subChunkPos.x == 0) this.updateChunkMesh(scene, chunkPos.subtractX(1));
-            if (subChunkPos.x == Chunk.chunkSize - 1) this.updateChunkMesh(scene, chunkPos.addX(1));
-            if (subChunkPos.y == 0) this.updateChunkMesh(scene, chunkPos.subtractY(1));
-            if (subChunkPos.y == Chunk.chunkSize - 1) this.updateChunkMesh(scene, chunkPos.addY(1));
-            if (subChunkPos.z == 0) this.updateChunkMesh(scene, chunkPos.subtractZ(1));
-            if (subChunkPos.z == Chunk.chunkSize - 1) this.updateChunkMesh(scene, chunkPos.addZ(1));
-            this.updateChunkMesh(scene, chunkPos);
+            if (subChunkPos.x == 0) await this.updateChunkMesh(scene, chunkPos.subtractX(1));
+            if (subChunkPos.x == Chunk.chunkSize - 1) await this.updateChunkMesh(scene, chunkPos.addX(1));
+            if (subChunkPos.y == 0) await this.updateChunkMesh(scene, chunkPos.subtractY(1));
+            if (subChunkPos.y == Chunk.chunkSize - 1) await this.updateChunkMesh(scene, chunkPos.addY(1));
+            if (subChunkPos.z == 0) await this.updateChunkMesh(scene, chunkPos.subtractZ(1));
+            if (subChunkPos.z == Chunk.chunkSize - 1) await this.updateChunkMesh(scene, chunkPos.addZ(1));
+            await this.updateChunkMesh(scene, chunkPos);
         }
     }
 
@@ -679,21 +722,21 @@ export class World {
 
         if (Math.abs(chunkPosShift.y) == 1 && chunkPosShift.x == 0 && chunkPosShift.z == 0) return;
 
-        if (
-            !this.firstStructureGeneration &&
-            ((Math.abs(chunkPosShift.x) == 1 || Math.abs(chunkPosShift.z) == 1)) &&
-            Math.abs(chunkPosShift.x) != Math.abs(chunkPosShift.z)
-        ) {
-            if (chunkPosShift.x == -1) maximumX = minimumX + Chunk.chunkSize;
-            else if (chunkPosShift.x == 1) minimumX = maximumX - Chunk.chunkSize;
-            else if (chunkPosShift.z == -1) maximumZ = minimumZ + Chunk.chunkSize;
-            else if (chunkPosShift.z == 1) minimumZ = maximumZ - Chunk.chunkSize;
-        }
+        // if (
+        //     !this.firstStructureGeneration &&
+        //     ((Math.abs(chunkPosShift.x) == 1 || Math.abs(chunkPosShift.z) == 1)) &&
+        //     Math.abs(chunkPosShift.x) != Math.abs(chunkPosShift.z)
+        // ) {
+        //     if (chunkPosShift.x == -1) maximumX = minimumX + Chunk.chunkSize;
+        //     else if (chunkPosShift.x == 1) minimumX = maximumX - Chunk.chunkSize;
+        //     else if (chunkPosShift.z == -1) maximumZ = minimumZ + Chunk.chunkSize;
+        //     else if (chunkPosShift.z == 1) minimumZ = maximumZ - Chunk.chunkSize;
+        // }
 
         for (let x = minimumX; x <= maximumX; x++) {
             for (let z = minimumZ; z <= maximumZ; z++) {
-                let model = this.getModelAtPos(x, z);
-                if (model != null) await model.loadModelInformation(new BlockPos(x, this.getHeightAt(x, z) + 1, z));
+                let modelAndHeight = this.getModelAtPos(x, z);
+                if (modelAndHeight != undefined) await modelAndHeight[0].loadModelInformation(new BlockPos(x, modelAndHeight[1] + 1, z));
             }
         }
 
@@ -720,12 +763,15 @@ export class World {
         }
     }
 
-    public getModelAtPos(x: number, z: number): Model | null {
+    public getModelAtPos(x: number, z: number): [Model, number] | undefined {
         let structureNoiseVal = this.structureNoise.noise(x, z);
-        if (structureNoiseVal >= 0.95) return Model.LoadedModels["Tree"];
-        if (structureNoiseVal >= 0.90 && structureNoiseVal <= 0.901) return Model.LoadedModels["Mushroom"];
-        if (structureNoiseVal >= 0.85 && structureNoiseVal <= 0.8501) return Model.LoadedModels["DirtHut"];
-        else return null;
+        if (structureNoiseVal >= 0.95) {
+            let heightAndBiome = this.getHeightAndBiomeFromXZ(x, z);
+            if (!heightAndBiome || !heightAndBiome[1]) return undefined;
+
+            if (heightAndBiome[0] == BiomeTypes.Plains) return [Model.LoadedModels["Tree"], heightAndBiome[1]];
+        }
+        else return undefined;
         // CURSED else return Model.LoadedModels["DirtHut"];
     }
 

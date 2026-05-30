@@ -68,6 +68,8 @@ export class Model {
     }
 
     public async loadModelInformation(blockOriginPos: BlockPos) {
+        if (Model.generatedStructureBlocksToLoad.has(blockOriginPos.getKey())) return;
+
         this.blockDatas.forEach((blockData) => {
             let blockWorldPos: BlockPos = new BlockPos(
                 blockData.pos.x + blockOriginPos.x,
