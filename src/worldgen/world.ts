@@ -106,7 +106,7 @@ export class World {
     private readonly structureNoise: SimplexNoise;
 
     readonly worldRadius = 4;
-    private worleyGridSize: number = 16;
+    private worleyGridSize: number = 64;
 
     //readonly chunks: Array<Array<Array<Chunk>>>;
     readonly chunksMap: Map<string, {chunk: Chunk, chunkMeshes: Mesh[]}>;
@@ -347,11 +347,11 @@ export class World {
 
     public getHeightAt(x: number, z: number): number {
         return Math.round(heightGen.amplitude *
-            this.heightNoiseCoarse.noise(x / heightGen.size, z / heightGen.size) +
+            (this.heightNoiseCoarse.noise(x / heightGen.size, z / heightGen.size) + 1) +
             heightGen.amplitude * heightGen.mediumFactor *
-            this.heightNoiseMedium.noise(x / (heightGen.size * heightGen.mediumFactor), z / (heightGen.size * heightGen.mediumFactor)) +
+            (this.heightNoiseMedium.noise(x / (heightGen.size * heightGen.mediumFactor), z / (heightGen.size * heightGen.mediumFactor)) + 1) +
             heightGen.amplitude * heightGen.fineFactor *
-            this.heightNoiseFine.noise(x / (heightGen.size * heightGen.fineFactor), z / (heightGen.size * heightGen.fineFactor)) + heightGen.base);
+            (this.heightNoiseFine.noise(x / (heightGen.size * heightGen.fineFactor), z / (heightGen.size * heightGen.fineFactor)) + 1) + heightGen.base);
     }
 
     private getDirtThicknessAt(x: number, z: number): number {
@@ -407,33 +407,33 @@ export class World {
         let closestBiomesList: BiomeDistance[] = [closestBiome, secondClosestBiome];
         let currentBiome: BiomeTypes = closestBiomesList[0].biome;
 
-        if (currentBiome == BiomeTypes.Mountain && blockPos.y < 70){
-            return this.mountainGetBlockAt(blockPos, smallest);
+        if (currentBiome == BiomeTypes.Mountain){
+            return this.mountainGetBlockAt(blockPos, closestBiome.distance, closestBiome.distance / ((closestBiome.distance + secondClosestBiome.distance) / 2));
             //return Blocks.RED;
         }
         if (currentBiome == BiomeTypes.Desert && blockPos.y < 70){
-            return this.desertGetBlockAt(blockPos, smallest);
+            return this.desertGetBlockAt(blockPos, 0);
             //return Blocks.BLUE;
         }
 
-        if (currentBiome == BiomeTypes.Ocean && blockPos.y < 70){
-            return this.oceanGetBlockAt(blockPos, smallest);
+        if (currentBiome == BiomeTypes.Ocean){
+            return this.oceanGetBlockAt(blockPos, secondClosestBiome.biome, closestBiome.distance / ((closestBiome.distance + secondClosestBiome.distance) / 2));
             //return Blocks.GREY;
         }
 
         if (currentBiome == BiomeTypes.Plains && blockPos.y < 70){
-            return this.plainsGetBlockAt(blockPos, smallest);
+            return this.plainsGetBlockAt(blockPos, 0);
             //return Blocks.GREEN;
         }
         else {
             return Blocks.AIR;
         }
     }
-    mountainGetBlockAt(blockPos: BlockPos, b: BiomeDistance[]){
+    mountainGetBlockAt(blockPos: BlockPos, d: number, dFract: number){
         let terrainHeight: number = this.getHeightAt(blockPos.x, blockPos.z);
         let mHeight: number = terrainHeight +
             //mountain height calc
-            Math.round((1 - Math.min(dist + 0.5, 1)) * heightGen.mountainHeight *
+            Math.round((1 - dFract) * heightGen.mountainHeight *
             //noise variance
             (this.mountainHeightNoise.noise(blockPos.x / 35, blockPos.z / 35) / 4 + 0.75));
         let height: number = mHeight - blockPos.y;
@@ -459,14 +459,31 @@ export class World {
         else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
         else return Blocks.STONE;
     }
-    oceanGetBlockAt(blockPos: BlockPos, dist: number){
-        let height: number = this.getHeightAt(blockPos.x, blockPos.z) - blockPos.y;
-        let dirtHeight: number = height - this.getDirtThicknessAt(blockPos.x, blockPos.z);
+    oceanGetBlockAt(blockPos: BlockPos, neighbour: BiomeTypes, dFract: number){
+        let terrainHeight: number = this.getHeightAt(blockPos.x, blockPos.z);
+        let oHeight = 0;
 
-        if (height < 0 || this.getCaveAt(blockPos)) return Blocks.AIR;
-        //cucumber for debug
-        else if (height === 0) return Blocks.CUCUMBER;
-        else if (dirtHeight <= 0) return Blocks.DIRT;
+        let shoreLine: number = 0.8;
+        let depth: number = 3
+        if (dFract > shoreLine && neighbour != BiomeTypes.Ocean){
+            oHeight = (terrainHeight - heightGen.base) * ((dFract - shoreLine) * 5) + heightGen.base;
+        } else {
+            //seabed height is world base heigh - (extra noise * (1 - normalised distance from biome center) * multiplier)
+            oHeight = heightGen.base - (terrainHeight - heightGen.base) * ((shoreLine - dFract) * (1 / shoreLine)) * depth; 
+        }
+        oHeight = Math.round(oHeight) - blockPos.y;
+        let sandDepth: number = this.getDirtThicknessAt(blockPos.x, blockPos.z);
+
+
+        //need to level out height noise around edges
+        //then terrain dips below that, anything above that but also below heightGen.base spawns water
+
+        //oHeight is how many blocks below the surface BlockPos is
+
+        //REPLACE BLUE WITH WATER
+        if (oHeight < 0 && blockPos.y < heightGen.base) return Blocks.BLUE;
+        if (oHeight < 0 || (this.getCaveAt(blockPos) && oHeight > sandDepth)) return Blocks.AIR;
+        else if (oHeight <= sandDepth) return Blocks.SAND;
         else if (this.getCoalAt(blockPos)) return Blocks.COAL;
         else if (this.getIronAt(blockPos)) return Blocks.IRON;
         else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
