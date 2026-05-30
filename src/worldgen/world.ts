@@ -59,7 +59,7 @@ export class World {
 
     private readonly structureNoise: SimplexNoise;
 
-    readonly worldRadius = 4;
+    readonly worldRadius = 3;
 
     //readonly chunks: Array<Array<Array<Chunk>>>;
     readonly chunksMap: Map<string, {chunk: Chunk, chunkMeshes: Mesh[]}>;

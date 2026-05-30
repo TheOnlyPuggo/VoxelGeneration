@@ -18,9 +18,9 @@ export class CameraControls {
     world: World | null = null;
     pointerLockControls: PointerLockControls;
     inputWrapper: InputWrapper;
-    playerPos: Vector3 = new Vector3();
+    public playerPos: Vector3 = new Vector3();
 
-    private playerHeight: number = 1.8;
+    public playerHeight: number = 1.8;
     private playerHeightLerpSpeed: number = 10;
     private readonly playerStandingHeight: number = 1.8;
     private readonly playerCrouchingHeight: number = 1.45;
@@ -70,6 +70,10 @@ export class CameraControls {
 
 
         this.inputWrapper.ClearPressed();
+    }
+    
+    public getPlayerFeetPos(): Vector3 {
+        return this.playerPos.clone().add(new Vector3(0, -this.playerHeight, 0));
     }
 
     private blockInteractionHandle(delta: number, scene: Scene | null): void {

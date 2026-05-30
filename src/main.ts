@@ -1,4 +1,4 @@
-import {ACESFilmicToneMapping, Camera, EquirectangularReflectionMapping, Mesh, PerspectiveCamera, Scene, SRGBColorSpace, Timer, Vector3, WebGLRenderer} from "three";
+import {ACESFilmicToneMapping, Camera, EquirectangularReflectionMapping, Mesh, PerspectiveCamera, Scene, SRGBColorSpace, Timer, Vector3, WebGLRenderer, DirectionalLight, AmbientLight, CameraHelper, BasicShadowMap, Fog} from "three";
 import {CameraControls} from './camera';
 import {World} from './worldgen/world';
 import {GroundedSkybox} from "three/examples/jsm/objects/GroundedSkybox.js";
@@ -7,12 +7,14 @@ import {CreateGUI} from "./UI";
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import {Model} from "./geometry/modelCreation";
 import {BlockPos} from "./positions/blockPos";
+import {CubeMeshGrassBlock} from "./geometry/creation";
 
 export const Game: {
     scene: Scene | null,
     camera: PerspectiveCamera | null,
     cameraControls: CameraControls | null,
     renderer: WebGLRenderer | null,
+    directionalLight: DirectionalLight | null,
     environment: {
         skybox: GroundedSkybox | null,
     },
@@ -27,6 +29,7 @@ export const Game: {
     camera: null,
     cameraControls: null,
     renderer: null,
+    directionalLight: null,
     environment: {
         skybox: null,
     },
@@ -73,9 +76,36 @@ async function init(): Promise<void> {
     Game.currentFrame = 0;
     
 
-    Game.renderer.toneMapping = ACESFilmicToneMapping;
-    Game.renderer.toneMappingExposure = 1.0;
-    Game.renderer.outputColorSpace = SRGBColorSpace;
+    // Game.renderer.toneMapping = ACESFilmicToneMapping;
+    // Game.renderer.toneMappingExposure = 1.0;
+    // Game.renderer.outputColorSpace = SRGBColorSpace;
+
+    Game.renderer.shadowMap.enabled = true;
+
+    Game.directionalLight = new DirectionalLight(0xfff9de, 2);
+    Game.directionalLight.castShadow = true;
+    Game.directionalLight.shadow.mapSize.width = 4096*1;
+    Game.directionalLight.shadow.mapSize.height = 4096*1;
+
+    Game.directionalLight.shadow.camera.near = 0;
+    Game.directionalLight.shadow.camera.far = 1000;
+    Game.directionalLight.shadow.camera.left = -50;
+    Game.directionalLight.shadow.camera.right = 50;
+    Game.directionalLight.shadow.camera.top = 30;
+    Game.directionalLight.shadow.camera.bottom = -30;
+
+    Game.directionalLight.shadow.normalBias = -0.001;
+    //Game.directionalLight.shadow.bias = 0.01;
+    Game.scene.add(Game.directionalLight);
+    Game.scene.add(Game.directionalLight.target);
+
+    Game.scene.fog = new Fog(0x98a2af, 20, 50);
+
+    //const ambientLight = new AmbientLight(0xc2d9ff, 0.8);
+    //Game.scene.add(ambientLight);
+
+    // const helper = new CameraHelper(Game.directionalLight.shadow.camera);
+    // Game.scene.add(helper);
 
     new HDRLoader().load(import.meta.env.BASE_URL + "skybox.hdr", (tex) => {
         tex.mapping = EquirectangularReflectionMapping;
@@ -83,7 +113,8 @@ async function init(): Promise<void> {
             Game.scene.background = tex;
             Game.scene.environment = tex;
             Game.scene.backgroundIntensity = 0.5;
-            Game.scene.environmentIntensity = 0.5;
+            Game.scene.backgroundBlurriness = 0.05;
+            Game.scene.environmentIntensity = 0.2;
         }
     });
 
@@ -104,7 +135,18 @@ function animate(time: number): void {
     Game.cameraControls?.Update(Game.timer?.getDelta() ?? 0, Game.scene);
     Game.environment.skybox?.position.copy(Game.camera?.position as Vector3);
 
+    if (Game.camera && Game.directionalLight) {
+        const SUN_OFFSET = new Vector3(50, 50, 65);
+        Game.directionalLight.position.copy(Game.camera.position.clone().add(SUN_OFFSET));
+        Game.directionalLight.target.position.copy(Game.camera.position.clone());
+    }
+
     if (Game.scene) Game.world?.Update(Game.camera, Game.scene);
+
+    // #region AnimateGrass
+    CubeMeshGrassBlock.grassMaterial.uniforms.uTime.value = Game.timer?.getElapsed();
+    CubeMeshGrassBlock.grassMaterial.uniforms.uPlayerFeetPos.value = Game.cameraControls?.getPlayerFeetPos();
+    // #endregion
 
     Game.stats?.update();
     requestAnimationFrame(animate);
