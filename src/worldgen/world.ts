@@ -64,7 +64,8 @@ export enum BiomeTypes {
     Desert,
     Plains,
     Mountain,
-    Ocean
+    Ocean,
+    Underground
 }
 export class BiomeDistance {
     public distance: number;
@@ -410,7 +411,7 @@ export class World {
             return this.mountainGetBlockAt(blockPos, biomeData[0].distance, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
             //return Blocks.RED;
         }
-        if (biomeData[0].biome == BiomeTypes.Desert && blockPos.y < 70){
+        if (biomeData[0].biome == BiomeTypes.Desert){
             return this.desertGetBlockAt(blockPos, 0);
             //return Blocks.BLUE;
         }
@@ -420,9 +421,12 @@ export class World {
             //return Blocks.GREY;
         }
 
-        if (biomeData[0].biome == BiomeTypes.Plains && blockPos.y < 70){
+        if (biomeData[0].biome == BiomeTypes.Plains){
             return this.plainsGetBlockAt(blockPos, 0);
             //return Blocks.GREEN;
+        }
+        if (biomeData[0].biome == BiomeTypes.Underground){
+            return this.undergroundGetBlockAt(blockPos);
         }
         else {
             return Blocks.AIR;
@@ -452,6 +456,13 @@ export class World {
         else {
             return Blocks.AIR;
         }
+    }
+    undergroundGetBlockAt(blockPos: BlockPos){
+        if (this.getCaveAt(blockPos)) return Blocks.AIR;
+        else if (this.getCoalAt(blockPos)) return Blocks.COAL;
+        else if (this.getIronAt(blockPos)) return Blocks.IRON;
+        else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
+        else return Blocks.STONE;
     }
     mountainGetBlockAt(blockPos: BlockPos, d: number, dFract: number){
         let terrainHeight: number = this.getHeightAt(blockPos.x, blockPos.z);
