@@ -51,18 +51,14 @@ export const cucumberGen = {
     size: 16
 }
 export const worleyGridOffsets = [
-    new Vec2(-2, 0),
     new Vec2(-1, 1),
     new Vec2(-1, 0),
     new Vec2(-1, -1),
-    new Vec2(0, 2),
     new Vec2(0, 1),
     new Vec2(0, -1),
-    new Vec2(0, -2),
     new Vec2(1, 1),
     new Vec2(1, 0),
     new Vec2(1, -1),
-    new Vec2(2, 0),
 ]
 export enum BiomeTypes {
     Desert,
@@ -70,7 +66,7 @@ export enum BiomeTypes {
     Mountain,
     Ocean
 }
-class BiomeDistance {
+export class BiomeDistance {
     public distance: number;
     public biome: BiomeTypes;
     constructor(d: number, b: BiomeTypes){
@@ -366,7 +362,14 @@ export class World {
     private getCucumberAt(blockPos: BlockPos): boolean {
         return this.cucumberNoise.noise3d(blockPos.x / cucumberGen.size, blockPos.y / cucumberGen.size, blockPos.z / cucumberGen.size) < cucumberGen.max && blockPos.y < cucumberGen.maxHeight;
     }
-
+    //USED BY CHUNK GENERATION
+    getBlockToGenerateAtFromChunk(blockPos: BlockPos, biomeData: BiomeDistance[]): Block {
+        let blockToPush = this.getTerrainBlockToGenerateAtFromChunk(blockPos, biomeData);
+        if (blockToPush == Blocks.AIR) blockToPush = this.getStructureBlockToGenerateAt(blockPos);
+        return blockToPush;
+    }
+    
+    //USED BY EVERYTHING ELSE
     getBlockToGenerateAt(blockPos: BlockPos): Block {
         let blockToPush = this.getTerrainBlockToGenerateAt(blockPos);
         if (blockToPush == Blocks.AIR) blockToPush = this.getStructureBlockToGenerateAt(blockPos);
@@ -375,13 +378,13 @@ export class World {
 
     // BIOMES
 
-    getTerrainBlockToGenerateAt(blockPos: BlockPos): Block {
+    public getBiomeData(blockPos: BlockPos){
         let worleyWorldPos = new Vec2(blockPos.x / this.worleyGridSize, blockPos.z / this.worleyGridSize);
         let worleyGridPos: Vec2 = new Vec2(Math.floor(worleyWorldPos.x), Math.floor(worleyWorldPos.y));
         let posWithinGrid: Vec2 = worleyWorldPos.subtract(worleyGridPos);
 
         let closestBiome: BiomeDistance = new BiomeDistance(this.getFPDistFromOffset(posWithinGrid, worleyGridPos, new Vec2(0, 0)), this.getBiomeAtGrid(worleyGridPos));
-        let secondClosestBiome: BiomeDistance = new BiomeDistance(100000, BiomeTypes.Desert);
+        let secondClosestBiome: BiomeDistance = new BiomeDistance(1000, BiomeTypes.Desert);
         for ( var i = 0; i < worleyGridOffsets.length; i++){
             let s: number = this.getFPDistFromOffset(posWithinGrid, worleyGridPos, worleyGridOffsets[i]);
             if (s < closestBiome.distance){
@@ -397,24 +400,52 @@ export class World {
             }
         }
 
-        let closestBiomesList: BiomeDistance[] = [closestBiome, secondClosestBiome];
-        let currentBiome: BiomeTypes = closestBiomesList[0].biome;
+        return [closestBiome, secondClosestBiome];
+    }
 
-        if (currentBiome == BiomeTypes.Mountain){
-            return this.mountainGetBlockAt(blockPos, closestBiome.distance, closestBiome.distance / ((closestBiome.distance + secondClosestBiome.distance) / 2));
+    //CALLED BY CHUNK GENERATION, AND GIVEN BIOME DATA FROM CHUNK MEMOISATION
+    getTerrainBlockToGenerateAtFromChunk(blockPos: BlockPos, biomeData: BiomeDistance[]): Block {
+
+        if (biomeData[0].biome == BiomeTypes.Mountain){
+            return this.mountainGetBlockAt(blockPos, biomeData[0].distance, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
             //return Blocks.RED;
         }
-        if (currentBiome == BiomeTypes.Desert && blockPos.y < 70){
+        if (biomeData[0].biome == BiomeTypes.Desert && blockPos.y < 70){
             return this.desertGetBlockAt(blockPos, 0);
             //return Blocks.BLUE;
         }
 
-        if (currentBiome == BiomeTypes.Ocean){
-            return this.oceanGetBlockAt(blockPos, secondClosestBiome.biome, closestBiome.distance / ((closestBiome.distance + secondClosestBiome.distance) / 2));
+        if (biomeData[0].biome == BiomeTypes.Ocean){
+            return this.oceanGetBlockAt(blockPos, biomeData[1].biome, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
             //return Blocks.GREY;
         }
 
-        if (currentBiome == BiomeTypes.Plains && blockPos.y < 70){
+        if (biomeData[0].biome == BiomeTypes.Plains && blockPos.y < 70){
+            return this.plainsGetBlockAt(blockPos, 0);
+            //return Blocks.GREEN;
+        }
+        else {
+            return Blocks.AIR;
+        }
+    }
+    //CALLED BY LITERALLY EVERYTHING ELSE T-T 
+    getTerrainBlockToGenerateAt(blockPos: BlockPos): Block {
+        let biomeData: BiomeDistance[] = this.getBiomeData(blockPos);
+        if (biomeData[0].biome == BiomeTypes.Mountain){
+            return this.mountainGetBlockAt(blockPos, biomeData[0].distance, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
+            //return Blocks.RED;
+        }
+        if (biomeData[0].biome == BiomeTypes.Desert && blockPos.y < 70){
+            return this.desertGetBlockAt(blockPos, 0);
+            //return Blocks.BLUE;
+        }
+
+        if (biomeData[0].biome == BiomeTypes.Ocean){
+            return this.oceanGetBlockAt(blockPos, biomeData[1].biome, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
+            //return Blocks.GREY;
+        }
+
+        if (biomeData[0].biome == BiomeTypes.Plains && blockPos.y < 70){
             return this.plainsGetBlockAt(blockPos, 0);
             //return Blocks.GREEN;
         }
@@ -430,7 +461,7 @@ export class World {
             //noise variance
             (this.mountainHeightNoise.noise(blockPos.x / 35, blockPos.z / 35) / 4 + 0.75));
         let height: number = mHeight - blockPos.y;
-        let snowSpawnHeight: number = heightGen.snowHeight + this.snowHeightNoise.noise(blockPos.x / 5, blockPos.z / 5) * 2
+        let snowSpawnHeight: number = heightGen.snowHeight + this.snowHeightNoise.noise(blockPos.x / 5, blockPos.z / 5) * 2;
 
         if (height < 0 || (this.getCaveAt(blockPos) && blockPos.y < terrainHeight)) return Blocks.AIR;
         else if (height === 0 && blockPos.y >= snowSpawnHeight) return Blocks.SNOW;
