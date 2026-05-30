@@ -387,16 +387,26 @@ export class World {
         let worleyGridPos: Vector2 = new Vector2(Math.floor(worleyWorldPos.x), Math.floor(worleyWorldPos.y));
         let posWithinGrid: Vector2 = worleyWorldPos.clone().sub(worleyGridPos);
 
-        let smallestBiomes: BiomeDistance = new BiomeDistance(this.getFPDistFromOffset(posWithinGrid, worleyGridPos, new Vector2(0, 0)), this.getBiomeAtGrid(worleyGridPos));
-        
-        let currentBiome: BiomeTypes = this.getBiomeAtGrid(worleyGridPos);
+        let closestBiome: BiomeDistance = new BiomeDistance(this.getFPDistFromOffset(posWithinGrid, worleyGridPos, new Vector2(0, 0)), this.getBiomeAtGrid(worleyGridPos));
+        let secondClosestBiome: BiomeDistance = new BiomeDistance(100000, BiomeTypes.Desert);
         for ( var i = 0; i < worleyGridOffsets.length; i++){
             let s: number = this.getFPDistFromOffset(posWithinGrid, worleyGridPos, worleyGridOffsets[i]);
-            if (s < smallest){
-                smallest = s;
-                currentBiome = this.getBiomeAtGrid(worleyGridPos.clone().add(worleyGridOffsets[i]));
+            if (s < closestBiome.distance){
+                secondClosestBiome.distance = closestBiome.distance;
+                secondClosestBiome.biome = closestBiome.biome;
+                
+                closestBiome.distance = s;
+                closestBiome.biome = this.getBiomeAtGrid(worleyGridPos.clone().add(worleyGridOffsets[i]));
+            }
+            else if (s < secondClosestBiome.distance){
+                secondClosestBiome.distance = s;
+                secondClosestBiome.biome = this.getBiomeAtGrid(worleyGridPos.clone().add(worleyGridOffsets[i]));
             }
         }
+
+        let closestBiomesList: BiomeDistance[] = [closestBiome, secondClosestBiome];
+        let currentBiome: BiomeTypes = closestBiomesList[0].biome;
+
         if (currentBiome == BiomeTypes.Mountain && blockPos.y < 70){
             return this.mountainGetBlockAt(blockPos, smallest);
             //return Blocks.RED;
@@ -419,7 +429,7 @@ export class World {
             return Blocks.AIR;
         }
     }
-    mountainGetBlockAt(blockPos: BlockPos, dist: number){
+    mountainGetBlockAt(blockPos: BlockPos, b: BiomeDistance[]){
         let terrainHeight: number = this.getHeightAt(blockPos.x, blockPos.z);
         let mHeight: number = terrainHeight +
             //mountain height calc
