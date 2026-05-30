@@ -26,6 +26,10 @@ export const heightGen = {
     mountainHeight: 64,
     snowHeight: 80
 }
+export const biomeGen = {
+    shorelineFactor: 0.8,
+    oceanDepth: 3
+}
 export const dirtGen = {
     base: 3,
     amplitude: 2,
@@ -379,6 +383,28 @@ export class World {
 
     // BIOMES
 
+    public getHeightFromXZ(x: number, z: number){
+        let blockPos: BlockPos = new BlockPos(x, 0, z);
+        let bD: BiomeDistance[] = this.getBiomeData(blockPos);
+        let dFract = bD[0].distance / ((bD[0].distance + bD[1].distance) / 2);
+        let biome: BiomeTypes = bD[0].biome;
+        switch(biome){
+            case BiomeTypes.Mountain:
+                return [biome, this.getMountainHeight(blockPos, dFract)];
+            case BiomeTypes.Desert:
+                return [biome, this.getDesertHeight(blockPos, dFract)];
+            case BiomeTypes.Ocean:
+                if (dFract > biomeGen.shorelineFactor){
+                    return [biome, this.getOceanHeight(blockPos, dFract)];
+                } else {
+                    return [biome, null];
+                }
+            case BiomeTypes.Plains:
+                return [biome, this.getPlainsHeight(blockPos)];
+        }
+
+    }
+    
     public getBiomeData(blockPos: BlockPos){
         let worleyWorldPos = new Vec2(blockPos.x / this.worleyGridSize, blockPos.z / this.worleyGridSize);
         let worleyGridPos: Vec2 = new Vec2(Math.floor(worleyWorldPos.x), Math.floor(worleyWorldPos.y));
@@ -408,7 +434,7 @@ export class World {
     getTerrainBlockToGenerateAtFromChunk(blockPos: BlockPos, biomeData: BiomeDistance[]): Block {
 
         if (biomeData[0].biome == BiomeTypes.Mountain){
-            return this.mountainGetBlockAt(blockPos, biomeData[0].distance, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
+            return this.mountainGetBlockAt(blockPos, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
             //return Blocks.RED;
         }
         if (biomeData[0].biome == BiomeTypes.Desert){
@@ -417,7 +443,7 @@ export class World {
         }
 
         if (biomeData[0].biome == BiomeTypes.Ocean){
-            return this.oceanGetBlockAt(blockPos, biomeData[1].biome, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
+            return this.oceanGetBlockAt(blockPos, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
             //return Blocks.GREY;
         }
 
@@ -436,7 +462,7 @@ export class World {
     getTerrainBlockToGenerateAt(blockPos: BlockPos): Block {
         let biomeData: BiomeDistance[] = this.getBiomeData(blockPos);
         if (biomeData[0].biome == BiomeTypes.Mountain){
-            return this.mountainGetBlockAt(blockPos, biomeData[0].distance, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
+            return this.mountainGetBlockAt(blockPos, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
             //return Blocks.RED;
         }
         if (biomeData[0].biome == BiomeTypes.Desert && blockPos.y < 70){
@@ -445,7 +471,7 @@ export class World {
         }
 
         if (biomeData[0].biome == BiomeTypes.Ocean){
-            return this.oceanGetBlockAt(blockPos, biomeData[1].biome, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
+            return this.oceanGetBlockAt(blockPos, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
             //return Blocks.GREY;
         }
 
@@ -464,25 +490,26 @@ export class World {
         else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
         else return Blocks.STONE;
     }
-    mountainGetBlockAt(blockPos: BlockPos, d: number, dFract: number){
-        let terrainHeight: number = this.getHeightAt(blockPos.x, blockPos.z);
-        let mHeight: number = terrainHeight +
-            //mountain height calc
-            Math.round((1 - dFract) * heightGen.mountainHeight *
-            //noise variance
-            (this.mountainHeightNoise.noise(blockPos.x / 35, blockPos.z / 35) / 4 + 0.75));
-        let height: number = mHeight - blockPos.y;
+    mountainGetBlockAt(blockPos: BlockPos, dFract: number){
+        let height: number = this.getMountainHeight(blockPos, dFract) - blockPos.y;
         let snowSpawnHeight: number = heightGen.snowHeight + this.snowHeightNoise.noise(blockPos.x / 5, blockPos.z / 5) * 2;
 
-        if (height < 0 || (this.getCaveAt(blockPos) && blockPos.y < terrainHeight)) return Blocks.AIR;
+        if (height < 0 || (this.getCaveAt(blockPos) && blockPos.y < heightGen.base)) return Blocks.AIR;
         else if (height === 0 && blockPos.y >= snowSpawnHeight) return Blocks.SNOW;
         else if (this.getCoalAt(blockPos)) return Blocks.COAL;
         else if (this.getIronAt(blockPos)) return Blocks.IRON;
         else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
         else return Blocks.STONE;
     }
-    desertGetBlockAt(blockPos: BlockPos, dist: number){
-        let height: number = this.getHeightAt(blockPos.x, blockPos.z) - blockPos.y;
+    getMountainHeight(blockPos: BlockPos, dFract: number){
+        return this.getHeightAt(blockPos.x, blockPos.z) +
+            //mountain height calc
+            Math.round((1 - dFract) * heightGen.mountainHeight *
+            //noise variance
+            (this.mountainHeightNoise.noise(blockPos.x / 35, blockPos.z / 35) / 4 + 0.75));
+    }
+    desertGetBlockAt(blockPos: BlockPos, dFract: number){
+        let height: number = this.getDesertHeight(blockPos, dFract) - blockPos.y;
         let dirtHeight: number = height - this.getDirtThicknessAt(blockPos.x, blockPos.z);
 
         if (height < 0 || this.getCaveAt(blockPos)) return Blocks.AIR;
@@ -494,28 +521,13 @@ export class World {
         else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
         else return Blocks.STONE;
     }
-    oceanGetBlockAt(blockPos: BlockPos, neighbour: BiomeTypes, dFract: number){
-        let terrainHeight: number = this.getHeightAt(blockPos.x, blockPos.z);
-        let oHeight = 0;
-
-        let shoreLine: number = 0.8;
-        let depth: number = 3
-        if (dFract > shoreLine && neighbour != BiomeTypes.Ocean){
-            oHeight = (terrainHeight - heightGen.base) * ((dFract - shoreLine) * 5) + heightGen.base;
-        } else {
-            //seabed height is world base heigh - (extra noise * (1 - normalised distance from biome center) * multiplier)
-            oHeight = heightGen.base - (terrainHeight - heightGen.base) * ((shoreLine - dFract) * (1 / shoreLine)) * depth; 
-        }
-        oHeight = Math.round(oHeight) - blockPos.y;
+    getDesertHeight(blockPos: BlockPos, dFract: number){
+        return this.getHeightAt(blockPos.x, blockPos.z);
+    }
+    oceanGetBlockAt(blockPos: BlockPos, dFract: number){
+        let oHeight = this.getOceanHeight(blockPos, dFract) - blockPos.y;
         let sandDepth: number = this.getDirtThicknessAt(blockPos.x, blockPos.z);
 
-
-        //need to level out height noise around edges
-        //then terrain dips below that, anything above that but also below heightGen.base spawns water
-
-        //oHeight is how many blocks below the surface BlockPos is
-
-        //REPLACE BLUE WITH WATER
         if (oHeight < 0 && blockPos.y < heightGen.base) return Blocks.BLUE;
         if (oHeight < 0 || (this.getCaveAt(blockPos) && oHeight > sandDepth)) return Blocks.AIR;
         else if (oHeight <= sandDepth) return Blocks.SAND;
@@ -524,8 +536,17 @@ export class World {
         else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
         else return Blocks.STONE;
     }
+    getOceanHeight(blockPos: BlockPos, dFract: number){
+        let terrainHeight: number = this.getHeightAt(blockPos.x, blockPos.z);
+        if (dFract > biomeGen.shorelineFactor){
+            return Math.round((terrainHeight - heightGen.base) * ((dFract - biomeGen.shorelineFactor) * 5) + heightGen.base);
+        } else {
+            //seabed height is world base heigh - (extra noise * (1 - normalised distance from biome center) * multiplier)
+            return Math.round(heightGen.base - (terrainHeight - heightGen.base) * ((biomeGen.shorelineFactor - dFract) * (1 / biomeGen.shorelineFactor)) * biomeGen.oceanDepth); 
+        }
+    }
     plainsGetBlockAt(blockPos: BlockPos, dist: number){
-        let height: number = this.getHeightAt(blockPos.x, blockPos.z) - blockPos.y;
+        let height: number = this.getPlainsHeight(blockPos) - blockPos.y;
         let dirtHeight: number = height - this.getDirtThicknessAt(blockPos.x, blockPos.z);
 
         if (height < 0 || this.getCaveAt(blockPos)) return Blocks.AIR;
@@ -535,6 +556,9 @@ export class World {
         else if (this.getIronAt(blockPos)) return Blocks.IRON;
         else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
         return Blocks.STONE;
+    }
+    getPlainsHeight(blockPos: BlockPos){
+        return this.getHeightAt(blockPos.x, blockPos.z);
     }
 
     getStructureBlockToGenerateAt(blockPos: BlockPos): Block {
