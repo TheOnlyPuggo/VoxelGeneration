@@ -540,7 +540,14 @@ export class World {
         let oHeight = this.getOceanHeight(blockPos, dFract) - blockPos.y;
         let sandDepth: number = this.getDirtThicknessAt(blockPos.x, blockPos.z);
 
-        if (oHeight < 0 && blockPos.y < heightGen.base) return Blocks.BLUE;
+
+        //need to level out height noise around edges
+        //then terrain dips below that, anything above that but also below heightGen.base spawns water
+
+        //oHeight is how many blocks below the surface BlockPos is
+
+        //REPLACE BLUE WITH WATER
+        if (oHeight < 0 && blockPos.y < heightGen.base) return Blocks.WATER;
         if (oHeight < 0 || (this.getCaveAt(blockPos) && oHeight > sandDepth)) return Blocks.AIR;
         else if (oHeight <= sandDepth) return Blocks.SAND;
         else if (this.getCoalAt(blockPos)) return Blocks.COAL;

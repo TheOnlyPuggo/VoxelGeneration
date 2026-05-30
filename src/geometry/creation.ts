@@ -26,6 +26,8 @@ import Buffer from "three/src/renderers/common/Buffer.js";
 import {SimplexNoise} from "three/examples/jsm/Addons.js";
 import grassVertexShader from '../shaders/grassVertexShader.glsl?raw';
 import grassFragmentShader from '../shaders/grassFragmentShader.glsl?raw';
+import waterVertexShader from '../shaders/waterVertexShader.glsl?raw';
+import waterFragmentShader from '../shaders/waterFragmentShader.glsl?raw';
 
 export abstract class CubeMesh {
     protected static readonly planeMatrices: Matrix4[] = [];
@@ -277,6 +279,59 @@ export class CubeMeshGrassBlock extends CubeMeshMultiTexture {
             }
         }
     }
+}
+
+export class CubeMeshWaterBlock extends CubeMeshMultiMaterial {
+    //protected readonly waterInstanceIndex: number;
+    static waterTopMaterial: ShaderMaterial;
+    static waterTopGeometry: PlaneGeometry;
+    protected readonly waterTopInstanceIndex: number;
+
+    static {
+        CubeMeshWaterBlock.waterTopMaterial = new ShaderMaterial({
+            vertexShader: waterVertexShader,
+            fragmentShader: waterFragmentShader,
+            // fog: true,
+            uniforms: UniformsUtils.merge([
+                // UniformsLib.lights,
+                // UniformsLib.fog,
+                {
+                    uTime: { value: 0 },
+                    uDisplace: { value: true },
+                    uWaterCol: { value: new Vector3(100./255., 150./255., 237./255.) },
+                    uCausticCol: { value: new Vector3(1, 1, 1) },
+                    uIsTransparent: { value: true },
+                    uGScale: { value: 1 },
+                    uGSpeed: { value: 1 },
+                    uDisplacementAmp: { value: 0.2 },
+                    uFBMIntensity: { value: 3 },
+                    uFBMScale: { value: 0.2 },
+                }
+            ]),
+            side: DoubleSide,
+            transparent: true,
+        });
+
+        CubeMeshWaterBlock.waterTopGeometry = new PlaneGeometry(1, 1, 32, 32);
+    }
+
+    public constructor() {
+        super(true,
+            CubeMeshWaterBlock.waterTopMaterial,
+            new MeshStandardMaterial(),
+            new MeshStandardMaterial()
+        );
+
+        this.waterTopInstanceIndex = CompositeGeometry.addInstancedGeometryType(CubeMeshWaterBlock.waterTopGeometry, CubeMeshWaterBlock.waterTopMaterial); 
+    }
+
+
+    override addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry, blockPos: BlockPos): void {
+        if (index === 2) {
+            compositeGeometry.addGeometryInstance(this.waterTopInstanceIndex, CubeMesh.planeMatrices[index].clone());
+        }
+    }
+
 }
 
 

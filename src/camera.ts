@@ -147,8 +147,6 @@ export class CameraControls {
         this.CrouchingHeight(delta);
         this.MoveAndCollide(delta);
         this.HeadBob(delta, dir);
-        
-        
     }
 
     CrouchingHeight(delta: number) {
