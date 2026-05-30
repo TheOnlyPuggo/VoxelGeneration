@@ -85,7 +85,8 @@ export class CameraControls {
         if (this.inputWrapper.IsPressed(Input.Destroy)) {
             const front = new Vector3();
             this.camera.getWorldDirection(front);
-            const raycast: BlockPos[] | undefined = this.world?.raycastForVisibleBlock(Vec3.fromVector3(this.camera.position), Vec3.fromVector3(front), 5);
+            const raycast: BlockPos[] | undefined = this.world?.raycastForBlock(Vec3.fromVector3(this.camera.position), Vec3.fromVector3(front), 5,
+                (block: Block): boolean => block.getVisible());
             if (raycast) {
                 if (this.world) this.lastDestroyedBlock = this.world.getBlockAt(raycast[raycast.length - 1]);
                 this.world?.setBlockAt(raycast[raycast.length - 1], Blocks.AIR, scene);
@@ -94,7 +95,8 @@ export class CameraControls {
         if (this.inputWrapper.IsPressed(Input.Place)) {
             const front = new Vector3();
             this.camera.getWorldDirection(front);
-            const raycast: BlockPos[] | undefined = this.world?.raycastForVisibleBlock(Vec3.fromVector3(this.camera.position), Vec3.fromVector3(front), 5);
+            const raycast: BlockPos[] | undefined = this.world?.raycastForBlock(Vec3.fromVector3(this.camera.position), Vec3.fromVector3(front), 5,
+                (block: Block): boolean => block.getVisible());
             if (raycast && raycast.length > 2) {
                 const newBlockPos = raycast[raycast.length - 2];
                 if (!this.collidesWithBlockPos(newBlockPos)) this.world?.setBlockAt(newBlockPos, this.lastDestroyedBlock, scene)
@@ -297,7 +299,7 @@ export class CameraControls {
     }
 
     IsSolid(x: number, y: number, z: number): boolean {
-        return this.world ? this.world.getBlockAt(BlockPos.roundFromVec3(new Vec3(x, y, z))).getVisible() : false;
+        return this.world ? this.world.getBlockAt(BlockPos.roundFromVec3(new Vec3(x, y, z))).getSolid() : false;
     }
 }
 

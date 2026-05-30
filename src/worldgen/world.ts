@@ -630,7 +630,7 @@ export class World {
     }
 
     // Technically not a raycast but like it does the same thing but better, so I'm calling it one
-    public raycastForVisibleBlock(startPos: Vec3, direction: Vec3, range: number): BlockPos[] | undefined {
+    public raycastForBlock(startPos: Vec3, direction: Vec3, range: number, condition: (block: Block) => boolean): BlockPos[] | undefined {
         let checkedBlocks: BlockPos[] = [];
         let currentPos: BlockPos = BlockPos.roundFromVec3(startPos);
         checkedBlocks.push(currentPos);
