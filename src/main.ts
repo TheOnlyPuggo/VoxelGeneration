@@ -104,8 +104,8 @@ async function init(): Promise<void> {
     //const ambientLight = new AmbientLight(0xc2d9ff, 0.8);
     //Game.scene.add(ambientLight);
 
-    const helper = new CameraHelper(Game.directionalLight.shadow.camera);
-    Game.scene.add(helper);
+    // const helper = new CameraHelper(Game.directionalLight.shadow.camera);
+    // Game.scene.add(helper);
 
     new HDRLoader().load(import.meta.env.BASE_URL + "skybox.hdr", (tex) => {
         tex.mapping = EquirectangularReflectionMapping;

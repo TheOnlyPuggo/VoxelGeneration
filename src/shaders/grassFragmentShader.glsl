@@ -85,7 +85,7 @@ void main() {
 
   // --- SHADOW
   float shadow = getShadowMask();
-  color *= mix(0.5, 1.0, shadow);
+  color *= mix(0.6, 1.0, shadow);
 
 
 /*
