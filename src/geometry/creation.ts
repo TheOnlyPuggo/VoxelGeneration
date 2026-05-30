@@ -1,15 +1,31 @@
 import {
+    BufferGeometry,
     Color,
+    Float32BufferAttribute,
     Material,
-    Matrix4,
+    ShaderMaterial,
     MeshStandardMaterial,
+    MeshNormalMaterial,
     NearestFilter,
     PlaneGeometry,
+    SphereGeometry,
+    TextureLoader,
+    DoubleSide,
+    Vector3,
+    Sphere,
+    MathUtils,
+    UniformsUtils,
+    UniformsLib,
+    Matrix4,
     SRGBColorSpace,
-    TextureLoader
+    MeshBasicMaterial,
 } from "three";
 import {CompositeGeometry} from "./compositeGeometry";
 import {BlockPos} from "../positions/blockPos";
+import Buffer from "three/src/renderers/common/Buffer.js";
+import {SimplexNoise} from "three/examples/jsm/Addons.js";
+import grassVertexShader from '../shaders/grassVertexShader.glsl?raw';
+import grassFragmentShader from '../shaders/grassFragmentShader.glsl?raw';
 
 export abstract class CubeMesh {
     protected static readonly planeMatrices: Matrix4[] = [];
@@ -94,9 +110,9 @@ export class CubeMeshOneMaterial extends CubeMesh {
 }
 
 export class CubeMeshMultiMaterial extends CubeMesh {
-    private readonly topInstanceIndex: number;
-    private readonly bottomInstanceIndex: number;
-    private readonly sideInstanceIndex: number;
+    protected readonly topInstanceIndex: number;
+    protected readonly bottomInstanceIndex: number;
+    protected readonly sideInstanceIndex: number;
 
     public constructor(
         transparent: boolean,
@@ -151,6 +167,120 @@ export class CubeMeshMultiTexture extends CubeMeshMultiMaterial {
         );
     }
 }
+
+export class CubeMeshGrassBlock extends CubeMeshMultiTexture {
+    protected readonly grassInstanceIndex: number;
+
+
+    static grassGeometry: BufferGeometry;
+    static grassMaterial: ShaderMaterial;
+    static grassNoise: SimplexNoise;
+
+    static {
+        let segments = 4;
+        let positions = [], uvs = [], indices = [];
+
+        for(let i = 0; i <= segments; ++i) {
+            let t = i / segments;
+            let width = 0.15 * (1 - t);
+            let height = t * 0.6;
+            let bend = t * t * 0.3;
+
+            positions.push(-width, height, bend);
+            positions.push(width, height, bend);
+            uvs.push(0, t, 1, t);
+
+            if (i < segments) {
+                let base = i * 2;
+                indices.push(base, base + 1, base + 2, base + 1, base + 3, base + 2);
+            }
+        }
+
+        CubeMeshGrassBlock.grassNoise = new SimplexNoise();
+
+        let geo = new BufferGeometry();
+        geo.setAttribute('position', new Float32BufferAttribute(positions, 3));
+        geo.setAttribute('uv', new Float32BufferAttribute(uvs, 2));
+        geo.setIndex(indices);
+        geo.computeVertexNormals();
+        geo.computeBoundingBox();
+        geo.computeBoundingSphere(); 
+        CubeMeshGrassBlock.grassGeometry = geo;
+
+
+        
+        CubeMeshGrassBlock.grassMaterial = new ShaderMaterial({
+            vertexShader: grassVertexShader,
+            fragmentShader: grassFragmentShader,
+            fog: true,
+            uniforms: UniformsUtils.merge([
+                UniformsLib.lights,
+                UniformsLib.fog,
+                {
+                    uTime:         { value: 0 },
+                    uPlayerFeetPos: { value : new Vector3(0, 0, 0) },
+                    //uWindDir:      { value: new Vector3(1, 0, 0.5).normalize() },
+                },
+            ]),
+            side: DoubleSide,
+            lights: true,
+            alphaTest: 0.1,
+            
+        });
+
+        CubeMeshGrassBlock.grassMaterial.userData.castShadow    = false;
+        CubeMeshGrassBlock.grassMaterial.userData.receiveShadow = true;
+        
+    }
+
+    public constructor(
+        transparent: boolean,
+        topTexturePath: string,
+        bottomTexturePath: string,
+        sideTexturePath: string
+    ) {
+        super(transparent,
+            topTexturePath,
+            bottomTexturePath,
+            sideTexturePath
+        );
+
+        this.grassInstanceIndex = CompositeGeometry.addInstancedGeometryType(CubeMeshGrassBlock.grassGeometry, CubeMeshGrassBlock.grassMaterial); 
+    }
+
+
+    override addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry, blockPos: BlockPos): void {
+        
+        super.addFaceToCompositeGeometry(index, compositeGeometry, blockPos);
+
+
+        if (index === 2) {
+            for(let x = 0; x < 1; x += 0.13) {
+                for(let y = 0; y < 1; y += 0.13) {
+                    let grassMatrix = new Matrix4();
+                    let modifyMatrix = new Matrix4();
+
+                    let randScale = 0.6 + CubeMeshGrassBlock.grassNoise.noise(x, y + 15) * 0.3;
+
+                    modifyMatrix.makeScale(randScale, randScale, randScale);
+                    grassMatrix.premultiply(modifyMatrix);
+
+                    modifyMatrix.makeRotationY(CubeMeshGrassBlock.grassNoise.noise(x + 100, y) * Math.PI * 2);
+                    grassMatrix.premultiply(modifyMatrix);
+
+                    let noiseScale = 10;
+                    modifyMatrix.makeTranslation((CubeMeshGrassBlock.grassNoise.noise((x + blockPos.x + 100) * noiseScale, (y + blockPos.z + 50) * noiseScale) + 1) * 50 % 1 - 0.5, -0.5, (CubeMeshGrassBlock.grassNoise.noise((x + blockPos.x - 100) * noiseScale, (y + blockPos.z - 50) * noiseScale) + 1) * 50 % 1 - 0.5);
+                    grassMatrix.premultiply(modifyMatrix);
+
+                    compositeGeometry.addGeometryInstance(this.grassInstanceIndex, grassMatrix);
+                }
+            }
+        }
+    }
+}
+
+
+
 
 // // The pbr are outdated rn, i will fix them when we get to using pbr textures.
 // export class CuboidMeshPBR extends CuboidMesh {

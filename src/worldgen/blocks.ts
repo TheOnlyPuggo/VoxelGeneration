@@ -1,10 +1,10 @@
 import {Block} from "./block";
 import {Color} from "three";
-import {CubeMeshMultiTexture, CubeMeshOneColor, CubeMeshOneTexture} from "../geometry/creation";
+import {CubeMeshGrassBlock, CubeMeshMultiTexture, CubeMeshOneColor, CubeMeshOneTexture} from "../geometry/creation";
 
 export const AIR = new Block("air", null);
 export const GRASS = new Block("grass",
-    new CubeMeshMultiTexture(false,
+    new CubeMeshGrassBlock(false,
         "block_textures/grass/grass_top.png",
         "block_textures/grass/grass_bottom.png",
         "block_textures/grass/grass_side.png",
