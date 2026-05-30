@@ -32,7 +32,7 @@ export const RED = new Block("snow", new CubeMeshOneColor(1, new Color(1, 0, 0),
 export const GREEN = new Block("snow", new CubeMeshOneColor(1, new Color(0, 1, 0), false));
 export const GREY = new Block("snow", new CubeMeshOneColor(1, new Color(0.5, 0.5, 0.5), false));
 export const BLACK = new Block("snow", new CubeMeshOneColor(1, new Color(0, 0, 0), false));
-export const SAND = new Block("Sand", new CubeMeshOneColor(1, new Color(1, 1, 0), false));
+export const SAND = new Block("sand", new CubeMeshOneTexture(false, "block_textures/sand.png"));
 interface BlockDictionary {
     [key: string]: Block;
 }
