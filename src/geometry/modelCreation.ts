@@ -60,6 +60,7 @@ export class Model {
         Model.LoadedModels["Tree"] = await Model.load("model_data/plains_tree.csv");
         Model.LoadedModels["DirtHut"] = await Model.load("model_data/dirt_hut.csv");
         Model.LoadedModels["Mushroom"] = await Model.load("model_data/mushroom.csv");
+        Model.LoadedModels["PalmTree"] = await Model.load("model_data/palm_tree_1.csv");
     }
 
     static async load(modelDataPath: string): Promise<Model> {
@@ -69,12 +70,35 @@ export class Model {
 
     public async loadModelInformation(blockOriginPos: BlockPos) {
         if (Model.generatedStructureBlocksToLoad.has(blockOriginPos.getKey())) return;
+        let modelRotationIndex = (blockOriginPos.x + blockOriginPos.z) % 4;
 
         this.blockDatas.forEach((blockData) => {
+            let blockPosX = 0;
+            let blockPosZ = 0;
+
+            switch (modelRotationIndex) {
+                case 0:
+                    blockPosX = blockData.pos.x + blockOriginPos.x;
+                    blockPosZ = blockData.pos.z + blockOriginPos.z;
+                    break;
+                case 1:
+                    blockPosX = -blockData.pos.z + blockOriginPos.x;
+                    blockPosZ = blockData.pos.x + blockOriginPos.z;
+                    break;
+                case 2:
+                    blockPosX = -blockData.pos.x + blockOriginPos.x;
+                    blockPosZ = -blockData.pos.z + blockOriginPos.z;
+                    break;
+                case 3:
+                    blockPosX = blockData.pos.z + blockOriginPos.x;
+                    blockPosZ = -blockData.pos.x + blockOriginPos.z;
+                    break;
+            }
+
             let blockWorldPos: BlockPos = new BlockPos(
-                blockData.pos.x + blockOriginPos.x,
+                blockPosX,
                 blockData.pos.y + blockOriginPos.y,
-                blockData.pos.z + blockOriginPos.z
+                blockPosZ
             );
 
             Model.generatedStructureBlocksToLoad.set(

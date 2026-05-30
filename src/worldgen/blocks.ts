@@ -33,6 +33,12 @@ export const GREEN = new Block("snow", new CubeMeshOneColor(1, new Color(0, 1, 0
 export const GREY = new Block("snow", new CubeMeshOneColor(1, new Color(0.5, 0.5, 0.5), false), true);
 export const BLACK = new Block("snow", new CubeMeshOneColor(1, new Color(0, 0, 0), false), true);
 export const SAND = new Block("sand", new CubeMeshOneTexture(false, "block_textures/sand.png"), true);
+export const PALM_TREE_LEAF = new Block("palm_tree_leaf", new CubeMeshOneTexture(true, "block_textures/leaves.png"), true);
+export const PALM_TREE_LOG = new Block("palm_tree_log", new CubeMeshMultiTexture(false,
+    "block_textures/log/log_top.png",
+    "block_textures/log/log_top.png",
+    "block_textures/log/log_side.png",
+), true);
 interface BlockDictionary {
     [key: string]: Block;
 }
@@ -48,5 +54,7 @@ export const MinecraftBlockDictionary: BlockDictionary = {
     "minecraft:iron_ore": IRON,
     "minecraft:red_mushroom_block": MUSHROOM_BLOCK,
     "minecraft:mushroom_stem": MUSHROOM_STEM,
+    "minecraft:azalea_leaves": PALM_TREE_LEAF,
+    "minecraft:jungle_log": PALM_TREE_LOG,
     "67": CUCUMBER,
 };

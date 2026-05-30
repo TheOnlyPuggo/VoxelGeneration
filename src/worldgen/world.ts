@@ -765,14 +765,30 @@ export class World {
 
     public getModelAtPos(x: number, z: number): [Model, number] | undefined {
         let structureNoiseVal = this.structureNoise.noise(x, z);
-        if (structureNoiseVal >= 0.95) {
+
+        if (structureNoiseVal >= 0.93) {
+            if (this.hasLocalMaximaNoise(structureNoiseVal, x, z, 2)) return undefined;
+
             let heightAndBiome = this.getHeightAndBiomeFromXZ(x, z);
             if (!heightAndBiome || !heightAndBiome[1]) return undefined;
 
             if (heightAndBiome[0] == BiomeTypes.Plains) return [Model.LoadedModels["Tree"], heightAndBiome[1]];
+            else if (heightAndBiome[0] == BiomeTypes.Ocean) return [Model.LoadedModels["PalmTree"], heightAndBiome[1]];
         }
         else return undefined;
         // CURSED else return Model.LoadedModels["DirtHut"];
+    }
+
+    private hasLocalMaximaNoise(noiseValue: number, x: number, z: number, range: number) : boolean {
+        for (let dx = -range; dx <= range; dx++) {
+            for (let dz = -range; dz <= range; dz++) {
+                if (dx == 0 && dz == 0) continue;
+
+                if (this.structureNoise.noise(x + dx, z + dz) > noiseValue) return true;
+            }
+        }
+
+        return false;
     }
 
     public SetStructureGenFirstTime(state: boolean) {
