@@ -87,7 +87,7 @@ export class CameraControls {
             this.camera.getWorldDirection(front);
             const raycast: BlockPos[] | undefined = this.world?.raycastForVisibleBlock(Vec3.fromVector3(this.camera.position), Vec3.fromVector3(front), 5);
             if (raycast) {
-                this.lastDestroyedBlock = this.world?.getBlockAt(raycast[raycast.length - 1]);
+                if (this.world) this.lastDestroyedBlock = this.world.getBlockAt(raycast[raycast.length - 1]);
                 this.world?.setBlockAt(raycast[raycast.length - 1], Blocks.AIR, scene);
             }
         }
