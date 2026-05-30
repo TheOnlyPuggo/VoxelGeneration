@@ -92,15 +92,16 @@ export class CompositeGeometry {
         const meshes: Mesh[] = [];
         for (const [material, geometries] of this.geometries) {
             const mesh = new Mesh(BufferGeometryUtils.mergeGeometries(geometries, false), material);
-            mesh.castShadow = material.visible;
-            mesh.receiveShadow = material.visible;
+            mesh.castShadow    = material.userData.castShadow    ?? material.visible;
+            mesh.receiveShadow = material.userData.receiveShadow ?? material.visible;
             material.visible = true;
             meshes.push(mesh);
         }
         for (const [index, instancedGeometry] of this.instancedGeometries) {
             const mesh = instancedGeometry.createMesh();
-            mesh.castShadow = instancedGeometry.geometryType.material.visible;
-            mesh.receiveShadow = instancedGeometry.geometryType.material.visible;
+            const mat = instancedGeometry.geometryType.material;
+            mesh.castShadow    = mat.userData.castShadow    ?? mat.visible;
+            mesh.receiveShadow = mat.userData.receiveShadow ?? mat.visible;
             instancedGeometry.geometryType.material.visible = true;
             meshes.push(mesh);
         }

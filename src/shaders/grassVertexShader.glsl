@@ -9,7 +9,9 @@ uniform vec3 uPlayerFeetPos;
 //uniform vec3  uWindDir; 
 varying vec2 vUv;
 varying float vHeight;
-
+varying vec3 vPosition;
+varying float vFogDepth;
+varying vec3 vNormal;
 
 //
 // Description : Array and textureless GLSL 2D simplex noise function.
@@ -90,6 +92,10 @@ void main() {
 
   vec4 instancePos = instanceMatrix * vec4(position, 1.0);
 
+  vPosition = instancePos.xyz;
+  
+  
+
   float influence = vHeight * vHeight;
   float distanceFromPlayer = distance(instancePos.xyz, uPlayerFeetPos);
 
@@ -134,9 +140,14 @@ void main() {
 
 
   vec3 transformedNormal = (modelMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz;
-  //vec4 worldPosition = modelMatrix * vec4(pos, 1.0);
+  vNormal = normalize(normalMatrix * vec3(0.0, 1.0, 0.0));
+  vec4 worldPosition = instancePos;
 
-  //#include <shadowmap_vertex>
+  #include <shadowmap_vertex>
+
+
+  vec4 mvPosition = modelViewMatrix * instancePos;
+  vFogDepth = -mvPosition.z;
 
   gl_Position = projectionMatrix * modelViewMatrix * instancePos;
 }
