@@ -256,42 +256,22 @@ export class CubeMeshGrassBlock extends CubeMeshMultiTexture {
                     let grassMatrix = new Matrix4();
                     let modifyMatrix = new Matrix4();
 
-                    let myGrassGeometry = CubeMeshGrassBlock.grassGeometry.clone();
                     let randScale = 0.6 + CubeMeshGrassBlock.grassNoise.noise(x, y + 15) * 0.3;
-
 
                     modifyMatrix.makeScale(randScale, randScale, randScale);
                     grassMatrix.premultiply(modifyMatrix);
-
-                    //myGrassGeometry.scale(randScale, randScale, randScale);
-                    //myGrassGeometry.rotateY(CubeMeshGrassBlock.grassNoise.noise(x + 100, y) * Math.PI * 2);
 
                     modifyMatrix.makeRotationY(CubeMeshGrassBlock.grassNoise.noise(x + 100, y) * Math.PI * 2);
                     grassMatrix.premultiply(modifyMatrix);
 
                     let noiseScale = 10;
-                    //myGrassGeometry.translate((CubeMeshGrassBlock.grassNoise.noise((x + 100) * noiseScale, (y + 50) * noiseScale) + 1) / 2 - 0.5, -0.5, (CubeMeshGrassBlock.grassNoise.noise((x - 100) * noiseScale, (y - 50) * noiseScale) + 1) / 2 - 0.5);
                     modifyMatrix.makeTranslation((CubeMeshGrassBlock.grassNoise.noise((x + blockPos.x + 100) * noiseScale, (y + blockPos.z + 50) * noiseScale) + 1) * 50 % 1 - 0.5, -0.5, (CubeMeshGrassBlock.grassNoise.noise((x + blockPos.x - 100) * noiseScale, (y + blockPos.z - 50) * noiseScale) + 1) * 50 % 1 - 0.5);
                     grassMatrix.premultiply(modifyMatrix);
 
-                    //topFaceGeometry.addGeometries([myGrassGeometry], [CubeMeshGrassBlock.grassMaterial]);
 
                     compositeGeometry.addGeometryInstance(this.grassInstanceIndex, grassMatrix);
                 }
             }
-    
-            /*
-            for (let i = 0; i < 100; ++i) {
-                let myGrassGeometry = CubeMeshGrassBlock.grassGeometry.clone();
-                let randScale = 0.6 + Math.random() * 0.3;
-                myGrassGeometry.scale(randScale, randScale, randScale);
-                myGrassGeometry.rotateY(Math.random() * Math.PI * 2);
-                myGrassGeometry.translate(MathUtils.randFloat(-0.5, 0.5), -0.5, MathUtils.randFloat(-0.5, 0.5));
-
-                
-                topFaceGeometry.addGeometries([myGrassGeometry], [CubeMeshGrassBlock.grassMaterial]);
-            }
-                */
         }
     }
 }
