@@ -1,7 +1,6 @@
-import {Camera, HalfFloatType, Vector3, MathUtils, PerspectiveCamera, Scene} from "three";
-import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
-import { World } from "./worldgen/world";
-import { TechnicolorShader } from "three/examples/jsm/Addons.js";
+import {Vector3, MathUtils, PerspectiveCamera, Scene} from "three";
+import {PointerLockControls} from 'three/examples/jsm/controls/PointerLockControls.js';
+import {World} from "./worldgen/world";
 import {BlockPos} from "./positions/blockPos";
 import {Vec3} from "./positions/vec3";
 import * as Blocks from "./worldgen/blocks";
@@ -77,13 +76,13 @@ export class CameraControls {
         if (this.inputWrapper.IsPressed(Input.Destroy)) {
             const front = new Vector3();
             this.camera.getWorldDirection(front);
-            const raycast: BlockPos[] | undefined = this.world?.raycastForVisibleBlock(Vec3.fromVector3(this.camera.position), Vec3.fromVector3(front), 4);
+            const raycast: BlockPos[] | undefined = this.world?.raycastForVisibleBlock(Vec3.fromVector3(this.camera.position), Vec3.fromVector3(front), 5);
             if (raycast) this.world?.setBlockAt(raycast[raycast.length - 1], Blocks.AIR, scene)
         }
         if (this.inputWrapper.IsPressed(Input.Place)) {
             const front = new Vector3();
             this.camera.getWorldDirection(front);
-            const raycast: BlockPos[] | undefined = this.world?.raycastForVisibleBlock(Vec3.fromVector3(this.camera.position), Vec3.fromVector3(front), 4);
+            const raycast: BlockPos[] | undefined = this.world?.raycastForVisibleBlock(Vec3.fromVector3(this.camera.position), Vec3.fromVector3(front), 5);
             if (raycast && raycast.length > 2) {
                 const newBlockPos = raycast[raycast.length - 2];
                 if (!this.collidesWithBlockPos(newBlockPos)) this.world?.setBlockAt(newBlockPos, Blocks.CUCUMBER, scene)

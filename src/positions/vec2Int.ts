@@ -1,6 +1,5 @@
 import {Vector2} from "three";
 import {Vec2} from "./vec2";
-import {Vec3} from "./vec3";
 
 export class Vec2Int extends Vec2 {
     public constructor(x: number = 0, y: number = 0) {

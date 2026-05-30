@@ -1,7 +1,5 @@
-import {Scene} from "three";
 import {BlockPos} from "../positions/blockPos";
 import {MinecraftBlockDictionary} from "../worldgen/blocks";
-import {FaceMap} from "./faceMap";
 import {Block} from "../worldgen/block";
 
 interface ModelBlockData {
@@ -23,7 +21,6 @@ interface GeneratedStructureBlock {
 }
 
 export class Model {
-    public static manualModelsToLoad: [BlockPos, StructureBlocksDictionary][] = [];
     public static generatedStructureBlocksToLoad: Map<string, GeneratedStructureBlock> = new Map<string, GeneratedStructureBlock>();
     public static LoadedModels: ModelNamesDictionary = {};
 
@@ -70,24 +67,7 @@ export class Model {
         return new Model(data);
     }
 
-    // chunk based
-    loadStructureAt(blockOriginPos: BlockPos) {
-        let blocksDictionary: StructureBlocksDictionary = {};
-
-        this.blockDatas.forEach((blockData) => {
-            let blockWorldPos: BlockPos = new BlockPos(
-                blockData.pos.x + blockOriginPos.x,
-                blockData.pos.y + blockOriginPos.y,
-                blockData.pos.z + blockOriginPos.z
-            );
-
-            blocksDictionary[blockWorldPos.getKey()] = MinecraftBlockDictionary[blockData.minecraftName];
-        });
-
-        Model.manualModelsToLoad.push([blockOriginPos, blocksDictionary]);
-    }
-
-    public loadModelInformation(blockOriginPos: BlockPos) {
+    public async loadModelInformation(blockOriginPos: BlockPos) {
         this.blockDatas.forEach((blockData) => {
             let blockWorldPos: BlockPos = new BlockPos(
                 blockData.pos.x + blockOriginPos.x,

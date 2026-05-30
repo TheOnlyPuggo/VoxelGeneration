@@ -1,17 +1,9 @@
-import {
-    Vector3,
-    Mesh,
-    Camera,
-    Scene,
-    Frustum,
-    Matrix4,
-} from "three";
+import {Mesh, Camera, Scene, Frustum, Matrix4} from "three";
 import * as Blocks from "./blocks";
 import {SimplexNoise} from "three/examples/jsm/Addons.js";
 import {Chunk} from "./chunk";
 import {BlockPos} from "../positions/blockPos";
 import {ChunkPos} from "../positions/chunkPos";
-import {SubChunkPos} from "../positions/subChunkPos";
 import {Block} from "./block";
 import { seededRandom } from "three/src/math/MathUtils.js";
 import {Model} from "../geometry/modelCreation";
@@ -25,7 +17,6 @@ const nextFrame = () =>
     new Promise<void>(resolve =>
         requestAnimationFrame(() => resolve())
     );
-export const worldSize = new Vector3(5, 8, 5);
 export const heightGen = {
     base: 64,
     amplitude: 2,
@@ -114,6 +105,7 @@ export class World {
 
     private cameraChunkPos: ChunkPos;
     private previousCameraChunkPos: ChunkPos;
+    private previousStructureCameraChunkPos: ChunkPos;
     private isGenerating: boolean;
 
     private firstStructureGeneration: boolean;
@@ -139,10 +131,12 @@ export class World {
 
         this.cameraChunkPos = new ChunkPos(0, 0, 0);
         this.previousCameraChunkPos = this.cameraChunkPos;
+        this.previousStructureCameraChunkPos = this.cameraChunkPos;
         this.isGenerating = false;
 
         this.chunksMap = new Map<string, {chunk: Chunk, chunkMeshes: Mesh[]}>();
         this.chunkSaveMap = new Map<string, ChunkSave>();
+
 
         this.firstStructureGeneration = true;
     }
@@ -153,17 +147,18 @@ export class World {
         this.cameraChunkPos = Chunk.getChunkPosfromCameraPos(camera);
         if (!this.previousCameraChunkPos.equals(this.cameraChunkPos) && !this.isGenerating)  {
             this.isGenerating = true;
-            this.previousCameraChunkPos = this.cameraChunkPos;
 
-            this.generateStructureData()
-                .then(() => this.CreateChunks())
-                .then((newChunks) => this.CreateChunkMeshes(scene, newChunks))
-                .then(() => this.DeleteOutOfRenderChunks(scene))
-                .then(() => this.deleteOutOfRangeStructureData())
-                .finally(() => this.isGenerating = false);
+            await this.generateStructureData();
+            const newChunks = await this.CreateChunks();
+            await this.CreateChunkMeshes(scene, newChunks);
+            await this.DeleteOutOfRenderChunks(scene);
+            await this.deleteOutOfRangeStructureData();
+
+            this.isGenerating = false;
+            this.previousCameraChunkPos = this.cameraChunkPos;
         }
 
-        this.FrustumCulling(camera);
+        //this.FrustumCulling(camera);
     }
 
     private addChunkMeshes(scene: Scene, chunkEntry: { chunk: Chunk, chunkMeshes: Mesh[] } | undefined): void {
@@ -209,9 +204,7 @@ export class World {
 
                         ++createCount;
 
-                        if (createCount % 2 === 0) {
-                            await nextFrame();
-                        }
+                        await nextFrame();
                     }
                 }
             }
@@ -503,25 +496,7 @@ export class World {
     }
 
     getStructureBlockToGenerateAt(blockPos: BlockPos): Block {
-        let structureBlock: Block | null = null;
-
-        // Manual Structure Loading
-        Model.manualModelsToLoad.forEach((modelData) => {
-            let distanceCalcPos1: Vector3 = new Vector3(blockPos.x, blockPos.y, blockPos.z);
-            let distanceCalcPos2: Vector3 = new Vector3(modelData[0].x, modelData[0].y, modelData[0].z);
-
-            if (distanceCalcPos1.distanceTo(distanceCalcPos2) > 256.0) return;
-
-            let foundStructureBlock = modelData[1][blockPos.getKey()];
-            if (foundStructureBlock == null) return;
-
-            structureBlock = foundStructureBlock;
-        });
-
-        // Generated Structure Loading
-        if (structureBlock == null) {
-            structureBlock = Model.generatedStructureBlocksToLoad.get(blockPos.getKey())?.block ?? null;
-        }
+        let structureBlock: Block | null = Model.generatedStructureBlocksToLoad.get(blockPos.getKey())?.block ?? null;
 
         if (structureBlock != null) return structureBlock;
         return Blocks.AIR;
@@ -652,26 +627,31 @@ export class World {
     private async generateStructureData() {
         if (this.firstStructureGeneration) await Model.LoadModelData();
 
-        let minimumX: number = (this.cameraChunkPos.x * Chunk.chunkSize) - ((this.worldRadius + 1) * Chunk.chunkSize);
-        let maximumX: number = (this.cameraChunkPos.x * Chunk.chunkSize) + ((this.worldRadius + 1) * Chunk.chunkSize) + Chunk.chunkSize - 1;
-        let minimumZ: number = (this.cameraChunkPos.z * Chunk.chunkSize) - ((this.worldRadius + 1) * Chunk.chunkSize);
-        let maximumZ: number = (this.cameraChunkPos.z * Chunk.chunkSize) + ((this.worldRadius + 1) * Chunk.chunkSize) + Chunk.chunkSize - 1;
+        let minimumX = (this.cameraChunkPos.x * Chunk.chunkSize) - ((this.worldRadius + 1) * Chunk.chunkSize);
+        let maximumX = (this.cameraChunkPos.x * Chunk.chunkSize) + ((this.worldRadius + 1) * Chunk.chunkSize) + Chunk.chunkSize - 1;
+        let minimumZ = (this.cameraChunkPos.z * Chunk.chunkSize) - ((this.worldRadius + 1) * Chunk.chunkSize);
+        let maximumZ = (this.cameraChunkPos.z * Chunk.chunkSize) + ((this.worldRadius + 1) * Chunk.chunkSize) + Chunk.chunkSize - 1;
+
+        let chunkPosShift: ChunkPos = this.cameraChunkPos.subtract(this.previousStructureCameraChunkPos);
+        this.previousStructureCameraChunkPos = this.cameraChunkPos;
+
+        if (Math.abs(chunkPosShift.y) == 1 && chunkPosShift.x == 0 && chunkPosShift.z == 0) return;
+
+        if (
+            !this.firstStructureGeneration &&
+            ((Math.abs(chunkPosShift.x) == 1 || Math.abs(chunkPosShift.z) == 1)) &&
+            Math.abs(chunkPosShift.x) != Math.abs(chunkPosShift.z)
+        ) {
+            if (chunkPosShift.x == -1) maximumX = minimumX + Chunk.chunkSize;
+            else if (chunkPosShift.x == 1) minimumX = maximumX - Chunk.chunkSize;
+            else if (chunkPosShift.z == -1) maximumZ = minimumZ + Chunk.chunkSize;
+            else if (chunkPosShift.z == 1) minimumZ = maximumZ - Chunk.chunkSize;
+        }
 
         for (let x = minimumX; x <= maximumX; x++) {
             for (let z = minimumZ; z <= maximumZ; z++) {
-                const blockPos = new BlockPos(x, this.getHeightAt(x, z), z);
-
-                /*const dy = blockPos.y - (this.cameraChunkPos.y * Chunk.chunkSize + Math.floor(Chunk.chunkSize / 2));
-                let maxDistance = ((this.worldRadius + 1) * Chunk.chunkSize) + Chunk.chunkSize - 1;
-                if (Math.abs(dy) > maxDistance) continue;*/
-
-                if (!this.firstStructureGeneration &&
-                    (x >= minimumX + Chunk.chunkSize && x <= maximumX - Chunk.chunkSize) &&
-                    (z >= minimumZ + Chunk.chunkSize && z <= maximumZ - Chunk.chunkSize)
-                ) continue;
-
                 let model = this.getModelAtPos(x, z);
-                if (model != null) model.loadModelInformation(new BlockPos(x, this.getHeightAt(x, z) + 1, z));
+                if (model != null) await model.loadModelInformation(new BlockPos(x, this.getHeightAt(x, z) + 1, z));
             }
         }
 
@@ -683,12 +663,12 @@ export class World {
 
         for (const [key, data] of Model.generatedStructureBlocksToLoad) {
             const dx = data.pos.x - (this.cameraChunkPos.x * Chunk.chunkSize + Math.floor(Chunk.chunkSize / 2));
-            const dy = data.pos.y - (this.cameraChunkPos.y * Chunk.chunkSize + Math.floor(Chunk.chunkSize / 2));
+            //const dy = data.pos.y - (this.cameraChunkPos.y * Chunk.chunkSize + Math.floor(Chunk.chunkSize / 2));
             const dz = data.pos.z - (this.cameraChunkPos.z * Chunk.chunkSize + Math.floor(Chunk.chunkSize / 2));
 
             let maxDistance = ((this.worldRadius + 1) * Chunk.chunkSize) + Chunk.chunkSize - 1;
 
-            if (Math.abs(dx) > maxDistance || Math.abs(dy) > maxDistance || Math.abs(dz) > maxDistance) {
+            if (Math.abs(dx) > maxDistance || Math.abs(dz) > maxDistance) {
                 keysToDelete.push(key);
             }
         }

@@ -5,7 +5,7 @@ import {GroundedSkybox} from "three/examples/jsm/objects/GroundedSkybox.js";
 import {HDRLoader} from "three/examples/jsm/loaders/HDRLoader.js";
 import {CreateGUI} from "./UI";
 import Stats from 'three/examples/jsm/libs/stats.module.js';
-import { Model } from "./geometry/modelCreation";
+import {Model} from "./geometry/modelCreation";
 import {BlockPos} from "./positions/blockPos";
 
 export const Game: {
@@ -58,7 +58,7 @@ async function init(): Promise<void> {
     Game.camera.position.z = 7.0;
     Game.camera.position.y = Game.world.getHeightAt(Game.camera.position.x, Game.camera.position.z) + 5;
     Game.camera.rotateY(-Math.PI * 0.75);
-    Game.camera.rotateX(-Math.PI / 4.0); Game.renderer.domElement
+    Game.camera.rotateX(-Math.PI / 4.0);
 
 
     Game.cameraControls = new CameraControls(Game.camera, Game.renderer.domElement, Game.world, false);
@@ -91,18 +91,6 @@ async function init(): Promise<void> {
     CreateGUI(Game);
 
     window.addEventListener("resize", onWindowResize, false);
-
-    let treeModel = await Model.load("model_data/plains_tree.csv");
-    treeModel.loadStructureAt(new BlockPos(10, 70, 10));
-
-    let dirtHutModel = await Model.load("model_data/dirt_hut.csv");
-    dirtHutModel.loadStructureAt(new BlockPos(20, 70, 20));
-
-    let mushroomModel = await Model.load("model_data/mushroom.csv");
-    mushroomModel.loadStructureAt(new BlockPos(30, 70, 30));
-
-    let smiley = await Model.load("model_data/smiley.csv");
-    smiley.loadStructureAt(new BlockPos(30, 100, 30));
 }
 
 function animate(time: number): void {
