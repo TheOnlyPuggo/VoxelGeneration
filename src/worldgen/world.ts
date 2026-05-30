@@ -255,8 +255,8 @@ export class World {
 
         for (let x = minimumX; x <= maximumX; x++) {
             for (let z = minimumZ; z <= maximumZ; z++) {
-                let model = this.getModelAtPos(x, z);
-                if (model != null) await model.loadModelInformation(new BlockPos(x, this.getHeightAt(x, z) + 1, z));
+                let modelAndHeight = this.getModelAtPos(x, z);
+                if (modelAndHeight != undefined) await modelAndHeight[0].loadModelInformation(new BlockPos(x, modelAndHeight[1] + 1, z));
             }
         }
 
@@ -395,7 +395,7 @@ export class World {
 
     // BIOMES
 
-    public getHeightFromXZ(x: number, z: number){
+    public getHeightAndBiomeFromXZ(x: number, z: number){
         let blockPos: BlockPos = new BlockPos(x, 0, z);
         let bD: BiomeDistance[] = this.getBiomeData(blockPos);
         let dFract = bD[0].distance / ((bD[0].distance + bD[1].distance) / 2);
@@ -728,8 +728,8 @@ export class World {
 
         for (let x = minimumX; x <= maximumX; x++) {
             for (let z = minimumZ; z <= maximumZ; z++) {
-                let model = this.getModelAtPos(x, z);
-                if (model != null) await model.loadModelInformation(new BlockPos(x, this.getHeightAt(x, z) + 1, z));
+                let modelAndHeight = this.getModelAtPos(x, z);
+                if (modelAndHeight != undefined) await modelAndHeight[0].loadModelInformation(new BlockPos(x, modelAndHeight[1] + 1, z));
             }
         }
 
@@ -756,12 +756,15 @@ export class World {
         }
     }
 
-    public getModelAtPos(x: number, z: number): Model | null {
+    public getModelAtPos(x: number, z: number): [Model, number] | undefined {
         let structureNoiseVal = this.structureNoise.noise(x, z);
-        if (structureNoiseVal >= 0.95) return Model.LoadedModels["Tree"];
-        if (structureNoiseVal >= 0.90 && structureNoiseVal <= 0.901) return Model.LoadedModels["Mushroom"];
-        if (structureNoiseVal >= 0.85 && structureNoiseVal <= 0.8501) return Model.LoadedModels["DirtHut"];
-        else return null;
+        if (structureNoiseVal >= 0.95) {
+            let heightAndBiome = this.getHeightAndBiomeFromXZ(x, z);
+            if (!heightAndBiome || !heightAndBiome[1]) return undefined;
+
+            if (heightAndBiome[0] == BiomeTypes.Plains) return [Model.LoadedModels["Tree"], heightAndBiome[1]];
+        }
+        else return undefined;
         // CURSED else return Model.LoadedModels["DirtHut"];
     }
 
