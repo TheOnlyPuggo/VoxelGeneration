@@ -5,9 +5,11 @@ import {Chunk} from "./chunk";
 import {BlockPos} from "../positions/blockPos";
 import {ChunkPos} from "../positions/chunkPos";
 import {Block} from "./block";
+import { seededRandom } from "three/src/math/MathUtils.js";
 import {Model} from "../geometry/modelCreation";
 import {Vec3} from "../positions/vec3";
 import {ChunkSave} from "./chunkSave";
+import { Vec2 } from "../positions/vec2";
 
 const hypo = (x: number, y: number, z: number): number => Math.sqrt(x * x + y * y + z * z);
 
@@ -17,10 +19,12 @@ const nextFrame = () =>
     );
 export const heightGen = {
     base: 64,
-    amplitude: 3,
-    size: 32,
+    amplitude: 2,
+    size: 128,
     mediumFactor: 0.5,
-    fineFactor: 0.25
+    fineFactor: 0.25,
+    mountainHeight: 64,
+    snowHeight: 80
 }
 export const dirtGen = {
     base: 3,
@@ -46,6 +50,31 @@ export const cucumberGen = {
     maxHeight: 20,
     size: 16
 }
+export const worleyGridOffsets = [
+    new Vec2(-1, 1),
+    new Vec2(-1, 0),
+    new Vec2(-1, -1),
+    new Vec2(0, 1),
+    new Vec2(0, -1),
+    new Vec2(1, 1),
+    new Vec2(1, 0),
+    new Vec2(1, -1),
+]
+export enum BiomeTypes {
+    Desert,
+    Plains,
+    Mountain,
+    Ocean,
+    Underground
+}
+export class BiomeDistance {
+    public distance: number;
+    public biome: BiomeTypes;
+    constructor(d: number, b: BiomeTypes){
+        this.distance = d;
+        this.biome = b;
+    }
+}
 
 export class World {
     private readonly heightNoiseCoarse: SimplexNoise;
@@ -56,10 +85,16 @@ export class World {
     private readonly coalNoise: SimplexNoise;
     private readonly ironNoise: SimplexNoise;
     private readonly cucumberNoise: SimplexNoise;
+    private readonly worleyXNoise: SimplexNoise;
+    private readonly worleyZNoise: SimplexNoise;
+    private readonly worleyBiome: SimplexNoise;
+    private readonly mountainHeightNoise: SimplexNoise;
+    private readonly snowHeightNoise: SimplexNoise;
 
     private readonly structureNoise: SimplexNoise;
 
-    readonly worldRadius = 10;
+    readonly worldRadius = 4;
+    private worleyGridSize: number = 64;
 
     //readonly chunks: Array<Array<Array<Chunk>>>;
     readonly chunksMap: Map<string, {chunk: Chunk, chunkMeshes: Mesh[]}>;
@@ -83,8 +118,14 @@ export class World {
         this.ironNoise = new SimplexNoise();
         this.cucumberNoise = new SimplexNoise();
 
+        this.worleyXNoise = new SimplexNoise();
+        this.worleyZNoise = new SimplexNoise();
+        this.worleyBiome = new SimplexNoise();
+        this.mountainHeightNoise = new SimplexNoise();
+        this.snowHeightNoise = new SimplexNoise();
+
         this.structureNoise = new SimplexNoise();
-        
+
         this.cameraChunkPos = new ChunkPos(0, 0, 0);
         this.previousCameraChunkPos = this.cameraChunkPos;
         this.previousStructureCameraChunkPos = this.cameraChunkPos;
@@ -308,11 +349,11 @@ export class World {
 
     public getHeightAt(x: number, z: number): number {
         return Math.round(heightGen.amplitude *
-            this.heightNoiseCoarse.noise(x / heightGen.size, z / heightGen.size) +
+            (this.heightNoiseCoarse.noise(x / heightGen.size, z / heightGen.size) + 1) +
             heightGen.amplitude * heightGen.mediumFactor *
-            this.heightNoiseMedium.noise(x / (heightGen.size * heightGen.mediumFactor), z / (heightGen.size * heightGen.mediumFactor)) +
+            (this.heightNoiseMedium.noise(x / (heightGen.size * heightGen.mediumFactor), z / (heightGen.size * heightGen.mediumFactor)) + 1) +
             heightGen.amplitude * heightGen.fineFactor *
-            this.heightNoiseFine.noise(x / (heightGen.size * heightGen.fineFactor), z / (heightGen.size * heightGen.fineFactor)) + heightGen.base);
+            (this.heightNoiseFine.noise(x / (heightGen.size * heightGen.fineFactor), z / (heightGen.size * heightGen.fineFactor)) + 1) + heightGen.base);
     }
 
     private getDirtThicknessAt(x: number, z: number): number {
@@ -334,14 +375,168 @@ export class World {
     private getCucumberAt(blockPos: BlockPos): boolean {
         return this.cucumberNoise.noise3d(blockPos.x / cucumberGen.size, blockPos.y / cucumberGen.size, blockPos.z / cucumberGen.size) < cucumberGen.max && blockPos.y < cucumberGen.maxHeight;
     }
-    
+    //USED BY CHUNK GENERATION
+    getBlockToGenerateAtFromChunk(blockPos: BlockPos, biomeData: BiomeDistance[]): Block {
+        let blockToPush = this.getTerrainBlockToGenerateAtFromChunk(blockPos, biomeData);
+        if (blockToPush == Blocks.AIR) blockToPush = this.getStructureBlockToGenerateAt(blockPos);
+        return blockToPush;
+    }
+
+    //USED BY EVERYTHING ELSE
     getBlockToGenerateAt(blockPos: BlockPos): Block {
         let blockToPush = this.getTerrainBlockToGenerateAt(blockPos);
         if (blockToPush == Blocks.AIR) blockToPush = this.getStructureBlockToGenerateAt(blockPos);
         return blockToPush;
     }
-    
+
+    // BIOMES
+
+    public getBiomeData(blockPos: BlockPos){
+        let worleyWorldPos = new Vec2(blockPos.x / this.worleyGridSize, blockPos.z / this.worleyGridSize);
+        let worleyGridPos: Vec2 = new Vec2(Math.floor(worleyWorldPos.x), Math.floor(worleyWorldPos.y));
+        let posWithinGrid: Vec2 = worleyWorldPos.subtract(worleyGridPos);
+
+        let closestBiome: BiomeDistance = new BiomeDistance(this.getFPDistFromOffset(posWithinGrid, worleyGridPos, new Vec2(0, 0)), this.getBiomeAtGrid(worleyGridPos));
+        let secondClosestBiome: BiomeDistance = new BiomeDistance(1000, BiomeTypes.Desert);
+        for ( var i = 0; i < worleyGridOffsets.length; i++){
+            let s: number = this.getFPDistFromOffset(posWithinGrid, worleyGridPos, worleyGridOffsets[i]);
+            if (s < closestBiome.distance){
+                secondClosestBiome.distance = closestBiome.distance;
+                secondClosestBiome.biome = closestBiome.biome;
+
+                closestBiome.distance = s;
+                closestBiome.biome = this.getBiomeAtGrid(worleyGridPos.add(worleyGridOffsets[i]));
+            }
+            else if (s < secondClosestBiome.distance){
+                secondClosestBiome.distance = s;
+                secondClosestBiome.biome = this.getBiomeAtGrid(worleyGridPos.add(worleyGridOffsets[i]));
+            }
+        }
+
+        return [closestBiome, secondClosestBiome];
+    }
+
+    //CALLED BY CHUNK GENERATION, AND GIVEN BIOME DATA FROM CHUNK MEMOISATION
+    getTerrainBlockToGenerateAtFromChunk(blockPos: BlockPos, biomeData: BiomeDistance[]): Block {
+
+        if (biomeData[0].biome == BiomeTypes.Mountain){
+            return this.mountainGetBlockAt(blockPos, biomeData[0].distance, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
+            //return Blocks.RED;
+        }
+        if (biomeData[0].biome == BiomeTypes.Desert){
+            return this.desertGetBlockAt(blockPos, 0);
+            //return Blocks.BLUE;
+        }
+
+        if (biomeData[0].biome == BiomeTypes.Ocean){
+            return this.oceanGetBlockAt(blockPos, biomeData[1].biome, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
+            //return Blocks.GREY;
+        }
+
+        if (biomeData[0].biome == BiomeTypes.Plains){
+            return this.plainsGetBlockAt(blockPos, 0);
+            //return Blocks.GREEN;
+        }
+        if (biomeData[0].biome == BiomeTypes.Underground){
+            return this.undergroundGetBlockAt(blockPos);
+        }
+        else {
+            return Blocks.AIR;
+        }
+    }
+    //CALLED BY LITERALLY EVERYTHING ELSE T-T
     getTerrainBlockToGenerateAt(blockPos: BlockPos): Block {
+        let biomeData: BiomeDistance[] = this.getBiomeData(blockPos);
+        if (biomeData[0].biome == BiomeTypes.Mountain){
+            return this.mountainGetBlockAt(blockPos, biomeData[0].distance, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
+            //return Blocks.RED;
+        }
+        if (biomeData[0].biome == BiomeTypes.Desert && blockPos.y < 70){
+            return this.desertGetBlockAt(blockPos, 0);
+            //return Blocks.BLUE;
+        }
+
+        if (biomeData[0].biome == BiomeTypes.Ocean){
+            return this.oceanGetBlockAt(blockPos, biomeData[1].biome, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
+            //return Blocks.GREY;
+        }
+
+        if (biomeData[0].biome == BiomeTypes.Plains && blockPos.y < 70){
+            return this.plainsGetBlockAt(blockPos, 0);
+            //return Blocks.GREEN;
+        }
+        else {
+            return Blocks.AIR;
+        }
+    }
+    undergroundGetBlockAt(blockPos: BlockPos){
+        if (this.getCaveAt(blockPos)) return Blocks.AIR;
+        else if (this.getCoalAt(blockPos)) return Blocks.COAL;
+        else if (this.getIronAt(blockPos)) return Blocks.IRON;
+        else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
+        else return Blocks.STONE;
+    }
+    mountainGetBlockAt(blockPos: BlockPos, d: number, dFract: number){
+        let terrainHeight: number = this.getHeightAt(blockPos.x, blockPos.z);
+        let mHeight: number = terrainHeight +
+            //mountain height calc
+            Math.round((1 - dFract) * heightGen.mountainHeight *
+            //noise variance
+            (this.mountainHeightNoise.noise(blockPos.x / 35, blockPos.z / 35) / 4 + 0.75));
+        let height: number = mHeight - blockPos.y;
+        let snowSpawnHeight: number = heightGen.snowHeight + this.snowHeightNoise.noise(blockPos.x / 5, blockPos.z / 5) * 2;
+
+        if (height < 0 || (this.getCaveAt(blockPos) && blockPos.y < terrainHeight)) return Blocks.AIR;
+        else if (height === 0 && blockPos.y >= snowSpawnHeight) return Blocks.SNOW;
+        else if (this.getCoalAt(blockPos)) return Blocks.COAL;
+        else if (this.getIronAt(blockPos)) return Blocks.IRON;
+        else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
+        else return Blocks.STONE;
+    }
+    desertGetBlockAt(blockPos: BlockPos, dist: number){
+        let height: number = this.getHeightAt(blockPos.x, blockPos.z) - blockPos.y;
+        let dirtHeight: number = height - this.getDirtThicknessAt(blockPos.x, blockPos.z);
+
+        if (height < 0 || this.getCaveAt(blockPos)) return Blocks.AIR;
+        //iron for debug
+        else if (height === 0) return Blocks.IRON;
+        else if (dirtHeight <= 0) return Blocks.DIRT;
+        else if (this.getCoalAt(blockPos)) return Blocks.COAL;
+        else if (this.getIronAt(blockPos)) return Blocks.IRON;
+        else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
+        else return Blocks.STONE;
+    }
+    oceanGetBlockAt(blockPos: BlockPos, neighbour: BiomeTypes, dFract: number){
+        let terrainHeight: number = this.getHeightAt(blockPos.x, blockPos.z);
+        let oHeight = 0;
+
+        let shoreLine: number = 0.8;
+        let depth: number = 3
+        if (dFract > shoreLine && neighbour != BiomeTypes.Ocean){
+            oHeight = (terrainHeight - heightGen.base) * ((dFract - shoreLine) * 5) + heightGen.base;
+        } else {
+            //seabed height is world base heigh - (extra noise * (1 - normalised distance from biome center) * multiplier)
+            oHeight = heightGen.base - (terrainHeight - heightGen.base) * ((shoreLine - dFract) * (1 / shoreLine)) * depth;
+        }
+        oHeight = Math.round(oHeight) - blockPos.y;
+        let sandDepth: number = this.getDirtThicknessAt(blockPos.x, blockPos.z);
+
+
+        //need to level out height noise around edges
+        //then terrain dips below that, anything above that but also below heightGen.base spawns water
+
+        //oHeight is how many blocks below the surface BlockPos is
+
+        //REPLACE BLUE WITH WATER
+        if (oHeight < 0 && blockPos.y < heightGen.base) return Blocks.BLUE;
+        if (oHeight < 0 || (this.getCaveAt(blockPos) && oHeight > sandDepth)) return Blocks.AIR;
+        else if (oHeight <= sandDepth) return Blocks.SAND;
+        else if (this.getCoalAt(blockPos)) return Blocks.COAL;
+        else if (this.getIronAt(blockPos)) return Blocks.IRON;
+        else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
+        else return Blocks.STONE;
+    }
+    plainsGetBlockAt(blockPos: BlockPos, dist: number){
         let height: number = this.getHeightAt(blockPos.x, blockPos.z) - blockPos.y;
         let dirtHeight: number = height - this.getDirtThicknessAt(blockPos.x, blockPos.z);
 
@@ -453,6 +648,32 @@ export class World {
             }
         }
         return overlaps;
+    }
+
+    getBiomeAtGrid(gridPos: Vec2){
+        let b: number = ((this.worleyBiome.noise(gridPos.x, gridPos.y) + 1) * 1000) % 1;
+        if (b < 0.25){
+            return BiomeTypes.Desert;
+        } else if (b < 0.5){
+            return BiomeTypes.Mountain;
+        } else if (b < 0.75){
+            return BiomeTypes.Ocean;
+        } else {
+            return BiomeTypes.Plains;
+        }
+    }
+
+    getWorleyFP(gridPos: Vec2){
+        let target: Vec2 = new Vec2(this.worleyXNoise.noise(gridPos.x, gridPos.y) / 2 + 1,
+            this.worleyZNoise.noise(gridPos.x, gridPos.y) / 2 + 1);
+        return target;
+    }
+
+    getFPDistFromOffset(worldPos: Vec2, gridPos: Vec2, offset: Vec2){
+        let targetGridPos: Vec2 = gridPos.add(offset);
+        let targetFP = targetGridPos.add(this.getWorleyFP(targetGridPos));
+        return gridPos.add(worldPos).distanceTo(targetFP);
+
     }
 
     // STRUCTURES
