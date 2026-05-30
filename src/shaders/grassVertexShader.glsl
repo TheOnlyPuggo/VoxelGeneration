@@ -12,6 +12,7 @@ varying float vHeight;
 varying vec3 vPosition;
 varying float vFogDepth;
 varying vec3 vNormal;
+varying vec3 vActualNormal;
 
 //
 // Description : Array and textureless GLSL 2D simplex noise function.
@@ -90,6 +91,9 @@ void main() {
   vUv = uv;
   vHeight = uv.y;
 
+  mat3 instanceNormalMatrix = mat3(transpose(inverse(instanceMatrix)));
+  vActualNormal = normalize(instanceNormalMatrix * normal);
+
   vec4 instancePos = instanceMatrix * vec4(position, 1.0);
 
   vPosition = instancePos.xyz;
@@ -103,7 +107,7 @@ void main() {
   float windSpeed = 1.;
   float windStrength = 0.4;
 
-  if (distanceFromPlayer < 1.) windStrength *= (distanceFromPlayer);
+  if (distanceFromPlayer < 1.5) windStrength *= (max(distanceFromPlayer * 1.333 - 1.0, 0.0));
 
   float windAngle = uTime * windSpeed;
   float mainWave  = sin(windAngle + instancePos.x * 0.5 + instancePos.z * 0.5) * windStrength;
@@ -130,12 +134,14 @@ void main() {
   vec3 unitDirectionFromPlayer = normalize(instancePos.xyz - uPlayerFeetPos);
   unitDirectionFromPlayer.y = 0.;
 
-  if (distanceFromPlayer < 1.) {
-    vec3 moveVector = unitDirectionFromPlayer * influence * (1.0 - distanceFromPlayer) * 1.5;
-    instancePos.x += moveVector.x;
-    instancePos.z += moveVector.z;
+  if (distanceFromPlayer < 1.5) {
+    vec3 moveVector = vActualNormal * influence * (1.0 - distanceFromPlayer * 0.667) * 0.8;
+    moveVector.y = (instancePos.y - floor(instancePos.y + 0.5) + 0.5) * max(distanceFromPlayer * 1.333 - 2.0, -0.99);
+    instancePos.xyz += moveVector;
 
-    instancePos.y -= influence * (1.0 - distanceFromPlayer) * 0.5;
+    //instancePos.y -= atan(influence) * pow(1.0 - distanceFromPlayer * 0.5, 3.0);
+
+    //instancePos.xyz += vActualNormal * (1.0 - distanceFromPlayer) * influence;
   }
 
 
