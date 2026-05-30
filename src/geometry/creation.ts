@@ -78,7 +78,6 @@ export abstract class CubeMesh {
 
 export class CubeMeshOneMaterial extends CubeMesh {
     private readonly instanceIndex: number;
-    private readonly material: Material;
 
     public constructor(
         transparent: boolean,
@@ -86,8 +85,7 @@ export class CubeMeshOneMaterial extends CubeMesh {
     ) {
         super(transparent);
 
-        this.instanceIndex = CompositeGeometry.addInstancedGeometryType(CubeMeshOneMaterial.planeGeometry.clone(), material);
-        this.material = material;
+        this.instanceIndex = CompositeGeometry.addInstancedGeometryType(CubeMeshOneMaterial.planeGeometry, material);
     }
 
     public addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry, blockPos: BlockPos): void {
@@ -108,9 +106,9 @@ export class CubeMeshMultiMaterial extends CubeMesh {
     ) {
         super(transparent);
 
-        this.topInstanceIndex = CompositeGeometry.addInstancedGeometryType(CubeMeshOneMaterial.planeGeometry.clone(), topMaterial);
-        this.bottomInstanceIndex = CompositeGeometry.addInstancedGeometryType(CubeMeshOneMaterial.planeGeometry.clone(), bottomMaterial);
-        this.sideInstanceIndex = CompositeGeometry.addInstancedGeometryType(CubeMeshOneMaterial.planeGeometry.clone(), sideMaterial);
+        this.topInstanceIndex = CompositeGeometry.addInstancedGeometryType(CubeMeshOneMaterial.planeGeometry, topMaterial);
+        this.bottomInstanceIndex = CompositeGeometry.addInstancedGeometryType(CubeMeshOneMaterial.planeGeometry, bottomMaterial);
+        this.sideInstanceIndex = CompositeGeometry.addInstancedGeometryType(CubeMeshOneMaterial.planeGeometry, sideMaterial);
     }
 
     public addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry, blockPos: BlockPos): void {
