@@ -1,6 +1,6 @@
 import {Camera, Mesh} from "three";
 import {Block} from "./block";
-import {BiomeDistance, World} from "./world";
+import {BiomeDistance, BiomeTypes, World} from "./world";
 import {ChunkPos} from "../positions/chunkPos";
 import {SubChunkPos} from "../positions/subChunkPos";
 import {BlockPos} from "../positions/blockPos";
@@ -22,12 +22,19 @@ export class Chunk {
         this.chunkPos = chunkPos;
         this.save = save ?? new ChunkSave();
 
+        let biomeLowerThreshhold: number = 64
+        let topY: number = new SubChunkPos(0, 15, 0).y
         this.blocks = [];
         let bData: Array<Array<BiomeDistance[]>> = [];
         for (let x: number = 0; x < Chunk.chunkSize; x++){
             bData.push([]);
             for (let z: number = 0; z < Chunk.chunkSize; z++){
-                bData[x].push(world.getBiomeData(this.getBlockPos(new SubChunkPos(x, 0, z))));
+                if (topY < biomeLowerThreshhold){
+                    bData[x].push([new BiomeDistance(0, BiomeTypes.Underground), new BiomeDistance(0, BiomeTypes.Underground)]);
+                } else {
+                    bData[x].push(world.getBiomeData(this.getBlockPos(new SubChunkPos(x, 0, z))));
+                }
+                
             }
         }
 
