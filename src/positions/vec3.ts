@@ -50,6 +50,18 @@ export class Vec3 {
         return this.x === other.x && this.y === other.y && this.z === other.z;
     }
 
+    public withX(other: number): this {
+        return new (this.constructor as any)(other, this.y, this.z);
+    }
+
+    public withY(other: number): this {
+        return new (this.constructor as any)(this.x, other, this.z);
+    }
+
+    public withZ(other: number): this {
+        return new (this.constructor as any)(this.x, this.y, other);
+    }
+
     public add(other: Vec3 | number): this {
         if (other instanceof Vec3) return new (this.constructor as any)(this.x + other.x, this.y + other.y, this.z + other.z);
         else return new (this.constructor as any)(this.x + other, this.y + other, this.z + other);

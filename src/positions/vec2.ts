@@ -47,6 +47,14 @@ export class Vec2 {
         return this.x === other.x && this.y === other.y;
     }
 
+    public withX(other: number): this {
+        return new (this.constructor as any)(other, this.y);
+    }
+
+    public withY(other: number): this {
+        return new (this.constructor as any)(this.x, other);
+    }
+
     public add(other: Vec2 | number): this {
         if (other instanceof Vec2) return new (this.constructor as any)(this.x + other.x, this.y + other.y);
         else return new (this.constructor as any)(this.x + other, this.y + other);
