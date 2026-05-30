@@ -118,17 +118,10 @@ void main() {
   instancePos.z += windDir.z * (mainWave + flutter) * influence;
   instancePos.y -= abs(mainWave + flutter) * influence * 0.15;
 
-
-
-  /*
-  if (distance(instancePos.xyz, uPlayerFeetPos) < 0.5) {
-    instancePos.x = 0.;
-    instancePos.y = 0.;
-    instancePos.z = 0.;
-  }
-  */
   vec3 unitDirectionFromPlayer = normalize(instancePos.xyz - uPlayerFeetPos);
   unitDirectionFromPlayer.y = 0.;
+
+
 
   if (distanceFromPlayer < 1.) {
     vec3 moveVector = unitDirectionFromPlayer * influence * (1.0 - distanceFromPlayer) * 1.5;
