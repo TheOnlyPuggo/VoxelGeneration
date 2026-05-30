@@ -106,4 +106,8 @@ export class Vec2 {
     public normalize(): this {
         return (this.divide as any)(this.magnitude());
     }
+
+    public distanceTo(other: Vec2): number {
+        return this.subtract(other).magnitude();
+    }
 }

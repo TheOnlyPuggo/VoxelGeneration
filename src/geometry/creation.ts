@@ -94,7 +94,6 @@ export abstract class CubeMesh {
 
 export class CubeMeshOneMaterial extends CubeMesh {
     private readonly instanceIndex: number;
-    private readonly material: Material;
 
     public constructor(
         transparent: boolean,
@@ -102,8 +101,7 @@ export class CubeMeshOneMaterial extends CubeMesh {
     ) {
         super(transparent);
 
-        this.instanceIndex = CompositeGeometry.addInstancedGeometryType(CubeMeshOneMaterial.planeGeometry.clone(), material);
-        this.material = material;
+        this.instanceIndex = CompositeGeometry.addInstancedGeometryType(CubeMeshOneMaterial.planeGeometry, material);
     }
 
     public addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry, blockPos: BlockPos): void {

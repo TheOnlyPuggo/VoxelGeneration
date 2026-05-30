@@ -67,7 +67,7 @@ export class Model {
         return new Model(data);
     }
 
-    public loadModelInformation(blockOriginPos: BlockPos) {
+    public async loadModelInformation(blockOriginPos: BlockPos) {
         this.blockDatas.forEach((blockData) => {
             let blockWorldPos: BlockPos = new BlockPos(
                 blockData.pos.x + blockOriginPos.x,
