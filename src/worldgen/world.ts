@@ -458,16 +458,16 @@ export class World {
 
         if (Math.abs(chunkPosShift.y) == 1 && chunkPosShift.x == 0 && chunkPosShift.z == 0) return;
 
-        if (
-            !this.firstStructureGeneration &&
-            ((Math.abs(chunkPosShift.x) == 1 || Math.abs(chunkPosShift.z) == 1)) &&
-            Math.abs(chunkPosShift.x) != Math.abs(chunkPosShift.z)
-        ) {
-            if (chunkPosShift.x == -1) maximumX = minimumX + Chunk.chunkSize;
-            else if (chunkPosShift.x == 1) minimumX = maximumX - Chunk.chunkSize;
-            else if (chunkPosShift.z == -1) maximumZ = minimumZ + Chunk.chunkSize;
-            else if (chunkPosShift.z == 1) minimumZ = maximumZ - Chunk.chunkSize;
-        }
+        // if (
+        //     !this.firstStructureGeneration &&
+        //     ((Math.abs(chunkPosShift.x) == 1 || Math.abs(chunkPosShift.z) == 1)) &&
+        //     Math.abs(chunkPosShift.x) != Math.abs(chunkPosShift.z)
+        // ) {
+        //     if (chunkPosShift.x == -1) maximumX = minimumX + Chunk.chunkSize;
+        //     else if (chunkPosShift.x == 1) minimumX = maximumX - Chunk.chunkSize;
+        //     else if (chunkPosShift.z == -1) maximumZ = minimumZ + Chunk.chunkSize;
+        //     else if (chunkPosShift.z == 1) minimumZ = maximumZ - Chunk.chunkSize;
+        // }
 
         for (let x = minimumX; x <= maximumX; x++) {
             for (let z = minimumZ; z <= maximumZ; z++) {
