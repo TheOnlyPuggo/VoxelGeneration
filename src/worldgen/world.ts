@@ -59,7 +59,7 @@ export class World {
 
     private readonly structureNoise: SimplexNoise;
 
-    readonly worldRadius = 3;
+    readonly worldRadius = 10;
 
     //readonly chunks: Array<Array<Array<Chunk>>>;
     readonly chunksMap: Map<string, {chunk: Chunk, chunkMeshes: Mesh[]}>;
@@ -202,7 +202,19 @@ export class World {
         }
     }
 
-    private updateChunkMesh(scene: Scene, chunkPos: ChunkPos): void {
+    public async updateChunkMesh(scene: Scene, chunkPos: ChunkPos) {
+        let minimumX = chunkPos.x * Chunk.chunkSize - Chunk.chunkSize;
+        let maximumX = chunkPos.x * Chunk.chunkSize + (Chunk.chunkSize * 2) - 1;
+        let minimumZ = chunkPos.z * Chunk.chunkSize - Chunk.chunkSize;
+        let maximumZ = chunkPos.z * Chunk.chunkSize + (Chunk.chunkSize * 2) - 1;
+
+        for (let x = minimumX; x <= maximumX; x++) {
+            for (let z = minimumZ; z <= maximumZ; z++) {
+                let model = this.getModelAtPos(x, z);
+                if (model != null) await model.loadModelInformation(new BlockPos(x, this.getHeightAt(x, z) + 1, z));
+            }
+        }
+
         let chunkPosKey: string = chunkPos.getKey();
         let chunkEntry = this.chunksMap.get(chunkPosKey);
 
@@ -358,7 +370,7 @@ export class World {
         return this.getBlockToGenerateAt(blockPos);
     }
 
-    public setBlockAt(blockPos: BlockPos, blockType: Block, scene: Scene | null): void {
+    public async setBlockAt(blockPos: BlockPos, blockType: Block, scene: Scene | null) {
         const chunkPos = blockPos.getChunkPos();
         const chunkPosKey = chunkPos.getKey();
         const subChunkPos = blockPos.getSubChunkPos();
@@ -381,13 +393,13 @@ export class World {
         if (save) this.chunkSaveMap.set(chunkPosKey, save);
         else this.chunkSaveMap.delete(chunkPosKey);
         if (scene) {
-            if (subChunkPos.x == 0) this.updateChunkMesh(scene, chunkPos.subtractX(1));
-            if (subChunkPos.x == Chunk.chunkSize - 1) this.updateChunkMesh(scene, chunkPos.addX(1));
-            if (subChunkPos.y == 0) this.updateChunkMesh(scene, chunkPos.subtractY(1));
-            if (subChunkPos.y == Chunk.chunkSize - 1) this.updateChunkMesh(scene, chunkPos.addY(1));
-            if (subChunkPos.z == 0) this.updateChunkMesh(scene, chunkPos.subtractZ(1));
-            if (subChunkPos.z == Chunk.chunkSize - 1) this.updateChunkMesh(scene, chunkPos.addZ(1));
-            this.updateChunkMesh(scene, chunkPos);
+            if (subChunkPos.x == 0) await this.updateChunkMesh(scene, chunkPos.subtractX(1));
+            if (subChunkPos.x == Chunk.chunkSize - 1) await this.updateChunkMesh(scene, chunkPos.addX(1));
+            if (subChunkPos.y == 0) await this.updateChunkMesh(scene, chunkPos.subtractY(1));
+            if (subChunkPos.y == Chunk.chunkSize - 1) await this.updateChunkMesh(scene, chunkPos.addY(1));
+            if (subChunkPos.z == 0) await this.updateChunkMesh(scene, chunkPos.subtractZ(1));
+            if (subChunkPos.z == Chunk.chunkSize - 1) await this.updateChunkMesh(scene, chunkPos.addZ(1));
+            await this.updateChunkMesh(scene, chunkPos);
         }
     }
 
