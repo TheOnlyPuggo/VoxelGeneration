@@ -4,6 +4,7 @@ import {World} from "./worldgen/world";
 import {BlockPos} from "./positions/blockPos";
 import {Vec3} from "./positions/vec3";
 import * as Blocks from "./worldgen/blocks";
+import {Block} from "./worldgen/block";
 
 enum PlayerState {
     Normal,
@@ -48,6 +49,8 @@ export class CameraControls {
     private playerState: PlayerState = PlayerState.Normal; 
     private cameraLerpSpeed: number = 10;
 
+    private lastDestroyedBlock: Block;
+
     constructor(camera: PerspectiveCamera, canvas: HTMLCanvasElement, world: World, isFlyingControls: boolean = false) {
         this.camera = camera;
         this.canvas = canvas;
@@ -60,6 +63,8 @@ export class CameraControls {
         document.addEventListener('click', () => this.pointerLockControls.lock());
 
         this.inputWrapper = new InputWrapper();
+
+        this.lastDestroyedBlock = Blocks.DIRT;
     }
     
     
@@ -81,7 +86,10 @@ export class CameraControls {
             const front = new Vector3();
             this.camera.getWorldDirection(front);
             const raycast: BlockPos[] | undefined = this.world?.raycastForVisibleBlock(Vec3.fromVector3(this.camera.position), Vec3.fromVector3(front), 5);
-            if (raycast) this.world?.setBlockAt(raycast[raycast.length - 1], Blocks.AIR, scene)
+            if (raycast) {
+                this.lastDestroyedBlock = this.world?.getBlockAt(raycast[raycast.length - 1]);
+                this.world?.setBlockAt(raycast[raycast.length - 1], Blocks.AIR, scene);
+            }
         }
         if (this.inputWrapper.IsPressed(Input.Place)) {
             const front = new Vector3();
@@ -89,7 +97,7 @@ export class CameraControls {
             const raycast: BlockPos[] | undefined = this.world?.raycastForVisibleBlock(Vec3.fromVector3(this.camera.position), Vec3.fromVector3(front), 5);
             if (raycast && raycast.length > 2) {
                 const newBlockPos = raycast[raycast.length - 2];
-                if (!this.collidesWithBlockPos(newBlockPos)) this.world?.setBlockAt(newBlockPos, Blocks.CUCUMBER, scene)
+                if (!this.collidesWithBlockPos(newBlockPos)) this.world?.setBlockAt(newBlockPos, this.lastDestroyedBlock, scene)
             }
         }
     }
