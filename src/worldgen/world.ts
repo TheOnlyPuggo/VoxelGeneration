@@ -5,7 +5,6 @@ import {
     Scene,
     Frustum,
     Matrix4,
-    Vector2,
 } from "three";
 import * as Blocks from "./blocks";
 import {SimplexNoise} from "three/examples/jsm/Addons.js";
@@ -18,6 +17,7 @@ import { seededRandom } from "three/src/math/MathUtils.js";
 import {Model} from "../geometry/modelCreation";
 import {Vec3} from "../positions/vec3";
 import {ChunkSave} from "./chunkSave";
+import { Vec2 } from "../positions/vec2";
 
 const hypo = (x: number, y: number, z: number): number => Math.sqrt(x * x + y * y + z * z);
 
@@ -60,18 +60,18 @@ export const cucumberGen = {
     size: 16
 }
 export const worleyGridOffsets = [
-    new Vector2(-2, 0),
-    new Vector2(-1, 1),
-    new Vector2(-1, 0),
-    new Vector2(-1, -1),
-    new Vector2(0, 2),
-    new Vector2(0, 1),
-    new Vector2(0, -1),
-    new Vector2(0, -2),
-    new Vector2(1, 1),
-    new Vector2(1, 0),
-    new Vector2(1, -1),
-    new Vector2(2, 0),
+    new Vec2(-2, 0),
+    new Vec2(-1, 1),
+    new Vec2(-1, 0),
+    new Vec2(-1, -1),
+    new Vec2(0, 2),
+    new Vec2(0, 1),
+    new Vec2(0, -1),
+    new Vec2(0, -2),
+    new Vec2(1, 1),
+    new Vec2(1, 0),
+    new Vec2(1, -1),
+    new Vec2(2, 0),
 ]
 export enum BiomeTypes {
     Desert,
@@ -383,11 +383,11 @@ export class World {
     // BIOMES
 
     getTerrainBlockToGenerateAt(blockPos: BlockPos): Block {
-        let worleyWorldPos = new Vector2(blockPos.x / this.worleyGridSize, blockPos.z / this.worleyGridSize);
-        let worleyGridPos: Vector2 = new Vector2(Math.floor(worleyWorldPos.x), Math.floor(worleyWorldPos.y));
-        let posWithinGrid: Vector2 = worleyWorldPos.clone().sub(worleyGridPos);
+        let worleyWorldPos = new Vec2(blockPos.x / this.worleyGridSize, blockPos.z / this.worleyGridSize);
+        let worleyGridPos: Vec2 = new Vec2(Math.floor(worleyWorldPos.x), Math.floor(worleyWorldPos.y));
+        let posWithinGrid: Vec2 = worleyWorldPos.subtract(worleyGridPos);
 
-        let closestBiome: BiomeDistance = new BiomeDistance(this.getFPDistFromOffset(posWithinGrid, worleyGridPos, new Vector2(0, 0)), this.getBiomeAtGrid(worleyGridPos));
+        let closestBiome: BiomeDistance = new BiomeDistance(this.getFPDistFromOffset(posWithinGrid, worleyGridPos, new Vec2(0, 0)), this.getBiomeAtGrid(worleyGridPos));
         let secondClosestBiome: BiomeDistance = new BiomeDistance(100000, BiomeTypes.Desert);
         for ( var i = 0; i < worleyGridOffsets.length; i++){
             let s: number = this.getFPDistFromOffset(posWithinGrid, worleyGridPos, worleyGridOffsets[i]);
@@ -396,11 +396,11 @@ export class World {
                 secondClosestBiome.biome = closestBiome.biome;
                 
                 closestBiome.distance = s;
-                closestBiome.biome = this.getBiomeAtGrid(worleyGridPos.clone().add(worleyGridOffsets[i]));
+                closestBiome.biome = this.getBiomeAtGrid(worleyGridPos.add(worleyGridOffsets[i]));
             }
             else if (s < secondClosestBiome.distance){
                 secondClosestBiome.distance = s;
-                secondClosestBiome.biome = this.getBiomeAtGrid(worleyGridPos.clone().add(worleyGridOffsets[i]));
+                secondClosestBiome.biome = this.getBiomeAtGrid(worleyGridPos.add(worleyGridOffsets[i]));
             }
         }
 
@@ -621,7 +621,7 @@ export class World {
         return overlaps;
     }
 
-    getBiomeAtGrid(gridPos: Vector2){
+    getBiomeAtGrid(gridPos: Vec2){
         let b: number = ((this.worleyBiome.noise(gridPos.x, gridPos.y) + 1) * 1000) % 1;
         if (b < 0.25){
             return BiomeTypes.Desert;
@@ -634,16 +634,16 @@ export class World {
         }
     }
 
-    getWorleyFP(gridPos: Vector2){
-        let target: Vector2 = new Vector2(this.worleyXNoise.noise(gridPos.x, gridPos.y) / 2 + 1,
+    getWorleyFP(gridPos: Vec2){
+        let target: Vec2 = new Vec2(this.worleyXNoise.noise(gridPos.x, gridPos.y) / 2 + 1,
             this.worleyZNoise.noise(gridPos.x, gridPos.y) / 2 + 1);
         return target;
     }
 
-    getFPDistFromOffset(worldPos: Vector2, gridPos: Vector2, offset: Vector2){
-        let targetGridPos: Vector2 = gridPos.clone().add(offset);
+    getFPDistFromOffset(worldPos: Vec2, gridPos: Vec2, offset: Vec2){
+        let targetGridPos: Vec2 = gridPos.add(offset);
         let targetFP = targetGridPos.add(this.getWorleyFP(targetGridPos));
-        return gridPos.clone().add(worldPos).distanceTo(targetFP);
+        return gridPos.add(worldPos).distanceTo(targetFP);
 
     }
 
