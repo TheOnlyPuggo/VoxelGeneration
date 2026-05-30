@@ -1,4 +1,4 @@
-import {ACESFilmicToneMapping, Camera, EquirectangularReflectionMapping, Mesh, PerspectiveCamera, Scene, SRGBColorSpace, Timer, Vector3, WebGLRenderer, DirectionalLight, AmbientLight, CameraHelper, BasicShadowMap, Fog} from "three";
+import {ACESFilmicToneMapping, Camera, EquirectangularReflectionMapping, Mesh, PerspectiveCamera, Scene, SRGBColorSpace, Timer, Vector3, WebGLRenderer, DirectionalLight, Color, AmbientLight, CameraHelper, BasicShadowMap, Fog} from "three";
 import {CameraControls} from './camera';
 import {World} from './worldgen/world';
 import {GroundedSkybox} from "three/examples/jsm/objects/GroundedSkybox.js";
@@ -99,7 +99,7 @@ async function init(): Promise<void> {
     Game.scene.add(Game.directionalLight);
     Game.scene.add(Game.directionalLight.target);
 
-    Game.scene.fog = new Fog(0x98a2af, 20, 50);
+    Game.scene.fog = new Fog(0x6a7b8b, (Game.world.worldRadius-1)*16, (Game.world.worldRadius)*16);
 
     //const ambientLight = new AmbientLight(0xc2d9ff, 0.8);
     //Game.scene.add(ambientLight);
@@ -110,10 +110,13 @@ async function init(): Promise<void> {
     new HDRLoader().load(import.meta.env.BASE_URL + "skybox.hdr", (tex) => {
         tex.mapping = EquirectangularReflectionMapping;
         if (Game.scene) {
+            // Game.scene.background = new Color(0x97b4d2);
             Game.scene.background = tex;
-            Game.scene.environment = tex;
             Game.scene.backgroundIntensity = 0.5;
             Game.scene.backgroundBlurriness = 0.05;
+
+            Game.scene.environment = tex;
+            
             Game.scene.environmentIntensity = 0.2;
         }
     });
