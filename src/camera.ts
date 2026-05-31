@@ -294,7 +294,7 @@ export class CameraControls {
 
     private collidesWithBlockPos(blockPos: BlockPos): boolean {
         return blockPos.x >= Math.round(this.playerPos.x - this.playerWidth / 2) && blockPos.x <= Math.round(this.playerPos.x + this.playerWidth / 2) &&
-            blockPos.y >= Math.round(this.playerPos.y - this.playerHeight) && blockPos.x <= Math.round(this.playerPos.y) &&
+            blockPos.y >= Math.round(this.playerPos.y - this.playerHeight) && blockPos.y <= Math.round(this.playerPos.y) &&
             blockPos.z >= Math.round(this.playerPos.z - this.playerWidth / 2) && blockPos.z <= Math.round(this.playerPos.z + this.playerWidth / 2);
     }
 
