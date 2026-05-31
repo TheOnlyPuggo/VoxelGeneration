@@ -169,5 +169,8 @@ function animate(time: number): void {
 
 function onWindowResize(): void {
     Game.renderer?.setSize(window.innerWidth, window.innerHeight);
-    Game.camera?.updateMatrix();
+    if (Game.camera) {
+        Game.camera.aspect = window.innerWidth / window.innerHeight;
+        Game.camera.updateMatrix();
+    }
 }
