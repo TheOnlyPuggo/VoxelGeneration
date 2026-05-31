@@ -627,6 +627,14 @@ export class World {
         return this.getBlockToGenerateAt(blockPos);
     }
 
+    public getBlockAtFromChunk(blockPos: BlockPos): Block {
+        const chunkSave = this.chunkSaveMap.get(blockPos.getChunkPos().getKey());
+        let foundBlock = chunkSave?.getBlocksMap().get(blockPos.getKey());
+        if (foundBlock) return foundBlock;
+        else return Blocks.AIR;
+
+    }
+
     public async setBlockAt(blockPos: BlockPos, blockType: Block, scene: Scene | null) {
         //console.log(this.slowCounter++);
         const chunkPos = blockPos.getChunkPos();

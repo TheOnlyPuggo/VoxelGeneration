@@ -35,4 +35,8 @@ export class ChunkSave {
     public getDiff(subChunkPos: SubChunkPos): Block | undefined {
         return this.blocks.get(subChunkPos.getKey());
     }
+
+    public getBlocksMap() {
+        return this.blocks;
+    }
 }
