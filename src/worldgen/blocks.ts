@@ -1,6 +1,6 @@
 import {Block} from "./block";
 import {Color} from "three";
-import {CubeMeshGrassBlock, CubeMeshMultiTexture, CubeMeshOneColor, CubeMeshOneTexture, CubeMeshWaterBlock} from "../geometry/creation";
+import {CubeMeshGrassBlock, CubeMeshMultiTexture, CubeMeshOneColor, CubeMeshOneTexture, CubeMeshSandBlock, CubeMeshWaterBlock} from "../geometry/creation";
 
 export const AIR = new Block("air", null, false);
 export const GRASS = new Block("grass",
@@ -17,6 +17,8 @@ export const OAKLOG = new Block("log",
     ), true);
 export const WATER = new Block("water",
     new CubeMeshWaterBlock(), false);
+export const SAND = new Block("sand", 
+    new CubeMeshSandBlock("block_textures/sand.png"), true);
 
 export const OAKLEAVES = new Block("oak_leaves", new CubeMeshOneTexture(true, "block_textures/leaves.png"), true);
 export const DIRT = new Block("dirt", new CubeMeshOneTexture(false, "block_textures/dirt.png"), true);
@@ -32,7 +34,6 @@ export const RED = new Block("snow", new CubeMeshOneColor(1, new Color(1, 0, 0),
 export const GREEN = new Block("snow", new CubeMeshOneColor(1, new Color(0, 1, 0), false), true);
 export const GREY = new Block("snow", new CubeMeshOneColor(1, new Color(0.5, 0.5, 0.5), false), true);
 export const BLACK = new Block("snow", new CubeMeshOneColor(1, new Color(0, 0, 0), false), true);
-export const SAND = new Block("sand", new CubeMeshOneTexture(false, "block_textures/sand.png"), true);
 export const PALM_TREE_LEAF = new Block("palm_tree_leaf", new CubeMeshOneTexture(true, "block_textures/leaves.png"), true);
 export const PALM_TREE_LOG = new Block("palm_tree_log", new CubeMeshMultiTexture(false,
     "block_textures/log/log_top.png",

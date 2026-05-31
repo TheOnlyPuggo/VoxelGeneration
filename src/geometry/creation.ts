@@ -221,7 +221,9 @@ export class CubeMeshGrassBlock extends CubeMeshMultiTexture {
                 {
                     uTime:         { value: 0 },
                     uPlayerFeetPos: { value : new Vector3(0, 0, 0) },
-                    //uWindDir:      { value: new Vector3(1, 0, 0.5).normalize() },
+                    uRootColor: { value : new Vector3(81./255., 161./255., 53./255.) },
+                    uTipColor1: { value : new Vector3(0.4, 0.7, 0.1) },
+                    uTipColor2: { value : new Vector3(0.7, 0.6, 0.1) },
                 },
             ]),
             side: DoubleSide,
@@ -338,6 +340,84 @@ export class CubeMeshWaterBlock extends CubeMeshMultiMaterial {
         }
     }
 
+}
+
+export class CubeMeshSandBlock extends CubeMeshOneTexture {
+    protected readonly grassInstanceIndex: number;
+
+    static grassMaterial: ShaderMaterial;
+
+    static {
+        CubeMeshSandBlock.grassMaterial = new ShaderMaterial({
+            vertexShader: grassVertexShader,
+            fragmentShader: grassFragmentShader,
+            fog: true,
+            uniforms: UniformsUtils.merge([
+                UniformsLib.lights,
+                UniformsLib.fog,
+                {
+                    uTime:         { value: 0 },
+                    uPlayerFeetPos: { value : new Vector3(0, 0, 0) },
+                    uRootColor: { value : new Vector3(104/255, 96/255, 53/255) },
+                    uTipColor1: { value : new Vector3(164/255, 121/255, 85/255) },
+                    uTipColor2: { value : new Vector3(156/255, 128/255, 109/255) },
+                },
+            ]),
+            side: DoubleSide,
+            lights: true,
+            alphaTest: 0.1,
+            
+        });
+
+        CubeMeshSandBlock.grassMaterial.userData.castShadow    = false;
+        CubeMeshSandBlock.grassMaterial.userData.receiveShadow = true;
+    }
+
+    public constructor(texturePath: string) {
+        super(false, texturePath);
+
+        this.grassInstanceIndex = CompositeGeometry.addInstancedGeometryType(CubeMeshGrassBlock.grassGeometry, CubeMeshSandBlock.grassMaterial); 
+    }
+
+    override addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry, blockPos: BlockPos): void {
+        
+        super.addFaceToCompositeGeometry(index, compositeGeometry, blockPos);
+
+        if (index === 2) {
+            for(let x = 0; x < 1; x += 0.25) {
+                for(let y = 0; y < 1; y += 0.25) {
+                    let shouldSpawnScale = 5;
+                    let shouldSpawmCutoff = 0.7;
+                    let shouldSpawnSample = CubeMeshGrassBlock.grassNoise.noise((blockPos.x + x) / shouldSpawnScale, (blockPos.z + y) / shouldSpawnScale);
+
+                    let shouldIgnoreScale = 30;
+                    let chanceOfIgnore = 0.03;
+                    //let chanceOfIgnoreSample = CubeMeshGrassBlock.grassNoise.noise((blockPos.x + x) / shouldIgnoreScale, (blockPos.z + y) / shouldIgnoreScale);
+
+                    if (shouldSpawnSample < shouldSpawmCutoff && (Math.random() < (1 - chanceOfIgnore))) continue;
+
+                    let grassMatrix = new Matrix4();
+                    let modifyMatrix = new Matrix4();
+
+                    let randScale = 0.6 + CubeMeshGrassBlock.grassNoise.noise(x, y + 15) * 0.3;
+                    
+                    let grassHeightMult = Math.pow(((shouldSpawnSample - shouldSpawmCutoff) + 1), 2);
+                    grassHeightMult = Math.max(grassHeightMult, 0.3);
+                    modifyMatrix.makeScale(randScale, randScale * (grassHeightMult * 3), randScale);
+                    grassMatrix.premultiply(modifyMatrix);
+
+                    modifyMatrix.makeRotationY(CubeMeshGrassBlock.grassNoise.noise(x + 100, y) * Math.PI * 2);
+                    grassMatrix.premultiply(modifyMatrix);
+
+                    let noiseScale = 10;
+                    modifyMatrix.makeTranslation((CubeMeshGrassBlock.grassNoise.noise((x + blockPos.x + 100) * noiseScale, (y + blockPos.z + 50) * noiseScale) + 1) * 50 % 1 - 0.5, -0.5, (CubeMeshGrassBlock.grassNoise.noise((x + blockPos.x - 100) * noiseScale, (y + blockPos.z - 50) * noiseScale) + 1) * 50 % 1 - 0.5);
+                    grassMatrix.premultiply(modifyMatrix);
+
+                    compositeGeometry.addGeometryInstance(this.grassInstanceIndex, grassMatrix);
+                }
+            }
+        }
+    }
 }
 
 

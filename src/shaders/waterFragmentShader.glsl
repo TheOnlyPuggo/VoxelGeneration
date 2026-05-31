@@ -78,7 +78,7 @@ vec2 hash(vec2 p) {
 float noise(vec2 p) {
   vec2 i = floor(p);
   vec2 f = fract(p);
-  vec2 u = f * f * (3.0 - 2.0 * f); // smoothstep
+  vec2 u = f * f * (3.0 - 2.0 * f);
 
   return mix(
     mix(dot(hash(i + vec2(0,0)), f - vec2(0,0)),

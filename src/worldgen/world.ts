@@ -115,7 +115,7 @@ export class World {
     private readonly maxAmountOfStoredStructureBlocks: number = 1000;
 
     constructor() {
-        const seed = 'hi! :D';
+        const seed = ' gimme grass twin';
         const seeder = alea(seed);
 
         this.heightNoiseCoarse = createNoise2D(alea(seeder.next()));

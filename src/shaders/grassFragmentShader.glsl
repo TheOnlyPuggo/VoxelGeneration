@@ -6,6 +6,10 @@
 #include <shadowmask_pars_fragment>
 #include <fog_pars_fragment>
 
+uniform vec3 uRootColor;
+uniform vec3 uTipColor1;
+uniform vec3 uTipColor2;
+
 varying vec2 vUv;
 varying float vHeight;
 varying vec3 vPosition;
@@ -42,19 +46,18 @@ float perlin(vec2 p) {
 void main() {
 
   //rgba(81, 161, 53)
-  vec3 rootColor = vec3(81./255., 161./255., 53./255.);
+  // vec3 rootColor = vec3(81./255., 161./255., 53./255.);
 
-  vec3 tipColor1  = vec3(0.4, 0.7, 0.1);
-  vec3 tipColor2  = vec3(0.7, 0.6, 0.1);
-  //vec3 tipColor2  = vec3(1., 0., 0.1);
+  // vec3 tipColor1  = vec3(0.4, 0.7, 0.1);
+  // vec3 tipColor2  = vec3(0.7, 0.6, 0.1);
 
 
   float tipColorSampleScale = 0.08;
   float tipColorSample = perlin(vec2(vPosition.x*tipColorSampleScale, vPosition.z*tipColorSampleScale));
   tipColorSample = tipColorSample / 2. + 0.5;
-  vec3 tipColor = mix(tipColor1, tipColor2, tipColorSample);
+  vec3 tipColor = mix(uTipColor1, uTipColor2, tipColorSample);
 
-  vec3 color = mix(rootColor, tipColor, vHeight);
+  vec3 color = mix(uRootColor, tipColor, vHeight);
 
   color *= 0.5 + 0.5 * vHeight;
 
