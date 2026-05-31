@@ -144,6 +144,8 @@ export class World {
 
 
         this.firstStructureGeneration = true;
+        var testCase: BiomeDistance[] = this.getBiomeData(new BlockPos(390, 90, 128))
+        console.log("closest biome distance: ", testCase[0].distance, "    Second closest is: ", testCase[1].distance);
     }
 
     async Update(camera: Camera | null, scene: Scene) {
