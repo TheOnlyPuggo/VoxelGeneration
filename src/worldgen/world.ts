@@ -11,6 +11,7 @@ import {Vec3} from "../positions/vec3";
 import {ChunkSave} from "./chunkSave";
 import { Vec2 } from "../positions/vec2";
 import {SimplexSeeder} from "./simplexSeeder";
+import { NoiseFunction2D } from "simplex-noise";
 
 const hypo = (x: number, y: number, z: number): number => Math.sqrt(x * x + y * y + z * z);
 
