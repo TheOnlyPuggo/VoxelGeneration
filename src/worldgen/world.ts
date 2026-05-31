@@ -363,16 +363,13 @@ export class World {
     // }
 
     public getHeightAt(x: number, z: number): number {
-        return Math.round(heightGen.amplitude *
+        if (!this.oldWorldGen) return Math.round(heightGen.amplitude *
             (this.heightNoiseCoarse.noise(x / heightGen.size, z / heightGen.size) + 1) +
             heightGen.amplitude * heightGen.mediumFactor *
             (this.heightNoiseMedium.noise(x / (heightGen.size * heightGen.mediumFactor), z / (heightGen.size * heightGen.mediumFactor)) + 1) +
             heightGen.amplitude * heightGen.fineFactor *
             (this.heightNoiseFine.noise(x / (heightGen.size * heightGen.fineFactor), z / (heightGen.size * heightGen.fineFactor)) + 1) + heightGen.base);
-    }
-
-    public getHeightAtOld(x: number, z: number): number {
-        return Math.round(oldHeightGen.amplitude *
+        else return Math.round(oldHeightGen.amplitude *
             this.heightNoiseCoarse.noise(x / oldHeightGen.size, z / oldHeightGen.size) +
             oldHeightGen.amplitude * oldHeightGen.mediumFactor *
             this.heightNoiseMedium.noise(x / (oldHeightGen.size * oldHeightGen.mediumFactor), z / (oldHeightGen.size * oldHeightGen.mediumFactor)) +
@@ -401,7 +398,7 @@ export class World {
     }
 
     getBlockToGenerateAtOld(blockPos: BlockPos): Block {
-        let height: number = this.getHeightAtOld(blockPos.x, blockPos.z) - blockPos.y;
+        let height: number = this.getHeightAt(blockPos.x, blockPos.z) - blockPos.y;
         let dirtHeight: number = height - this.getDirtThicknessAt(blockPos.x, blockPos.z);
 
         if (height < 0 || this.getCaveAt(blockPos)) return Blocks.AIR;
@@ -433,7 +430,7 @@ export class World {
     // BIOMES
 
     public getHeightAndBiomeFromXZ(x: number, z: number){
-        if (this.oldWorldGen) return [BiomeTypes.Plains, this.getHeightAtOld(x, z)];
+        if (this.oldWorldGen) return [BiomeTypes.Plains, this.getHeightAt(x, z)];
         let blockPos: BlockPos = new BlockPos(x, 0, z);
         let bD: BiomeDistance[] = this.getBiomeData(blockPos);
         let dFract = bD[0].distance / ((bD[0].distance + bD[1].distance) / 2);
@@ -807,9 +804,9 @@ export class World {
         if (this.oldWorldGen) {
             if (this.hasLocalMaximaNoise(structureNoiseVal, x, z, 2)) return undefined;
 
-            if (structureNoiseVal >= 0.95) return [Model.LoadedModels["Tree"], this.getHeightAtOld(x, z)];
-            if (structureNoiseVal >= 0.90 && structureNoiseVal <= 0.901) return [Model.LoadedModels["Mushroom"], this.getHeightAtOld(x, z)];
-            if (structureNoiseVal >= 0.85 && structureNoiseVal <= 0.8501) return [Model.LoadedModels["DirtHut"], this.getHeightAtOld(x, z)];
+            if (structureNoiseVal >= 0.95) return [Model.LoadedModels["Tree"], this.getHeightAt(x, z)];
+            if (structureNoiseVal >= 0.90 && structureNoiseVal <= 0.901) return [Model.LoadedModels["Mushroom"], this.getHeightAt(x, z)];
+            if (structureNoiseVal >= 0.85 && structureNoiseVal <= 0.8501) return [Model.LoadedModels["DirtHut"], this.getHeightAt(x, z)];
             else return undefined;
             // CURSED else return Model.LoadedModels["DirtHut"];
         } else {
