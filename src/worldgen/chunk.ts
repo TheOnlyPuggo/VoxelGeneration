@@ -22,9 +22,9 @@ export class Chunk {
         this.world = world;
         this.chunkPos = chunkPos;
         this.save = save ?? new ChunkSave();
-        
+
         //neighbouring worley points precalc:
-        
+
         let worleyWorldPos = new Vec2(new SubChunkPos(8, 0, 8).x / world.worleyGridSize, new SubChunkPos(8, 0, 8).z / world.worleyGridSize);
         let worleyGridPos: Vec2 = new Vec2(Math.floor(worleyWorldPos.x), Math.floor(worleyWorldPos.y));
         let neightbours: WorleyPoint[] = [];
@@ -100,6 +100,10 @@ export class Chunk {
     public getSave(): ChunkSave | null {
         if (this.save.hasDiffs()) return this.save;
         else return null;
+    }
+
+    public getBlocks() {
+        return this.blocks;
     }
 
     static getChunkPosfromCameraPos(camera: Camera): ChunkPos {

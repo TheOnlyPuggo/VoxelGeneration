@@ -10,6 +10,7 @@ import {Model} from "../geometry/modelCreation";
 import {Vec3} from "../positions/vec3";
 import {ChunkSave} from "./chunkSave";
 import { Vec2 } from "../positions/vec2";
+import {AIR} from "./blocks";
 
 const hypo = (x: number, y: number, z: number): number => Math.sqrt(x * x + y * y + z * z);
 
@@ -163,8 +164,8 @@ export class World {
         if (!this.previousCameraChunkPos.equals(this.cameraChunkPos) && !this.isGenerating)  {
             this.isGenerating = true;
 
-            await this.generateStructureData();
             const newChunks = await this.CreateChunks();
+            await this.generateStructureData();
             await this.CreateChunkMeshes(scene, newChunks);
             await this.DeleteOutOfRenderChunks(scene);
             await this.deleteOutOfRangeStructureData();
@@ -469,7 +470,7 @@ export class World {
                 secondClosestBiome.biome = this.getBiomeAtGrid(worleyGridPos.add(worleyGridOffsets[i]));
             }
         }
-        
+
         return [closestBiome, secondClosestBiome];
     }
 
@@ -627,9 +628,17 @@ export class World {
         return this.getBlockToGenerateAt(blockPos);
     }
 
-    public getBlockAtFromChunk(blockPos: BlockPos): Block | undefined {
-        const chunkSave = this.chunkSaveMap.get(blockPos.getChunkPos().getKey());
-        return chunkSave?.getBlocksMap().get(blockPos.getKey());
+    public getBlockAtFromChunk(blockPos: BlockPos): Block {
+        const chunkPos = blockPos.getChunkPos();
+
+        const chunkEntry = this.chunksMap.get(chunkPos.getKey());
+        if (!chunkEntry) return this.getBlockAt(blockPos);
+
+        const subChunkPos = blockPos.getSubChunkPos();
+
+        let foundBlock = chunkEntry.chunk.getBlocks()[subChunkPos.x][subChunkPos.y][subChunkPos.z];
+        if (foundBlock == undefined) return this.getBlockAt(blockPos);
+        return foundBlock
     }
 
     public async setBlockAt(blockPos: BlockPos, blockType: Block, scene: Scene | null) {
@@ -672,9 +681,7 @@ export class World {
         let currentPos: BlockPos = BlockPos.roundFromVec3(startPos);
         checkedBlocks.push(currentPos);
 
-        let foundBlock = this.getBlockAtFromChunk(currentPos);
-        if (foundBlock == undefined) foundBlock = this.getBlockAt(currentPos);
-        if (foundBlock.getVisible()) return checkedBlocks;
+        if (this.getBlockAtFromChunk(currentPos).getVisible()) return checkedBlocks;
 
         const endPos: Vec3 = startPos.add(direction.normalize().multiply(range));
         const xOverlaps: number[] = World.getRaycastOverlaps(startPos.x, endPos.x, direction.x);
@@ -699,9 +706,7 @@ export class World {
             }
 
             checkedBlocks.push(currentPos);
-            let foundBlock = this.getBlockAtFromChunk(currentPos);
-            if (foundBlock == undefined) foundBlock = this.getBlockAt(currentPos);
-            if (foundBlock.getVisible()) return checkedBlocks;
+            if (this.getBlockAtFromChunk(currentPos).getVisible()) return checkedBlocks;
         }
 
         return undefined;
@@ -737,12 +742,27 @@ export class World {
         }
     }
 
+    private worleyPointCache = new Map<string, Vec2>();
+
     getWorleyFP(gridPos: Vec2){
-        this.noiseCounter = this.noiseCounter + 2;
-        //console.log(this.noiseCounter);
-        let target: Vec2 = new Vec2(this.worleyXNoise.noise(gridPos.x, gridPos.y) / 2 + 1,
-            this.worleyZNoise.noise(gridPos.x, gridPos.y) / 2 + 1);
-        return target;
+        const key = `${gridPos.x},${gridPos.y}`;
+
+        let cached = this.worleyPointCache.get(key);
+        if (cached) return cached;
+
+        cached = new Vec2(
+            this.worleyXNoise.noise(gridPos.x, gridPos.y) / 2 + 1,
+            this.worleyZNoise.noise(gridPos.x, gridPos.y) / 2 + 1
+        );
+
+        this.worleyPointCache.set(key, cached);
+        return cached;
+
+        // this.noiseCounter = this.noiseCounter + 2;
+        // //console.log(this.noiseCounter);
+        // let target: Vec2 = new Vec2(this.worleyXNoise.noise(gridPos.x, gridPos.y) / 2 + 1,
+        //     this.worleyZNoise.noise(gridPos.x, gridPos.y) / 2 + 1);
+        // return target;
     }
 
     getFPDistFromOffset(worldPos: Vec2, gridPos: Vec2, offset: Vec2){

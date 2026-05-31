@@ -14,10 +14,7 @@ export class BlockMap {
         this.world = world;
         this.blockPos = blockPos;
 
-        let foundBlock = world.getBlockAtFromChunk(blockPos);
-        if (foundBlock == undefined) foundBlock = world.getBlockAt(blockPos);
-
-        this.block = foundBlock;
+        this.block = world.getBlockAtFromChunk(blockPos);
 
         if (!this.block.getTransparent()) {
             this.geometry = undefined;
@@ -36,17 +33,13 @@ export class BlockMap {
     private addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry): void {
         const blockPos = this.getPos(index);
         if (!blockPos || !this.showBlock(blockPos)) return;
-        let foundBlock = this.world.getBlockAtFromChunk(blockPos);
-        if (foundBlock == undefined) foundBlock = this.world.getBlockAt(blockPos);
 
-        foundBlock.meshConstructor?.addFaceToCompositeGeometry(index, compositeGeometry, blockPos);
+        this.world.getBlockAtFromChunk(blockPos).meshConstructor?.addFaceToCompositeGeometry(index, compositeGeometry, blockPos);
     }
 
     private showBlock(blockPos: BlockPos): boolean {
-        let foundBlock = this.world.getBlockAtFromChunk(blockPos);
-        if (foundBlock == undefined) foundBlock = this.world.getBlockAt(blockPos);
 
-        const block = foundBlock;
+        const block = this.world.getBlockAtFromChunk(blockPos);
         return !block.equals(this.block) && block.getVisible();
     }
 
