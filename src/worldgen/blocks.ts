@@ -1,6 +1,6 @@
 import {Block} from "./block";
 import {Color} from "three";
-import {CubeMeshGrassBlock, CubeMeshMultiTexture, CubeMeshOneColor, CubeMeshOneTexture, CubeMeshSandBlock, CubeMeshWaterBlock} from "../geometry/creation";
+import {CubeMeshGrassBlock, CubeMeshMultiTexture, CubeMeshOneColor, CubeMeshOneTexture, CubeMeshSandBlock, CubeMeshSnowBlock, CubeMeshWaterBlock} from "../geometry/creation";
 
 export const AIR = new Block("air", null, false);
 export const GRASS = new Block("grass",
@@ -19,6 +19,9 @@ export const WATER = new Block("water",
     new CubeMeshWaterBlock(), false);
 export const SAND = new Block("sand", 
     new CubeMeshSandBlock("block_textures/sand.png"), true);
+export const SNOW = new Block("snow",
+    new CubeMeshSnowBlock("block_textures/snow.png"), true);
+
 
 export const OAKLEAVES = new Block("oak_leaves", new CubeMeshOneTexture(true, "block_textures/leaves.png"), true);
 export const DIRT = new Block("dirt", new CubeMeshOneTexture(false, "block_textures/dirt.png"), true);
@@ -29,7 +32,6 @@ export const IRON = new Block("iron", new CubeMeshOneTexture(false, "block_textu
 export const MUSHROOM_BLOCK = new Block("mushroom_block", new CubeMeshOneTexture(false, "block_textures/mushroom_block.png"), true);
 export const MUSHROOM_STEM = new Block("mushroom_stem", new CubeMeshOneTexture(false, "block_textures/mushroom_stem.png"), true);
 export const CUCUMBER = new Block("cucumber", new CubeMeshOneTexture(false, "block_textures/cucumber.png"), true);
-export const SNOW = new Block("snow", new CubeMeshOneTexture(false, "block_textures/snow.png"), true);
 export const RED = new Block("snow", new CubeMeshOneColor(1, new Color(1, 0, 0), false), true);
 export const GREEN = new Block("snow", new CubeMeshOneColor(1, new Color(0, 1, 0), false), true);
 export const GREY = new Block("snow", new CubeMeshOneColor(1, new Color(0.5, 0.5, 0.5), false), true);

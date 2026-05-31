@@ -7,7 +7,7 @@ import {CreateGUI} from "./UI";
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import {Model} from "./geometry/modelCreation";
 import {BlockPos} from "./positions/blockPos";
-import {CubeMeshGrassBlock, CubeMeshWaterBlock, CubeMeshSandBlock} from "./geometry/creation";
+import {CubeMeshGrassBlock, CubeMeshWaterBlock, CubeMeshSandBlock, CubeMeshSnowBlock} from "./geometry/creation";
 import {WorldWrapper} from "./worldgen/worldWrapper";
 
 
@@ -152,6 +152,9 @@ function animate(time: number): void {
 
     CubeMeshSandBlock.grassMaterial.uniforms.uTime.value = Game.timer?.getElapsed();
     CubeMeshSandBlock.grassMaterial.uniforms.uPlayerFeetPos.value = Game.cameraControls?.getPlayerFeetPos();
+
+    CubeMeshSnowBlock.grassMaterial.uniforms.uTime.value = Game.timer?.getElapsed();
+    CubeMeshSnowBlock.grassMaterial.uniforms.uPlayerFeetPos.value = Game.cameraControls?.getPlayerFeetPos();
     // #endregion
 
     // #region AnimateWater

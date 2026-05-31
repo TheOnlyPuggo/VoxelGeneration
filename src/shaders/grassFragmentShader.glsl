@@ -66,7 +66,7 @@ void main() {
   // ---- Lighting ----
 
   // Ambient
-  vec3 lightContribution = ambientLightColor;
+  vec3 lightContribution = vec3(0., 0., 0.);
 
   // Directional lights
   #if NUM_DIR_LIGHTS > 0
