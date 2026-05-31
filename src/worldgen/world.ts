@@ -605,7 +605,7 @@ export class World {
         return Blocks.STONE;
     }
     getTundraHeight(blockPos: BlockPos, dFract: number){
-        return Math.min(this.getHeightAt(blockPos.x, blockPos.z), 6 * (1 - Math.pow(dFract, 2)));
+        return this.getHeightAt(blockPos.x, blockPos.z);
     }
 
     getStructureBlockToGenerateAt(blockPos: BlockPos): Block {
