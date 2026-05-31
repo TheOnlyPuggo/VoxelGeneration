@@ -830,8 +830,12 @@ export class World {
                 return [Model.LoadedModels["Cactus3"], heightAndBiome[1]];
         }
         else if (heightAndBiome[0] == BiomeTypes.Tundra) {
-            if (structureNoiseVal >= 0.93 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
+            if (structureNoiseVal >= 0.98 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
                 return [Model.LoadedModels["IceSpike1"], heightAndBiome[1]];
+            if (structureNoiseVal >= 0.955 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
+                return [Model.LoadedModels["IceSpike2"], heightAndBiome[1]];
+            if (structureNoiseVal >= 0.93 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
+                return [Model.LoadedModels["IceSpike3"], heightAndBiome[1]];
         }
         else return undefined;
         // CURSED else return Model.LoadedModels["DirtHut"];
