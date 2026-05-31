@@ -47,7 +47,7 @@ export const CACTUS = new Block("cactus", new CubeMeshMultiTexture(false,
     "block_textures/cactus/cactus_top.png",
     "block_textures/cactus/cactus_side.png",
 ), true);
-export const ICE = new Block("ice", new CubeMeshOneColor(1, new Color(0, 1, 1), false), true);
+export const ICE = new Block("ice", new CubeMeshOneTexture(true, "block_textures/ice.png"), true);
 interface BlockDictionary {
     [key: string]: Block;
 }
