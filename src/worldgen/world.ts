@@ -28,7 +28,7 @@ export const heightGen = {
 }
 export const oldHeightGen = {
     base: 64,
-    amplitude: 6,
+    amplitude: 3,
     size: 32,
     mediumFactor: 0.5,
     fineFactor: 0.25
