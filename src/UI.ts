@@ -25,8 +25,6 @@ export function CreateGUI(gameProps: GameLike) {
         positionFolder.add(gameProps.camera.position, "z").listen().onChange((value: number) => {
             if (gameProps.world != null) gameProps.world.SetStructureGenFirstTime(true);
         });
-
-        positionFolder.on
     }
 
     if (gameProps.cameraControls != null) {
