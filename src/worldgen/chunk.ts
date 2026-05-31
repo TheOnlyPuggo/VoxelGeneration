@@ -9,6 +9,7 @@ import {ChunkSave} from "./chunkSave";
 import {BlockMap} from "../geometry/blockMap";
 import {Vec3} from "../positions/vec3";
 import { Vec2 } from "../positions/vec2";
+import { Timer } from "three";
 
 export class Chunk {
     readonly world: World;
@@ -19,6 +20,9 @@ export class Chunk {
     public static readonly chunkSize: number = 16;
 
     constructor(world: World, chunkPos: ChunkPos, save: ChunkSave | undefined) {
+        const timer = new Timer();
+        timer.update;
+        var time = timer.getElapsed();
         this.world = world;
         this.chunkPos = chunkPos;
         this.save = save ?? new ChunkSave();
@@ -33,6 +37,9 @@ export class Chunk {
                 neightbours.push(new WorleyPoint(world.getWorleyFP(new Vec2(worleyGridPos.x + x, worleyGridPos.y + z)), world.getBiomeAtGrid(new Vec2(worleyGridPos.x + x, worleyGridPos.y + z))));
             }
         }
+        timer.update()
+        console.log("WorleyPoints found in: ", timer.getElapsed() - time, " seconds");
+        time = timer.getElapsed();
         this.blocks = [];
         let bData: Array<Array<BiomeDistance[]>> = [];
         for (let x: number = 0; x < Chunk.chunkSize; x++){
@@ -42,7 +49,9 @@ export class Chunk {
                     //console.log("test");
             }
         }
-
+        timer.update()
+        console.log("Precalc done in: ", timer.getElapsed() - time, " seconds");
+        time = timer.getElapsed();
         let diffCount: number = this.save.getDiffCount();
         for (let x: number = 0; x < Chunk.chunkSize; x++) {
             this.blocks.push([]);
@@ -58,6 +67,8 @@ export class Chunk {
                 }
             }
         }
+        timer.update()
+        console.log("Chunk loaded in: ", timer.getElapsed() - time, " seconds");
         //console.log(world.noiseCounter);
     }
 

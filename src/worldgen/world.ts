@@ -10,6 +10,7 @@ import {Model} from "../geometry/modelCreation";
 import {Vec3} from "../positions/vec3";
 import {ChunkSave} from "./chunkSave";
 import { Vec2 } from "../positions/vec2";
+import { Timer } from "three";
 
 const hypo = (x: number, y: number, z: number): number => Math.sqrt(x * x + y * y + z * z);
 
@@ -230,14 +231,19 @@ export class World {
 
     private async CreateChunkMeshes(scene: Scene, newChunks: Chunk[]) {
         let createCount = 0;
-
+        const timer = new Timer();
+        timer.update;
+        var time = timer.getElapsed();
         for (const chunk of newChunks) {
             this.addChunkMeshes(scene, this.chunksMap.get(chunk.chunkPos.getKey()));
-
+            timer.update()
+            console.log("Chunk mesh created in: ", timer.getElapsed() - time, " seconds");
+            time = timer.getElapsed();
             if (++createCount % 2 === 0) {
                 await nextFrame();
             }
         }
+        
     }
 
     private async DeleteOutOfRenderChunks(scene: Scene) {
