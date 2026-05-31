@@ -33,7 +33,7 @@ export class CameraControls {
     private velocity: Vector3 = new Vector3();
     private isGrounded: boolean = false;
 
-    private speed: number = 4.317;
+    private speed: number = 10;
     private walkSpeed: number = 4.317;
     private sprintSpeed: number = 5.612;
     private crouchSpeed: number = 1.3;
@@ -86,7 +86,7 @@ export class CameraControls {
             const front = new Vector3();
             this.camera.getWorldDirection(front);
             const raycast: BlockPos[] | undefined = this.world?.raycastForBlock(Vec3.fromVector3(this.camera.position), Vec3.fromVector3(front), 5,
-                (block: Block): boolean => block.getVisible());
+                (block: Block): boolean => block.getSolid());
             if (raycast) {
                 if (this.world) this.lastDestroyedBlock = this.world.getBlockAt(raycast[raycast.length - 1]);
                 this.world?.setBlockAt(raycast[raycast.length - 1], Blocks.AIR, scene);
@@ -96,7 +96,7 @@ export class CameraControls {
             const front = new Vector3();
             this.camera.getWorldDirection(front);
             const raycast: BlockPos[] | undefined = this.world?.raycastForBlock(Vec3.fromVector3(this.camera.position), Vec3.fromVector3(front), 5,
-                (block: Block): boolean => block.getVisible());
+                (block: Block): boolean => block.getSolid());
             if (raycast && raycast.length > 2) {
                 const newBlockPos = raycast[raycast.length - 2];
                 if (!this.collidesWithBlockPos(newBlockPos)) this.world?.setBlockAt(newBlockPos, this.lastDestroyedBlock, scene)

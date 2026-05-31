@@ -57,10 +57,17 @@ export class Model {
     }
 
     public static async LoadModelData(): Promise<void> {
-        Model.LoadedModels["Tree"] = await Model.load("model_data/plains_tree.csv");
+        Model.LoadedModels["Tree1"] = await Model.load("model_data/plains_tree_1.csv");
+        Model.LoadedModels["Tree2"] = await Model.load("model_data/plains_tree_2.csv");
+        Model.LoadedModels["BigTree1"] = await Model.load("model_data/big_tree_1.csv");
+        Model.LoadedModels["BigTree2"] = await Model.load("model_data/big_tree_2.csv");
         Model.LoadedModels["DirtHut"] = await Model.load("model_data/dirt_hut.csv");
         Model.LoadedModels["Mushroom"] = await Model.load("model_data/mushroom.csv");
-        Model.LoadedModels["PalmTree"] = await Model.load("model_data/palm_tree_1.csv");
+        Model.LoadedModels["PalmTree1"] = await Model.load("model_data/palm_tree_1.csv");
+        Model.LoadedModels["PalmTree2"] = await Model.load("model_data/palm_tree_2.csv");
+        Model.LoadedModels["Cactus1"] = await Model.load("model_data/cactus_1.csv");
+        Model.LoadedModels["Cactus2"] = await Model.load("model_data/cactus_2.csv");
+        Model.LoadedModels["Cactus3"] = await Model.load("model_data/cactus_3.csv");
     }
 
     static async load(modelDataPath: string): Promise<Model> {

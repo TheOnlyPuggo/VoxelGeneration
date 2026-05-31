@@ -10,6 +10,7 @@ import {Model} from "../geometry/modelCreation";
 import {Vec3} from "../positions/vec3";
 import {ChunkSave} from "./chunkSave";
 import { Vec2 } from "../positions/vec2";
+import {SimplexSeeder} from "./simplexSeeder";
 
 const hypo = (x: number, y: number, z: number): number => Math.sqrt(x * x + y * y + z * z);
 
@@ -18,16 +19,16 @@ const nextFrame = () =>
         requestAnimationFrame(() => resolve())
     );
 export const heightGen = {
-    base: 64,
-    amplitude: 2,
-    size: 128,
+    base: 66,
+    amplitude: 3,
+    size: 32,
     mediumFactor: 0.5,
     fineFactor: 0.25,
-    mountainHeight: 64,
-    snowHeight: 80
+    mountainHeight: 128,
+    snowHeight: 100
 }
 export const biomeGen = {
-    shorelineFactor: 0.8,
+    shorelineFactor: 0.85,
     oceanDepth: 3
 }
 export const dirtGen = {
@@ -98,7 +99,7 @@ export class World {
     private readonly structureNoise: SimplexNoise;
 
     readonly worldRadius = 4;
-    private worleyGridSize: number = 64;
+    private worleyGridSize: number = 128;
 
     //readonly chunks: Array<Array<Array<Chunk>>>;
     readonly chunksMap: Map<string, {chunk: Chunk, chunkMeshes: Mesh[]}>;
@@ -113,22 +114,24 @@ export class World {
     private readonly maxAmountOfStoredStructureBlocks: number = 1000;
 
     constructor() {
-        this.heightNoiseCoarse = new SimplexNoise();
-        this.heightNoiseMedium = new SimplexNoise();
-        this.heightNoiseFine = new SimplexNoise();
-        this.dirtNoise = new SimplexNoise();
-        this.caveNoise = new SimplexNoise();
-        this.coalNoise = new SimplexNoise();
-        this.ironNoise = new SimplexNoise();
-        this.cucumberNoise = new SimplexNoise();
+        let globalSeeder: SimplexSeeder = new SimplexSeeder(1000);
 
-        this.worleyXNoise = new SimplexNoise();
-        this.worleyZNoise = new SimplexNoise();
-        this.worleyBiome = new SimplexNoise();
-        this.mountainHeightNoise = new SimplexNoise();
-        this.snowHeightNoise = new SimplexNoise();
+        this.heightNoiseCoarse = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.heightNoiseMedium = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.heightNoiseFine = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.dirtNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.caveNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.coalNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.ironNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.cucumberNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
 
-        this.structureNoise = new SimplexNoise();
+        this.worleyXNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.worleyZNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.worleyBiome = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.mountainHeightNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.snowHeightNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+
+        this.structureNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
 
         this.cameraChunkPos = new ChunkPos(0, 0, 0);
         this.previousCameraChunkPos = this.cameraChunkPos;
@@ -185,11 +188,7 @@ export class World {
         for (let x = this.cameraChunkPos.x - this.worldRadius; x <= this.cameraChunkPos.x + this.worldRadius; x++) {
             for (let y = this.cameraChunkPos.y - this.worldRadius; y <= this.cameraChunkPos.y + this.worldRadius; y++) {
                 for (let z = this.cameraChunkPos.z - this.worldRadius; z <= this.cameraChunkPos.z + this.worldRadius; z++) {
-                    if (hypo(
-                        x - this.cameraChunkPos.x,
-                        y - this.cameraChunkPos.y,
-                        z - this.cameraChunkPos.z
-                    ) > this.worldRadius) continue;
+                    if (this.chunkPosWithinRenderDistance(new ChunkPos(x, y, z))) continue;
 
                     const chunkPos = new ChunkPos(x, y, z);
                     let chunkPosKey = chunkPos.getKey();
@@ -231,11 +230,7 @@ export class World {
 
         const chunkMapEntries = Array.from(this.chunksMap);
         for (const [chunkPosKey, chunkEntry] of chunkMapEntries) {
-            if (hypo(
-                chunkEntry.chunk.chunkPos.x - this.cameraChunkPos.x,
-                chunkEntry.chunk.chunkPos.y - this.cameraChunkPos.y,
-                chunkEntry.chunk.chunkPos.z - this.cameraChunkPos.z
-            ) > this.worldRadius) {
+            if (this.chunkPosWithinRenderDistance(chunkEntry.chunk.chunkPos)) {
                 this.removeChunkMeshes(scene, chunkEntry);
                 this.chunksMap.delete(chunkPosKey);
             }
@@ -245,6 +240,12 @@ export class World {
                 await nextFrame();
             }
         }
+    }
+
+    private chunkPosWithinRenderDistance(chunkPos: ChunkPos): boolean {
+        let difference: ChunkPos = chunkPos.subtract(this.cameraChunkPos);
+        //if (difference.y < 0) difference = difference.multiplyY(2);
+        return difference.magnitude() > this.worldRadius;
     }
 
     public async updateChunkMesh(scene: Scene, chunkPos: ChunkPos) {
@@ -504,10 +505,10 @@ export class World {
     }
     mountainGetBlockAt(blockPos: BlockPos, dFract: number){
         let height: number = this.getMountainHeight(blockPos, dFract) - blockPos.y;
-        let snowSpawnHeight: number = heightGen.snowHeight + this.snowHeightNoise.noise(blockPos.x / 5, blockPos.z / 5) * 2;
+        let snowSpawnHeight: number = heightGen.snowHeight + this.snowHeightNoise.noise(blockPos.x / 5, blockPos.z / 5) * 10;
 
         if (height < 0 || (this.getCaveAt(blockPos) && blockPos.y < heightGen.base)) return Blocks.AIR;
-        else if (height === 0 && blockPos.y >= snowSpawnHeight) return Blocks.SNOW;
+        else if (height <= 4 && blockPos.y >= snowSpawnHeight) return Blocks.SNOW;
         else if (this.getCoalAt(blockPos)) return Blocks.COAL;
         else if (this.getIronAt(blockPos)) return Blocks.IRON;
         else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
@@ -640,7 +641,7 @@ export class World {
         let checkedBlocks: BlockPos[] = [];
         let currentPos: BlockPos = BlockPos.roundFromVec3(startPos);
         checkedBlocks.push(currentPos);
-        if (this.getBlockAt(currentPos).getVisible()) return checkedBlocks;
+        if (condition(this.getBlockAt(currentPos))) return checkedBlocks;
 
         const endPos: Vec3 = startPos.add(direction.normalize().multiply(range));
         const xOverlaps: number[] = World.getRaycastOverlaps(startPos.x, endPos.x, direction.x);
@@ -665,7 +666,7 @@ export class World {
             }
 
             checkedBlocks.push(currentPos);
-            if (this.getBlockAt(currentPos).getVisible()) return checkedBlocks;
+            if (condition(this.getBlockAt(currentPos))) return checkedBlocks;
         }
 
         return undefined;
@@ -772,29 +773,47 @@ export class World {
     public getModelAtPos(x: number, z: number): [Model, number] | undefined {
         let structureNoiseVal = this.structureNoise.noise(x, z);
 
-        if (structureNoiseVal >= 0.93) {
-            if (this.hasLocalMaximaNoise(structureNoiseVal, x, z, 2)) return undefined;
+        let heightAndBiome = this.getHeightAndBiomeFromXZ(x, z);
+        if (!heightAndBiome || !heightAndBiome[1]) return undefined;
 
-            let heightAndBiome = this.getHeightAndBiomeFromXZ(x, z);
-            if (!heightAndBiome || !heightAndBiome[1]) return undefined;
-
-            if (heightAndBiome[0] == BiomeTypes.Plains) return [Model.LoadedModels["Tree"], heightAndBiome[1]];
-            else if (heightAndBiome[0] == BiomeTypes.Ocean) return [Model.LoadedModels["PalmTree"], heightAndBiome[1]];
+        if (heightAndBiome[0] == BiomeTypes.Plains) {
+            if (structureNoiseVal >= 0.995 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
+                return [Model.LoadedModels["BigTree1"], heightAndBiome[1]];
+            if (structureNoiseVal >= 0.99 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
+                return [Model.LoadedModels["BigTree2"], heightAndBiome[1]];
+            if (structureNoiseVal > 0.96 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
+                return [Model.LoadedModels["Tree1"], heightAndBiome[1]];
+            if (structureNoiseVal > 0.93 && this.isLocalMaximum(structureNoiseVal, x, z,
+                2)) return [Model.LoadedModels["Tree2"], heightAndBiome[1]];
+        }
+        else if (heightAndBiome[0] == BiomeTypes.Ocean) {
+            if (structureNoiseVal > 0.96 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
+                return [Model.LoadedModels["PalmTree1"], heightAndBiome[1]];
+            if (structureNoiseVal > 0.93 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
+                return [Model.LoadedModels["PalmTree2"], heightAndBiome[1]];
+        }
+        else if (heightAndBiome[0] == BiomeTypes.Desert) {
+            if (structureNoiseVal >= 0.99 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
+                return [Model.LoadedModels["Cactus1"], heightAndBiome[1]];
+            if (structureNoiseVal >= 0.975 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
+                return [Model.LoadedModels["Cactus2"], heightAndBiome[1]];
+            if (structureNoiseVal >= 0.96 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
+                return [Model.LoadedModels["Cactus3"], heightAndBiome[1]];
         }
         else return undefined;
         // CURSED else return Model.LoadedModels["DirtHut"];
     }
 
-    private hasLocalMaximaNoise(noiseValue: number, x: number, z: number, range: number) : boolean {
+    private isLocalMaximum(noiseValue: number, x: number, z: number, range: number) : boolean {
         for (let dx = -range; dx <= range; dx++) {
             for (let dz = -range; dz <= range; dz++) {
                 if (dx == 0 && dz == 0) continue;
 
-                if (this.structureNoise.noise(x + dx, z + dz) > noiseValue) return true;
+                if (this.structureNoise.noise(x + dx, z + dz) > noiseValue) return false;
             }
         }
 
-        return false;
+        return true;
     }
 
     public SetStructureGenFirstTime(state: boolean) {
