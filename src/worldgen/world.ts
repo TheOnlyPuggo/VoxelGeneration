@@ -5,13 +5,12 @@ import {Chunk} from "./chunk";
 import {BlockPos} from "../positions/blockPos";
 import {ChunkPos} from "../positions/chunkPos";
 import {Block} from "./block";
-import { seededRandom } from "three/src/math/MathUtils.js";
 import {Model} from "../geometry/modelCreation";
 import {Vec3} from "../positions/vec3";
 import {ChunkSave} from "./chunkSave";
 import { Vec2 } from "../positions/vec2";
-import {SimplexSeeder} from "./simplexSeeder";
-import { NoiseFunction2D } from "simplex-noise";
+import {createNoise2D, createNoise3D, NoiseFunction2D, NoiseFunction3D} from 'simplex-noise';
+import alea from 'alea';
 
 const hypo = (x: number, y: number, z: number): number => Math.sqrt(x * x + y * y + z * z);
 
@@ -84,21 +83,21 @@ export class BiomeDistance {
 }
 
 export class World {
-    private readonly heightNoiseCoarse: SimplexNoise;
-    private readonly heightNoiseMedium: SimplexNoise;
-    private readonly heightNoiseFine: SimplexNoise;
-    private readonly dirtNoise: SimplexNoise;
-    private readonly caveNoise: SimplexNoise;
-    private readonly coalNoise: SimplexNoise;
-    private readonly ironNoise: SimplexNoise;
-    private readonly cucumberNoise: SimplexNoise;
-    private readonly worleyXNoise: SimplexNoise;
-    private readonly worleyZNoise: SimplexNoise;
-    private readonly worleyBiome: SimplexNoise;
-    private readonly mountainHeightNoise: SimplexNoise;
-    private readonly snowHeightNoise: SimplexNoise;
+    private readonly heightNoiseCoarse: NoiseFunction2D;
+    private readonly heightNoiseMedium: NoiseFunction2D;
+    private readonly heightNoiseFine: NoiseFunction2D;
+    private readonly dirtNoise: NoiseFunction2D;
+    private readonly caveNoise: NoiseFunction3D;
+    private readonly coalNoise: NoiseFunction3D;
+    private readonly ironNoise: NoiseFunction3D;
+    private readonly cucumberNoise: NoiseFunction3D;
+    private readonly worleyXNoise: NoiseFunction2D;
+    private readonly worleyZNoise: NoiseFunction2D;
+    private readonly worleyBiome: NoiseFunction2D;
+    private readonly mountainHeightNoise: NoiseFunction2D;
+    private readonly snowHeightNoise: NoiseFunction2D;
 
-    private readonly structureNoise: SimplexNoise;
+    private readonly structureNoise: NoiseFunction2D;
 
     readonly worldRadius = 4;
     private worleyGridSize: number = 128;
@@ -116,24 +115,25 @@ export class World {
     private readonly maxAmountOfStoredStructureBlocks: number = 1000;
 
     constructor() {
-        let globalSeeder: SimplexSeeder = new SimplexSeeder(1000);
+        const seed = 'hi! :D';
+        const seeder = alea(seed);
 
-        this.heightNoiseCoarse = new SimplexNoise();
-        this.heightNoiseMedium = new SimplexNoise();
-        this.heightNoiseFine = new SimplexNoise();
-        this.dirtNoise = new SimplexNoise();
-        this.caveNoise = new SimplexNoise();
-        this.coalNoise = new SimplexNoise();
-        this.ironNoise = new SimplexNoise();
-        this.cucumberNoise = new SimplexNoise();
+        this.heightNoiseCoarse = createNoise2D(alea(seeder.next()));
+        this.heightNoiseMedium = createNoise2D(alea(seeder.next()));
+        this.heightNoiseFine = createNoise2D(alea(seeder.next()));
+        this.dirtNoise = createNoise2D(alea(seeder.next()));
+        this.caveNoise = createNoise3D(alea(seeder.next()));
+        this.coalNoise = createNoise3D(alea(seeder.next()));
+        this.ironNoise = createNoise3D(alea(seeder.next()));
+        this.cucumberNoise = createNoise3D(alea(seeder.next()));
 
-        this.worleyXNoise = new SimplexNoise();
-        this.worleyZNoise = new SimplexNoise();
-        this.worleyBiome = new SimplexNoise();
-        this.mountainHeightNoise = new SimplexNoise();
-        this.snowHeightNoise = new SimplexNoise();
+        this.worleyXNoise = createNoise2D(alea(seeder.next()));
+        this.worleyZNoise = createNoise2D(alea(seeder.next()));
+        this.worleyBiome = createNoise2D(alea(seeder.next()));
+        this.mountainHeightNoise = createNoise2D(alea(seeder.next()));
+        this.snowHeightNoise = createNoise2D(alea(seeder.next()));
 
-        this.structureNoise = new SimplexNoise();
+        this.structureNoise = createNoise2D(alea(seeder.next()));
 
         this.cameraChunkPos = new ChunkPos(0, 0, 0);
         this.previousCameraChunkPos = this.cameraChunkPos;
@@ -358,31 +358,31 @@ export class World {
 
     public getHeightAt(x: number, z: number): number {
         return Math.round(heightGen.amplitude *
-            (this.heightNoiseCoarse.noise(x / heightGen.size, z / heightGen.size) + 1) +
+            (this.heightNoiseCoarse(x / heightGen.size, z / heightGen.size) + 1) +
             heightGen.amplitude * heightGen.mediumFactor *
-            (this.heightNoiseMedium.noise(x / (heightGen.size * heightGen.mediumFactor), z / (heightGen.size * heightGen.mediumFactor)) + 1) +
+            (this.heightNoiseMedium(x / (heightGen.size * heightGen.mediumFactor), z / (heightGen.size * heightGen.mediumFactor)) + 1) +
             heightGen.amplitude * heightGen.fineFactor *
-            (this.heightNoiseFine.noise(x / (heightGen.size * heightGen.fineFactor), z / (heightGen.size * heightGen.fineFactor)) + 1) + heightGen.base);
+            (this.heightNoiseFine(x / (heightGen.size * heightGen.fineFactor), z / (heightGen.size * heightGen.fineFactor)) + 1) + heightGen.base);
     }
 
     private getDirtThicknessAt(x: number, z: number): number {
-        return Math.round(dirtGen.amplitude * this.dirtNoise.noise(x / dirtGen.size, z / dirtGen.size) + dirtGen.base);
+        return Math.round(dirtGen.amplitude * this.dirtNoise(x / dirtGen.size, z / dirtGen.size) + dirtGen.base);
     }
 
     private getCaveAt(blockPos: BlockPos): boolean {
-        return this.caveNoise.noise3d(blockPos.x / caveGen.size, blockPos.y / caveGen.size, blockPos.z / caveGen.size) < caveGen.max;
+        return this.caveNoise(blockPos.x / caveGen.size, blockPos.y / caveGen.size, blockPos.z / caveGen.size) < caveGen.max;
     }
 
     private getCoalAt(blockPos: BlockPos): boolean {
-        return this.coalNoise.noise3d(blockPos.x / coalGen.size, blockPos.y / coalGen.size, blockPos.z / coalGen.size) < coalGen.max && blockPos.y < coalGen.maxHeight;
+        return this.coalNoise(blockPos.x / coalGen.size, blockPos.y / coalGen.size, blockPos.z / coalGen.size) < coalGen.max && blockPos.y < coalGen.maxHeight;
     }
 
     private getIronAt(blockPos: BlockPos): boolean {
-        return this.ironNoise.noise3d(blockPos.x / ironGen.size, blockPos.y / ironGen.size, blockPos.z / ironGen.size) < ironGen.max && blockPos.y < ironGen.maxHeight;
+        return this.ironNoise(blockPos.x / ironGen.size, blockPos.y / ironGen.size, blockPos.z / ironGen.size) < ironGen.max && blockPos.y < ironGen.maxHeight;
     }
 
     private getCucumberAt(blockPos: BlockPos): boolean {
-        return this.cucumberNoise.noise3d(blockPos.x / cucumberGen.size, blockPos.y / cucumberGen.size, blockPos.z / cucumberGen.size) < cucumberGen.max && blockPos.y < cucumberGen.maxHeight;
+        return this.cucumberNoise(blockPos.x / cucumberGen.size, blockPos.y / cucumberGen.size, blockPos.z / cucumberGen.size) < cucumberGen.max && blockPos.y < cucumberGen.maxHeight;
     }
     //USED BY CHUNK GENERATION
     getBlockToGenerateAtFromChunk(blockPos: BlockPos, biomeData: BiomeDistance[]): Block {
@@ -522,7 +522,7 @@ export class World {
     }
     mountainGetBlockAt(blockPos: BlockPos, dFract: number){
         let height: number = this.getMountainHeight(blockPos, dFract) - blockPos.y;
-        let snowSpawnHeight: number = heightGen.snowHeight + this.snowHeightNoise.noise(blockPos.x / 5, blockPos.z / 5) * 10;
+        let snowSpawnHeight: number = heightGen.snowHeight + this.snowHeightNoise(blockPos.x / 5, blockPos.z / 5) * 10;
 
         if (height < 0 || (this.getCaveAt(blockPos) && blockPos.y < heightGen.base)) return Blocks.AIR;
         else if (height <= 4 && blockPos.y >= snowSpawnHeight) return Blocks.SNOW;
@@ -536,7 +536,7 @@ export class World {
             //mountain height calc
             Math.round((1 - dFract) * heightGen.mountainHeight *
             //noise variance
-            (this.mountainHeightNoise.noise(blockPos.x / 35, blockPos.z / 35) / 4 + 0.75));
+            (this.mountainHeightNoise(blockPos.x / 35, blockPos.z / 35) / 4 + 0.75));
     }
     desertGetBlockAt(blockPos: BlockPos, dFract: number){
         let height: number = this.getDesertHeight(blockPos, dFract) - blockPos.y;
@@ -720,7 +720,7 @@ export class World {
     }
 
     getBiomeAtGrid(gridPos: Vec2){
-        let b: number = ((this.worleyBiome.noise(gridPos.x, gridPos.y) + 1) * 1000) % 1;
+        let b: number = ((this.worleyBiome(gridPos.x, gridPos.y) + 1) * 1000) % 1;
         if (b < 0.2){
             return BiomeTypes.Desert;
         } else if (b < 0.4){
@@ -735,8 +735,8 @@ export class World {
     }
 
     getWorleyFP(gridPos: Vec2){
-        let target: Vec2 = new Vec2(this.worleyXNoise.noise(gridPos.x, gridPos.y) / 2 + 1,
-            this.worleyZNoise.noise(gridPos.x, gridPos.y) / 2 + 1);
+        let target: Vec2 = new Vec2(this.worleyXNoise(gridPos.x, gridPos.y) / 2 + 1,
+            this.worleyZNoise(gridPos.x, gridPos.y) / 2 + 1);
         return target;
     }
 
@@ -804,7 +804,7 @@ export class World {
     }
 
     public getModelAtPos(x: number, z: number): [Model, number] | undefined {
-        let structureNoiseVal = this.structureNoise.noise(x, z);
+        let structureNoiseVal = this.structureNoise(x, z);
 
         let heightAndBiome = this.getHeightAndBiomeFromXZ(x, z);
         if (!heightAndBiome || !heightAndBiome[1]) return undefined;
@@ -850,7 +850,7 @@ export class World {
             for (let dz = -range; dz <= range; dz++) {
                 if (dx == 0 && dz == 0) continue;
 
-                if (this.structureNoise.noise(x + dx, z + dz) > noiseValue) return false;
+                if (this.structureNoise(x + dx, z + dz) > noiseValue) return false;
             }
         }
 
