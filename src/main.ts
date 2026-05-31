@@ -53,7 +53,7 @@ async function init(): Promise<void> {
     document.body.appendChild(Game.renderer.domElement);
 
     // World Creation
-    Game.world = new World();
+    Game.world = new World(true);
 
     // Game Camera stuff
     Game.camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);

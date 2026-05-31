@@ -25,23 +25,24 @@ export class Chunk {
         let biomeLowerThreshhold: number = 64
         let topY: number = new SubChunkPos(0, 15, 0).y
         this.blocks = [];
+
         let bData: Array<Array<BiomeDistance[]>> = [];
-        for (let x: number = 0; x < Chunk.chunkSize; x++){
-            bData.push([]);
-            for (let z: number = 0; z < Chunk.chunkSize; z++){
-                if (topY < biomeLowerThreshhold){
-                    bData[x].push([new BiomeDistance(0, BiomeTypes.Underground), new BiomeDistance(0, BiomeTypes.Underground)]);
-                } else {
-                    bData[x].push(world.getBiomeData(this.getBlockPos(new SubChunkPos(x, 0, z))));
+        if (!world.oldWorldGen) {
+            for (let x: number = 0; x < Chunk.chunkSize; x++){
+                bData.push([]);
+                for (let z: number = 0; z < Chunk.chunkSize; z++){
+                    if (topY < biomeLowerThreshhold){
+                        bData[x].push([new BiomeDistance(0, BiomeTypes.Underground), new BiomeDistance(0, BiomeTypes.Underground)]);
+                    } else {
+                        bData[x].push(world.getBiomeData(this.getBlockPos(new SubChunkPos(x, 0, z))));
+                    }
                 }
-                
             }
         }
 
         let diffCount: number = this.save.getDiffCount();
         for (let x: number = 0; x < Chunk.chunkSize; x++) {
             this.blocks.push([]);
-
             for (let y: number = 0; y < Chunk.chunkSize; y++) {
                 this.blocks[x].push([]);
                 for (let z: number = 0; z < Chunk.chunkSize; z++) {
@@ -49,7 +50,13 @@ export class Chunk {
                     let diff: Block | undefined;
                     if (diffCount > 0 && (diff = this.save.getDiff(subChunkPos))) {
                         this.blocks[x][y].push(diff);
-                    } else this.blocks[x][y].push(world.getBlockToGenerateAtFromChunk(this.getBlockPos(subChunkPos), bData[x][z]));
+                    } else {
+                        if (!world.oldWorldGen) {
+                            this.blocks[x][y].push(world.getBlockToGenerateAtFromChunk(this.getBlockPos(subChunkPos), bData[x][z]));
+                        } else {
+                            this.blocks[x][y].push(world.getBlockToGenerateAtOld(this.getBlockPos(subChunkPos)));
+                        }
+                    }
                 }
             }
         }

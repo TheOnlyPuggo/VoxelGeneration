@@ -26,6 +26,13 @@ export const heightGen = {
     mountainHeight: 64,
     snowHeight: 80
 }
+export const oldHeightGen = {
+    base: 64,
+    amplitude: 6,
+    size: 32,
+    mediumFactor: 0.5,
+    fineFactor: 0.25
+}
 export const biomeGen = {
     shorelineFactor: 0.8,
     oceanDepth: 3
@@ -112,7 +119,11 @@ export class World {
     private firstStructureGeneration: boolean;
     private readonly maxAmountOfStoredStructureBlocks: number = 1000;
 
-    constructor() {
+    public readonly oldWorldGen: boolean;
+
+    constructor(oldWorldGen: boolean) {
+        this.oldWorldGen = oldWorldGen;
+
         this.heightNoiseCoarse = new SimplexNoise();
         this.heightNoiseMedium = new SimplexNoise();
         this.heightNoiseFine = new SimplexNoise();
@@ -360,6 +371,15 @@ export class World {
             (this.heightNoiseFine.noise(x / (heightGen.size * heightGen.fineFactor), z / (heightGen.size * heightGen.fineFactor)) + 1) + heightGen.base);
     }
 
+    public getHeightAtOld(x: number, z: number): number {
+        return Math.round(oldHeightGen.amplitude *
+            this.heightNoiseCoarse.noise(x / oldHeightGen.size, z / oldHeightGen.size) +
+            oldHeightGen.amplitude * oldHeightGen.mediumFactor *
+            this.heightNoiseMedium.noise(x / (oldHeightGen.size * oldHeightGen.mediumFactor), z / (oldHeightGen.size * oldHeightGen.mediumFactor)) +
+            oldHeightGen.amplitude * oldHeightGen.fineFactor *
+            this.heightNoiseFine.noise(x / (oldHeightGen.size * oldHeightGen.fineFactor), z / (oldHeightGen.size * oldHeightGen.fineFactor)) + oldHeightGen.base);
+    }
+
     private getDirtThicknessAt(x: number, z: number): number {
         return Math.round(dirtGen.amplitude * this.dirtNoise.noise(x / dirtGen.size, z / dirtGen.size) + dirtGen.base);
     }
@@ -379,6 +399,20 @@ export class World {
     private getCucumberAt(blockPos: BlockPos): boolean {
         return this.cucumberNoise.noise3d(blockPos.x / cucumberGen.size, blockPos.y / cucumberGen.size, blockPos.z / cucumberGen.size) < cucumberGen.max && blockPos.y < cucumberGen.maxHeight;
     }
+
+    getBlockToGenerateAtOld(blockPos: BlockPos): Block {
+        let height: number = this.getHeightAtOld(blockPos.x, blockPos.z) - blockPos.y;
+        let dirtHeight: number = height - this.getDirtThicknessAt(blockPos.x, blockPos.z);
+
+        if (height < 0 || this.getCaveAt(blockPos)) return Blocks.AIR;
+        else if (height === 0) return Blocks.GRASS;
+        else if (dirtHeight <= 0) return Blocks.DIRT;
+        else if (this.getCoalAt(blockPos)) return Blocks.COAL;
+        else if (this.getIronAt(blockPos)) return Blocks.IRON;
+        else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
+        return Blocks.STONE;
+    }
+
     //USED BY CHUNK GENERATION
     getBlockToGenerateAtFromChunk(blockPos: BlockPos, biomeData: BiomeDistance[]): Block {
         let blockToPush = this.getTerrainBlockToGenerateAtFromChunk(blockPos, biomeData);
@@ -388,7 +422,9 @@ export class World {
 
     //USED BY EVERYTHING ELSE
     getBlockToGenerateAt(blockPos: BlockPos): Block {
-        let blockToPush = this.getTerrainBlockToGenerateAt(blockPos);
+        let blockToPush;
+        if (!this.oldWorldGen) blockToPush = this.getTerrainBlockToGenerateAt(blockPos);
+        else return this.getBlockToGenerateAtOld(blockPos);
         if (blockToPush == Blocks.AIR) blockToPush = this.getStructureBlockToGenerateAt(blockPos);
         return blockToPush;
     }
@@ -396,6 +432,7 @@ export class World {
     // BIOMES
 
     public getHeightAndBiomeFromXZ(x: number, z: number){
+        if (this.oldWorldGen) return [BiomeTypes.Plains, this.getHeightAtOld(x, z)];
         let blockPos: BlockPos = new BlockPos(x, 0, z);
         let bD: BiomeDistance[] = this.getBiomeData(blockPos);
         let dFract = bD[0].distance / ((bD[0].distance + bD[1].distance) / 2);
