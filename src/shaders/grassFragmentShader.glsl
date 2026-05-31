@@ -63,7 +63,7 @@ void main() {
   // ---- Lighting ----
 
   // Ambient
-  vec3 lightContribution = ambientLightColor;  // from lights_pars_begin
+  vec3 lightContribution = ambientLightColor;
 
   // Directional lights
   #if NUM_DIR_LIGHTS > 0
@@ -71,8 +71,7 @@ void main() {
       vec3 lightDir = normalize(directionalLights[i].direction);
       float NdotL = max(dot(vNormal, lightDir), 0.0);
 
-      // Grass is two-sided — soften the dark side
-      NdotL = NdotL * 0.5 + 0.5;  // remap 0..1 → 0.5..1 (half-lambert)
+      NdotL = NdotL * 0.5 + 0.5;
 
       lightContribution += directionalLights[i].color * NdotL;
     }
@@ -88,11 +87,6 @@ void main() {
   color *= mix(0.6, 1.0, shadow);
 
 
-/*
-  float alpha = 1.0 - abs(vUv.x - 0.5) * 2.0;
-  alpha = pow(alpha, 0.5);
-  //if (alpha < 0.1) discard;
-  */
 
   gl_FragColor = vec4(color, 1.);
 

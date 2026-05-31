@@ -1,3 +1,5 @@
+#include <fog_pars_fragment>
+
 uniform float uTime;
 uniform vec3 uWaterCol;
 uniform vec3 uCausticCol;
@@ -7,9 +9,15 @@ uniform bool uIsTransparent;
 uniform float uFBMIntensity;
 uniform float uFBMScale;
 
+// lighting
+uniform vec3  uLightDir;
+uniform vec3  uLightColor;
+uniform vec3  uCameraPos;
+uniform float uShininess;
+uniform float uSpecularStr;
 
 varying vec2 vUv;
-varying vec3 vInstancePos;
+varying vec3 vWorldPos;
 
 const mat2 myt = mat2(.12121212, .13131313, -.13131313, .12121212);
 const vec2 mys = vec2(1e4, 1e6);
@@ -92,32 +100,64 @@ float fbm(vec2 p) {
   return value;
 }
 
-
-void main() {
-    float scale = 10.;
-    float zSpeed = 0.3;
-    float moveSpeed = 0.3;
-
+float sampleCaustic(vec2 worldXZ, float time) {
+    float zSpeed    = 0.3;
     float warpSpeed = 0.05;
 
-    vec2 sampleCoords = vInstancePos.xz * uGScale;
-    //sampleCoords += vec2(uTime * moveSpeed * uGSpeed, 0.);
-    float warpX = fbm(vInstancePos.xz*uGScale*uFBMScale + vec2(0., 0.) + uTime * warpSpeed);
-    float warpY = fbm(vInstancePos.xz*uGScale*uFBMScale + vec2(5.2, 1.3) + uTime * warpSpeed);
+    vec2 sampleCoords = worldXZ * uGScale;
 
-    vec2 warpedSampleCoords = sampleCoords + vec2(warpX, warpY) * uFBMIntensity;
+    float warpX = fbm(worldXZ * uGScale * uFBMScale + vec2(0.,  0. ) + time * warpSpeed);
+    float warpY = fbm(worldXZ * uGScale * uFBMScale + vec2(5.2, 1.3) + time * warpSpeed);
 
-    float vSample = voronoi3d(vec3(warpedSampleCoords, uTime * zSpeed * uGSpeed)).x;
+    vec2 warpedCoords = sampleCoords + vec2(warpX, warpY) * uFBMIntensity;
 
-    vSample = pow(vSample, 3.);
-    vSample = clamp(vSample, 0., 0.8);
+    float v = voronoi3d(vec3(warpedCoords, time * zSpeed * uGSpeed)).x;
+    v = pow(v, 3.);
+    return clamp(v, 0., 0.8);
+}
 
+vec3 calcWaterNormal(vec2 worldXZ, float time) {
+    float eps      = 0.3;
+    float warpSpeed = 0.05;
+    vec2  p        = worldXZ * uGScale * uFBMScale;
+
+    float l = fbm(p + vec2(-eps, 0.) + time * warpSpeed);
+    float r = fbm(p + vec2( eps, 0.) + time * warpSpeed);
+    float d = fbm(p + vec2(0., -eps) + time * warpSpeed);
+    float u = fbm(p + vec2(0.,  eps) + time * warpSpeed);
+
+    float strength = 1.2;
+    return normalize(vec3(
+        (l - r) / (2.0 * eps) * strength,
+        1.0,
+        (d - u) / (2.0 * eps) * strength
+    ));
+}
+
+
+void main() {
+    float vSample   = sampleCaustic(vWorldPos.xz, uTime);
     vec3 causticCol = mix(uWaterCol, uCausticCol, vSample);
 
+    vec3 N = calcWaterNormal(vWorldPos.xz, uTime);
+    vec3 L = normalize(uLightDir);
+    vec3 V = normalize(uCameraPos - vWorldPos);
+    vec3 H = normalize(L + V);
+
+    float NdotH = max(dot(N, H), 0.0);
+
+    float specBroad = pow(NdotH, 12.0) * 0.3;
+    float specSharp = pow(NdotH, uShininess) * vSample * uSpecularStr;
+    vec3  specular  = uLightColor * (specBroad + specSharp);
+
+    vec3 litColor = causticCol * 0.7 + specular;
 
     if (uIsTransparent) {
-      gl_FragColor = vec4(causticCol, causticCol * 1.8);
+        float alpha = dot(causticCol, vec3(0.333)) * 1.2;
+        gl_FragColor = vec4(litColor, alpha);
     } else {
-      gl_FragColor = vec4(causticCol * 2., 1.);
+        gl_FragColor = vec4(litColor * 2., 1.);
     }
+
+    #include <fog_fragment>
 }
