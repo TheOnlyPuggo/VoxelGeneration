@@ -15,7 +15,7 @@ export function CreateGUI(gameProps: GameLike) {
     const gui = new GUI();
     const positionFolder = gui.addFolder("Position");
     const cameraFolder = gui.addFolder("Camera");
-    const seedFolder = gui.addFolder("Seed");
+    const generationFolder = gui.addFolder("Generation");
 
     if (gameProps.camera) {
         positionFolder.add(gameProps.camera.position, "x").listen().onChange((value: number) => {
@@ -34,9 +34,10 @@ export function CreateGUI(gameProps: GameLike) {
     }
 
     if (gameProps.worldWrapper) {
-        seedFolder.add(gameProps.worldWrapper, "seed").listen();
-        seedFolder.add(gameProps.worldWrapper, "biomeSize").listen();
-        seedFolder.add({
+        generationFolder.add(gameProps.worldWrapper, "seed").listen();
+        generationFolder.add(gameProps.worldWrapper, "biomeSize").listen();
+        generationFolder.add(gameProps.worldWrapper, "heightAmplitude").listen();
+        generationFolder.add({
             regenerateWorld: function() {
                 if (gameProps.scene && gameProps.cameraControls) {
                     gameProps.worldWrapper?.regenerate(gameProps.scene, gameProps.cameraControls);

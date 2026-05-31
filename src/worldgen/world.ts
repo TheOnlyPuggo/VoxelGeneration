@@ -18,7 +18,7 @@ const nextFrame = () =>
     new Promise<void>(resolve =>
         requestAnimationFrame(() => resolve())
     );
-export const heightGen = {
+export let heightGen = {
     base: 66,
     amplitude: 3,
     size: 32,
@@ -116,7 +116,7 @@ export class World {
     private readonly maxAmountOfStoredStructureBlocks: number = 1000;
     //private testPos: Vec2;
 
-    constructor(seed: number, worleyGridSize: number) {
+    constructor(seed: number, worleyGridSize: number, heightAmplitude: number) {
         const seeder = alea(seed);
 
         this.heightNoiseCoarse = createNoise2D(alea(seeder.next()));
@@ -145,6 +145,7 @@ export class World {
         this.chunkSaveMap = new Map<string, ChunkSave>();
 
         this.worleyGridSize = worleyGridSize;
+        heightGen.amplitude = heightAmplitude;
 
         var testCase: BiomeDistance[] = this.getBiomeData(new BlockPos(390, 90, 128))
         console.log("closest biome distance: ", testCase[0].distance, "    Second closest is: ", testCase[1].distance);

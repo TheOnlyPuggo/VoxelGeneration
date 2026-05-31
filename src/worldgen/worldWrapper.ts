@@ -6,11 +6,12 @@ import {CameraControls} from "../camera";
 export class WorldWrapper {
     public seed: number = Math.round(Math.random() * 1000000000);
     public biomeSize: number = 128;
+    public heightAmplitude: number = 3
 
     private world: World;
 
     constructor() {
-        this.world = new World(this.seed, this.biomeSize);
+        this.world = new World(this.seed, this.biomeSize, this.heightAmplitude);
     }
 
     public getWorld(): World {
@@ -19,7 +20,7 @@ export class WorldWrapper {
 
     public regenerate(scene: Scene, cameraControls: CameraControls): void {
         this.world.destroy(scene);
-        this.world = new World(this.seed, this.biomeSize);
+        this.world = new World(this.seed, this.biomeSize, this.heightAmplitude);
         this.resetCamera(cameraControls);
         Model.generatedStructureBlocksToLoad = new Map();
     }
