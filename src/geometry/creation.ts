@@ -391,10 +391,11 @@ export class CubeMeshSandBlock extends CubeMeshOneTexture {
                     let shouldSpawnSample = CubeMeshGrassBlock.grassNoise.noise((blockPos.x + x) / shouldSpawnScale, (blockPos.z + y) / shouldSpawnScale);
 
                     let shouldIgnoreScale = 30;
-                    let chanceOfIgnore = 0.03;
+                    let chanceOfIgnore = 0.04;
+                    let chanceOfIgnoreSample = CubeMeshGrassBlock.grassNoise.noise((blockPos.x + x) * shouldIgnoreScale, (blockPos.z + y) * shouldIgnoreScale) * 10000 % 1;
                     //let chanceOfIgnoreSample = CubeMeshGrassBlock.grassNoise.noise((blockPos.x + x) / shouldIgnoreScale, (blockPos.z + y) / shouldIgnoreScale);
 
-                    if (shouldSpawnSample < shouldSpawmCutoff && (Math.random() < (1 - chanceOfIgnore))) continue;
+                    if (shouldSpawnSample < shouldSpawmCutoff && (chanceOfIgnoreSample < (1 - chanceOfIgnore))) continue;
 
                     let grassMatrix = new Matrix4();
                     let modifyMatrix = new Matrix4();

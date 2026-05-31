@@ -9,6 +9,7 @@ import {Model} from "./geometry/modelCreation";
 import {BlockPos} from "./positions/blockPos";
 import {CubeMeshGrassBlock, CubeMeshWaterBlock, CubeMeshSandBlock} from "./geometry/creation";
 
+
 export const Game: {
     scene: Scene | null,
     camera: PerspectiveCamera | null,
@@ -89,8 +90,8 @@ async function init(): Promise<void> {
 
     Game.directionalLight = new DirectionalLight(0xfff9de, 2);
     Game.directionalLight.castShadow = true;
-    Game.directionalLight.shadow.mapSize.width = 8192*1;
-    Game.directionalLight.shadow.mapSize.height = 8192*1;
+    Game.directionalLight.shadow.mapSize.width = 8192*2;
+    Game.directionalLight.shadow.mapSize.height = 8192*2;
 
     Game.directionalLight.shadow.camera.near = 0;
     Game.directionalLight.shadow.camera.far = 1000;
@@ -118,8 +119,8 @@ async function init(): Promise<void> {
         if (Game.scene) {
             // Game.scene.background = new Color(0x97b4d2);
             Game.scene.background = tex;
-            Game.scene.backgroundIntensity = 0.5;
-            Game.scene.backgroundBlurriness = 0.05;
+            Game.scene.backgroundIntensity = 1;
+            // Game.scene.backgroundBlurriness = 0.2;
 
             Game.scene.environment = tex;
             
@@ -145,7 +146,7 @@ function animate(time: number): void {
     Game.environment.skybox?.position.copy(Game.camera?.position as Vector3);
 
     if (Game.camera && Game.directionalLight) {
-        const SUN_OFFSET = new Vector3(50, 50, 65);
+        const SUN_OFFSET = new Vector3(50, 50, 40);
         Game.directionalLight.position.copy(Game.camera.position.clone().add(SUN_OFFSET));
         Game.directionalLight.target.position.copy(Game.camera.position.clone());
     }
