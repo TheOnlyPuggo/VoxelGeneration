@@ -59,7 +59,13 @@ async function init(): Promise<void> {
     Game.camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
     Game.camera.position.x = 7.0;
     Game.camera.position.z = 7.0;
-    Game.camera.position.y = Game.world.getHeightAt(Game.camera.position.x, Game.camera.position.z) + 5;
+    let heightAndBiome = Game.world.getHeightAndBiomeFromXZ(Game.camera.position.x, Game.camera.position.z);
+    while (!heightAndBiome || !heightAndBiome[1]) {
+        Game.camera.position.x += 7.0;
+        Game.camera.position.z += 7.0;
+        heightAndBiome = Game.world.getHeightAndBiomeFromXZ(Game.camera.position.x, Game.camera.position.z);
+    }
+    Game.camera.position.y = heightAndBiome[1] + 5;
     Game.camera.rotateY(-Math.PI * 0.75);
     Game.camera.rotateX(-Math.PI / 4.0);
 

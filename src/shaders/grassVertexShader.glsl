@@ -127,12 +127,8 @@ void main() {
 
   if (distanceFromPlayer < 1.5) {
     vec3 moveVector = vActualNormal * influence * (1.0 - distanceFromPlayer * 0.667) * 0.8;
-    moveVector.y = (instancePos.y - floor(instancePos.y + 0.5) + 0.5) * max(distanceFromPlayer * 1.333 - 2.0, -0.99);
+    moveVector.y = (instancePos.y - floor(instancePos.y + 0.5) + 0.5) * max(distanceFromPlayer * 1.333 - 2.0, -0.9);
     instancePos.xyz += moveVector;
-
-    //instancePos.y -= atan(influence) * pow(1.0 - distanceFromPlayer * 0.5, 3.0);
-
-    //instancePos.xyz += vActualNormal * (1.0 - distanceFromPlayer) * influence;
   }
 
 
