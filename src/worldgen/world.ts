@@ -97,7 +97,7 @@ export class World {
 
     private readonly structureNoise: SimplexNoise;
 
-    readonly worldRadius = 4;
+    readonly worldRadius = 8;
     private worleyGridSize: number = 64;
 
     //readonly chunks: Array<Array<Array<Chunk>>>;
@@ -772,14 +772,22 @@ export class World {
     public getModelAtPos(x: number, z: number): [Model, number] | undefined {
         let structureNoiseVal = this.structureNoise.noise(x, z);
 
-        if (structureNoiseVal >= 0.93) {
-            if (this.hasLocalMaximaNoise(structureNoiseVal, x, z, 2)) return undefined;
+        if (this.hasLocalMaximaNoise(structureNoiseVal, x, z, 2)) return undefined;
 
-            let heightAndBiome = this.getHeightAndBiomeFromXZ(x, z);
-            if (!heightAndBiome || !heightAndBiome[1]) return undefined;
+        let heightAndBiome = this.getHeightAndBiomeFromXZ(x, z);
+        if (!heightAndBiome || !heightAndBiome[1]) return undefined;
 
-            if (heightAndBiome[0] == BiomeTypes.Plains) return [Model.LoadedModels["Tree"], heightAndBiome[1]];
-            else if (heightAndBiome[0] == BiomeTypes.Ocean) return [Model.LoadedModels["PalmTree"], heightAndBiome[1]];
+        if (heightAndBiome[0] == BiomeTypes.Plains) {
+            if (structureNoiseVal >= 0.995) return [Model.LoadedModels["BigTree1"], heightAndBiome[1]];
+            if (structureNoiseVal >= 0.99) return [Model.LoadedModels["BigTree2"], heightAndBiome[1]];
+            if (structureNoiseVal > 0.96) return [Model.LoadedModels["Tree1"], heightAndBiome[1]];
+            if (structureNoiseVal > 0.93) return [Model.LoadedModels["Tree2"], heightAndBiome[1]];
+        }
+        else if (heightAndBiome[0] == BiomeTypes.Ocean && structureNoiseVal > 0.93) return [Model.LoadedModels["PalmTree"], heightAndBiome[1]];
+        else if (heightAndBiome[0] == BiomeTypes.Desert) {
+            if (structureNoiseVal >= 0.99) return [Model.LoadedModels["Cactus1"], heightAndBiome[1]];
+            if (structureNoiseVal >= 0.96) return [Model.LoadedModels["Cactus2"], heightAndBiome[1]];
+            if (structureNoiseVal >= 0.93) return [Model.LoadedModels["Cactus3"], heightAndBiome[1]];
         }
         else return undefined;
         // CURSED else return Model.LoadedModels["DirtHut"];
