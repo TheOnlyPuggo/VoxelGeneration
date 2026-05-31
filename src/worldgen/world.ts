@@ -241,7 +241,7 @@ export class World {
 
     private chunkPosWithinRenderDistance(chunkPos: ChunkPos): boolean {
         let difference: ChunkPos = chunkPos.subtract(this.cameraChunkPos);
-        if (difference.y < 0) difference = difference.multiplyY(2);
+        //if (difference.y < 0) difference = difference.multiplyY(2);
         return difference.magnitude() > this.worldRadius;
     }
 
