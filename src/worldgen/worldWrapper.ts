@@ -10,6 +10,8 @@ export class WorldWrapper {
 
     private world: World;
 
+    private static firstLoad = true;
+
     constructor() {
         this.world = new World(this.seed, this.biomeSize, this.heightAmplitude);
     }
@@ -26,8 +28,8 @@ export class WorldWrapper {
     }
 
     public resetCamera(cameraControls: CameraControls): void {
-        cameraControls.playerPos.x = 7.0;
-        cameraControls.playerPos.z = 7.0;
+        //cameraControls.playerPos.x = 7.0;
+        //cameraControls.playerPos.z = 7.0;
         let heightAndBiome = this.world.getHeightAndBiomeFromXZ(cameraControls.playerPos.x, cameraControls.playerPos.z);
         while (!heightAndBiome || !heightAndBiome[1]) {
             cameraControls.playerPos.x += 7.0;
@@ -35,5 +37,9 @@ export class WorldWrapper {
             heightAndBiome = this.world.getHeightAndBiomeFromXZ(cameraControls.playerPos.x, cameraControls.playerPos.z);
         }
         cameraControls.playerPos.y = heightAndBiome[1] + 10;
+        if (WorldWrapper.firstLoad) {
+            WorldWrapper.firstLoad = false;
+            cameraControls.playerPos.y += 150;
+        }
     }
 }
