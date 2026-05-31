@@ -35,6 +35,7 @@ export function CreateGUI(gameProps: GameLike) {
 
     if (gameProps.worldWrapper) {
         seedFolder.add(gameProps.worldWrapper, "seed").listen();
+        seedFolder.add(gameProps.worldWrapper, "biomeSize").listen();
         seedFolder.add({
             regenerateWorld: function() {
                 if (gameProps.scene && gameProps.cameraControls) {
