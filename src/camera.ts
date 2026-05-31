@@ -5,6 +5,7 @@ import {BlockPos} from "./positions/blockPos";
 import {Vec3} from "./positions/vec3";
 import * as Blocks from "./worldgen/blocks";
 import {Block} from "./worldgen/block";
+import {WorldWrapper} from "./worldgen/worldWrapper";
 
 enum PlayerState {
     Normal,
@@ -17,7 +18,7 @@ export class CameraControls {
     camera: PerspectiveCamera;
     canvas: HTMLCanvasElement;
     isFlyingControls: boolean;
-    world: World | null = null;
+    worldWrapper: WorldWrapper | null = null;
     pointerLockControls: PointerLockControls;
     inputWrapper: InputWrapper;
     public playerPos: Vector3 = new Vector3();
@@ -54,10 +55,10 @@ export class CameraControls {
 
     private lastDestroyedBlock: Block;
 
-    constructor(camera: PerspectiveCamera, canvas: HTMLCanvasElement, world: World, isFlyingControls: boolean = false) {
+    constructor(camera: PerspectiveCamera, canvas: HTMLCanvasElement, worldWrapper: WorldWrapper, isFlyingControls: boolean = false) {
         this.camera = camera;
         this.canvas = canvas;
-        this.world = world;
+        this.worldWrapper = worldWrapper;
         this.isFlyingControls = isFlyingControls;
 
         this.playerPos = this.camera.position.clone();
@@ -88,21 +89,21 @@ export class CameraControls {
         if (this.inputWrapper.IsPressed(Input.Destroy)) {
             const front = new Vector3();
             this.camera.getWorldDirection(front);
-            const raycast: BlockPos[] | undefined = this.world?.raycastForBlock(Vec3.fromVector3(this.camera.position), Vec3.fromVector3(front), 5,
+            const raycast: BlockPos[] | undefined = this.worldWrapper?.getWorld().raycastForBlock(Vec3.fromVector3(this.camera.position), Vec3.fromVector3(front), 5,
                 (block: Block): boolean => block.getSolid());
             if (raycast) {
-                if (this.world) this.lastDestroyedBlock = this.world.getBlockAt(raycast[raycast.length - 1]);
-                this.world?.setBlockAt(raycast[raycast.length - 1], Blocks.AIR, scene);
+                if (this.worldWrapper) this.lastDestroyedBlock = this.worldWrapper.getWorld().getBlockAt(raycast[raycast.length - 1]);
+                this.worldWrapper?.getWorld().setBlockAt(raycast[raycast.length - 1], Blocks.AIR, scene);
             }
         }
         if (this.inputWrapper.IsPressed(Input.Place)) {
             const front = new Vector3();
             this.camera.getWorldDirection(front);
-            const raycast: BlockPos[] | undefined = this.world?.raycastForBlock(Vec3.fromVector3(this.camera.position), Vec3.fromVector3(front), 5,
+            const raycast: BlockPos[] | undefined = this.worldWrapper?.getWorld().raycastForBlock(Vec3.fromVector3(this.camera.position), Vec3.fromVector3(front), 5,
                 (block: Block): boolean => block.getSolid());
             if (raycast && raycast.length > 2) {
                 const newBlockPos = raycast[raycast.length - 2];
-                if (!this.collidesWithBlockPos(newBlockPos)) this.world?.setBlockAt(newBlockPos, this.lastDestroyedBlock, scene)
+                if (!this.collidesWithBlockPos(newBlockPos)) this.worldWrapper?.getWorld().setBlockAt(newBlockPos, this.lastDestroyedBlock, scene)
             }
         }
     }
@@ -331,11 +332,11 @@ export class CameraControls {
     }
 
     IsSolid(x: number, y: number, z: number): boolean {
-        return this.world ? this.world.getBlockAt(BlockPos.roundFromVec3(new Vec3(x, y, z))).getSolid() : false;
+        return this.worldWrapper ? this.worldWrapper.getWorld().getBlockAt(BlockPos.roundFromVec3(new Vec3(x, y, z))).getSolid() : false;
     }
 
     IsWater(x: number, y: number, z: number): boolean {
-        return this.world ? this.world.getBlockAt(BlockPos.roundFromVec3(new Vec3(x, y, z))).equals(Blocks.WATER) : false;
+        return this.worldWrapper ? this.worldWrapper.getWorld().getBlockAt(BlockPos.roundFromVec3(new Vec3(x, y, z))).equals(Blocks.WATER) : false;
     }
 }
 

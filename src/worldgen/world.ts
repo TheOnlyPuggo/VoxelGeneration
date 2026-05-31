@@ -111,12 +111,10 @@ export class World {
     private previousStructureCameraChunkPos: ChunkPos;
     private isGenerating: boolean;
 
-    private firstStructureGeneration: boolean;
     private readonly maxAmountOfStoredStructureBlocks: number = 1000;
     //private testPos: Vec2;
 
-    constructor() {
-        const seed = ' gimme grass twin';
+    constructor(seed: number) {
         const seeder = alea(seed);
 
         this.heightNoiseCoarse = createNoise2D(alea(seeder.next()));
@@ -145,31 +143,8 @@ export class World {
         this.chunkSaveMap = new Map<string, ChunkSave>();
 
 
-        this.firstStructureGeneration = true;
-        /*
-        var b: BlockPos = new BlockPos(128, 90, 0);
-
-        let worleyWorldPos = new Vec2(b.x / this.worleyGridSize, b.z / this.worleyGridSize);
-        let worleyGridPos: Vec2 = new Vec2(Math.floor(worleyWorldPos.x), Math.floor(worleyWorldPos.y));
-        let posWithinGrid: Vec2 = worleyWorldPos.subtract(worleyGridPos);
-        console.log(worleyGridPos);
-
-        let closestBiome: BiomeDistance = new BiomeDistance(1000, BiomeTypes.Desert);
-        let c: number = 0
-        for ( var i = 0; i < worleyGridOffsets.length; i++){
-            let s: number = this.getFPDistFromOffset(posWithinGrid, worleyGridPos, worleyGridOffsets[i]);
-            if (s < closestBiome.distance){
-                closestBiome.distance = s;
-                closestBiome.biome = this.getBiomeAtGrid(worleyGridPos.add(worleyGridOffsets[i]));
-                c = i;
-            }
-
-        }
-        console.log(worleyGridOffsets[c].x, ", ", worleyGridOffsets[c].y);
-        console.log(this.getWorleyFP(new Vec2(0, -1)));
-        this.testPos = new Vec2((worleyWorldPos.x + worleyGridOffsets[c].x) * this.worleyGridSize, (worleyWorldPos.y + worleyGridOffsets[c].y) * this.worleyGridSize);
-        console.log(this.testPos.x, ", ", this.testPos.y);
-        */
+        var testCase: BiomeDistance[] = this.getBiomeData(new BlockPos(390, 90, 128))
+        console.log("closest biome distance: ", testCase[0].distance, "    Second closest is: ", testCase[1].distance);
     }
 
     async Update(camera: Camera | null, scene: Scene) {
@@ -192,6 +167,12 @@ export class World {
         //this.FrustumCulling(camera);
     }
 
+    public destroy(scene: Scene) {
+        for (const [key, chunkEntry] of this.chunksMap) {
+            this.removeChunkMeshes(scene, chunkEntry);
+        }
+    }
+
     private addChunkMeshes(scene: Scene, chunkEntry: { chunk: Chunk, chunkMeshes: Mesh[] } | undefined): void {
         if (!chunkEntry) return;
         const meshes: Mesh[] | undefined = chunkEntry?.chunk.getChunkMeshes();
@@ -212,26 +193,31 @@ export class World {
         let newChunks: Chunk[] = [];
         let createCount = 0;
 
-        for (let x = this.cameraChunkPos.x - this.worldRadius; x <= this.cameraChunkPos.x + this.worldRadius; x++) {
-            for (let y = this.cameraChunkPos.y - this.worldRadius; y <= this.cameraChunkPos.y + this.worldRadius; y++) {
-                for (let z = this.cameraChunkPos.z - this.worldRadius; z <= this.cameraChunkPos.z + this.worldRadius; z++) {
-                    if (this.chunkPosWithinRenderDistance(new ChunkPos(x, y, z))) continue;
+        for (let i = 0; i <= this.worldRadius; i++) {
+            for (let x = -i; x <= i; x++) {
+                for (let y = -i; y <= i; y++) {
+                    for (let z = -i; z <= i; z++) {
+                        if (x > -i && x < i && y > -i && y < i && z > -i && z < i) continue;
 
-                    const chunkPos = new ChunkPos(x, y, z);
-                    let chunkPosKey = chunkPos.getKey();
-                    if (!this.chunksMap.has(chunkPosKey)) {
-                        const chunk = new Chunk(this, chunkPos, this.chunkSaveMap.get(chunkPosKey));
+                        const chunkPos = this.cameraChunkPos.add(new ChunkPos(x, y, z));
 
-                        this.chunksMap.set(chunkPos.getKey(), {
-                            chunk,
-                            chunkMeshes: []
-                        });
+                        if (this.chunkPosWithinRenderDistance(chunkPos)) continue;
 
-                        newChunks.push(chunk);
+                        let chunkPosKey = chunkPos.getKey();
+                        if (!this.chunksMap.has(chunkPosKey)) {
+                            const chunk = new Chunk(this, chunkPos, this.chunkSaveMap.get(chunkPosKey));
 
-                        ++createCount;
+                            this.chunksMap.set(chunkPos.getKey(), {
+                                chunk,
+                                chunkMeshes: []
+                            });
 
-                        await nextFrame();
+                            newChunks.push(chunk);
+
+                            ++createCount;
+
+                            await nextFrame();
+                        }
                     }
                 }
             }
@@ -437,7 +423,7 @@ export class World {
                 } else {
                     return [biome, this.getDesertHeight(blockPos, dFract)];
                 }
-                
+
             case BiomeTypes.Tundra:
                 return [biome, this.getTundraHeight(blockPos, dFract)];
             case BiomeTypes.Ocean:
@@ -777,7 +763,7 @@ export class World {
     // STRUCTURES
 
     private async generateStructureData() {
-        if (this.firstStructureGeneration) await Model.LoadModelData();
+        if (Model.firstStructureGeneration) await Model.LoadModelData();
 
         let minimumX = (this.cameraChunkPos.x * Chunk.chunkSize) - ((this.worldRadius + 1) * Chunk.chunkSize);
         let maximumX = (this.cameraChunkPos.x * Chunk.chunkSize) + ((this.worldRadius + 1) * Chunk.chunkSize) + Chunk.chunkSize - 1;
@@ -807,7 +793,7 @@ export class World {
             }
         }
 
-        if (this.firstStructureGeneration) this.firstStructureGeneration = false;
+        if (Model.firstStructureGeneration) Model.firstStructureGeneration = false;
     }
 
     private async deleteOutOfRangeStructureData() {
@@ -885,6 +871,6 @@ export class World {
     }
 
     public SetStructureGenFirstTime(state: boolean) {
-        this.firstStructureGeneration = state;
+        Model.firstStructureGeneration = state;
     }
 }

@@ -8,6 +8,7 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 import {Model} from "./geometry/modelCreation";
 import {BlockPos} from "./positions/blockPos";
 import {CubeMeshGrassBlock, CubeMeshWaterBlock, CubeMeshSandBlock} from "./geometry/creation";
+import {WorldWrapper} from "./worldgen/worldWrapper";
 
 export const Game: {
     scene: Scene | null,
@@ -19,7 +20,7 @@ export const Game: {
         skybox: GroundedSkybox | null,
     },
     timer: Timer | null,
-    world: World | null,
+    worldWrapper: WorldWrapper | null,
     
     instantiatedMeshes: Mesh[] | null,
     currentFrame: number | null,
@@ -34,7 +35,7 @@ export const Game: {
         skybox: null,
     },
     timer: null,
-    world: null,
+    worldWrapper: null,
 
     instantiatedMeshes: null,
     currentFrame: null,
@@ -53,25 +54,17 @@ async function init(): Promise<void> {
     document.body.appendChild(Game.renderer.domElement);
 
     // World Creation
-    Game.world = new World();
+    Game.worldWrapper = new WorldWrapper();
 
     // Game Camera stuff
     Game.camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
-    Game.camera.position.x = 7.0;
-    Game.camera.position.z = 7.0;
-    let heightAndBiome = Game.world.getHeightAndBiomeFromXZ(Game.camera.position.x, Game.camera.position.z);
-    while (!heightAndBiome || !heightAndBiome[1]) {
-        Game.camera.position.x += 7.0;
-        Game.camera.position.z += 7.0;
-        heightAndBiome = Game.world.getHeightAndBiomeFromXZ(Game.camera.position.x, Game.camera.position.z);
-    }
-    Game.camera.position.y = heightAndBiome[1] + 200;
     Game.camera.rotateY(-Math.PI * 0.75);
     Game.camera.rotateX(-Math.PI / 4.0);
 
-    Game.cameraControls = new CameraControls(Game.camera, Game.renderer.domElement, Game.world, false);
 
-    
+    Game.cameraControls = new CameraControls(Game.camera, Game.renderer.domElement, Game.worldWrapper, false);
+
+    Game.worldWrapper.resetCamera(Game.cameraControls);
     
     Game.stats = new Stats();
     document.body.appendChild(Game.stats.dom);
@@ -105,7 +98,7 @@ async function init(): Promise<void> {
     Game.scene.add(Game.directionalLight);
     Game.scene.add(Game.directionalLight.target);
 
-    Game.scene.fog = new Fog(0x6a7b8b, (Game.world.worldRadius-1)*16, (Game.world.worldRadius)*16);
+    Game.scene.fog = new Fog(0x6a7b8b, (Game.worldWrapper.getWorld().worldRadius-1)*16, (Game.worldWrapper.getWorld().worldRadius)*16);
 
     //const ambientLight = new AmbientLight(0xc2d9ff, 0.8);
     //Game.scene.add(ambientLight);
@@ -150,7 +143,7 @@ function animate(time: number): void {
         Game.directionalLight.target.position.copy(Game.camera.position.clone());
     }
 
-    if (Game.scene) Game.world?.Update(Game.camera, Game.scene);
+    if (Game.scene) Game.worldWrapper?.getWorld().Update(Game.camera, Game.scene);
 
     // #region AnimateGrass
     CubeMeshGrassBlock.grassMaterial.uniforms.uTime.value = Game.timer?.getElapsed();
