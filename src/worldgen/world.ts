@@ -69,7 +69,8 @@ export enum BiomeTypes {
     Plains,
     Mountain,
     Ocean,
-    Underground
+    Underground,
+    Tundra
 }
 export class BiomeDistance {
     public distance: number;
@@ -464,6 +465,9 @@ export class World {
         if (biomeData[0].biome == BiomeTypes.Underground){
             return this.undergroundGetBlockAt(blockPos);
         }
+        if (biomeData[0].biome == BiomeTypes.Tundra){
+            return this.tundraGetBlockAt(blockPos, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
+        }
         else {
             return Blocks.AIR;
         }
@@ -487,6 +491,10 @@ export class World {
 
         if (biomeData[0].biome == BiomeTypes.Plains){
             return this.plainsGetBlockAt(blockPos, 0);
+            //return Blocks.GREEN;
+        }
+        if (biomeData[0].biome == BiomeTypes.Tundra){
+            return this.tundraGetBlockAt(blockPos, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
             //return Blocks.GREEN;
         }
         else {
@@ -576,6 +584,20 @@ export class World {
     }
     getPlainsHeight(blockPos: BlockPos){
         return this.getHeightAt(blockPos.x, blockPos.z);
+    }
+    tundraGetBlockAt(blockPos: BlockPos, dFract: number){
+        let height: number = this.getPlainsHeight(blockPos) - blockPos.y;
+        let dirtHeight: number = height - this.getDirtThicknessAt(blockPos.x, blockPos.z);
+
+        if (height < 0 || (this.getCaveAt(blockPos) && blockPos.y < heightGen.base)) return Blocks.AIR;
+        else if (dirtHeight <= 0) return Blocks.SNOW;
+        else if (this.getCoalAt(blockPos)) return Blocks.COAL;
+        else if (this.getIronAt(blockPos)) return Blocks.IRON;
+        else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
+        return Blocks.STONE;
+    }
+    getTundraHeight(blockPos: BlockPos, dFract: number){
+        return Math.min(this.getHeightAt(blockPos.x, blockPos.z), 6 * (1 - Math.pow(dFract, 2)));
     }
 
     getStructureBlockToGenerateAt(blockPos: BlockPos): Block {
@@ -687,14 +709,16 @@ export class World {
 
     getBiomeAtGrid(gridPos: Vec2){
         let b: number = ((this.worleyBiome.noise(gridPos.x, gridPos.y) + 1) * 1000) % 1;
-        if (b < 0.25){
+        if (b < 0.2){
             return BiomeTypes.Desert;
-        } else if (b < 0.5){
+        } else if (b < 0.4){
             return BiomeTypes.Mountain;
-        } else if (b < 0.75){
+        } else if (b < 0.6){
             return BiomeTypes.Ocean;
-        } else {
+        } else if (b < 0.8){
             return BiomeTypes.Plains;
+        } else {
+            return BiomeTypes.Tundra;
         }
     }
 
