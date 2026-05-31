@@ -18,16 +18,16 @@ const nextFrame = () =>
         requestAnimationFrame(() => resolve())
     );
 export const heightGen = {
-    base: 64,
-    amplitude: 2,
-    size: 128,
+    base: 66,
+    amplitude: 3,
+    size: 32,
     mediumFactor: 0.5,
     fineFactor: 0.25,
-    mountainHeight: 64,
-    snowHeight: 80
+    mountainHeight: 128,
+    snowHeight: 100
 }
 export const biomeGen = {
-    shorelineFactor: 0.8,
+    shorelineFactor: 0.85,
     oceanDepth: 3
 }
 export const dirtGen = {
@@ -97,8 +97,8 @@ export class World {
 
     private readonly structureNoise: SimplexNoise;
 
-    readonly worldRadius = 8;
-    private worleyGridSize: number = 64;
+    readonly worldRadius = 4;
+    private worleyGridSize: number = 128;
 
     //readonly chunks: Array<Array<Array<Chunk>>>;
     readonly chunksMap: Map<string, {chunk: Chunk, chunkMeshes: Mesh[]}>;
@@ -185,11 +185,7 @@ export class World {
         for (let x = this.cameraChunkPos.x - this.worldRadius; x <= this.cameraChunkPos.x + this.worldRadius; x++) {
             for (let y = this.cameraChunkPos.y - this.worldRadius; y <= this.cameraChunkPos.y + this.worldRadius; y++) {
                 for (let z = this.cameraChunkPos.z - this.worldRadius; z <= this.cameraChunkPos.z + this.worldRadius; z++) {
-                    if (hypo(
-                        x - this.cameraChunkPos.x,
-                        y - this.cameraChunkPos.y,
-                        z - this.cameraChunkPos.z
-                    ) > this.worldRadius) continue;
+                    if (this.chunkPosWithinRenderDistance(new ChunkPos(x, y, z))) continue;
 
                     const chunkPos = new ChunkPos(x, y, z);
                     let chunkPosKey = chunkPos.getKey();
@@ -231,11 +227,7 @@ export class World {
 
         const chunkMapEntries = Array.from(this.chunksMap);
         for (const [chunkPosKey, chunkEntry] of chunkMapEntries) {
-            if (hypo(
-                chunkEntry.chunk.chunkPos.x - this.cameraChunkPos.x,
-                chunkEntry.chunk.chunkPos.y - this.cameraChunkPos.y,
-                chunkEntry.chunk.chunkPos.z - this.cameraChunkPos.z
-            ) > this.worldRadius) {
+            if (this.chunkPosWithinRenderDistance(chunkEntry.chunk.chunkPos)) {
                 this.removeChunkMeshes(scene, chunkEntry);
                 this.chunksMap.delete(chunkPosKey);
             }
@@ -245,6 +237,12 @@ export class World {
                 await nextFrame();
             }
         }
+    }
+
+    private chunkPosWithinRenderDistance(chunkPos: ChunkPos): boolean {
+        let difference: ChunkPos = chunkPos.subtract(this.cameraChunkPos);
+        if (difference.y < 0) difference = difference.multiplyY(2);
+        return difference.magnitude() > this.worldRadius;
     }
 
     public async updateChunkMesh(scene: Scene, chunkPos: ChunkPos) {
@@ -504,10 +502,10 @@ export class World {
     }
     mountainGetBlockAt(blockPos: BlockPos, dFract: number){
         let height: number = this.getMountainHeight(blockPos, dFract) - blockPos.y;
-        let snowSpawnHeight: number = heightGen.snowHeight + this.snowHeightNoise.noise(blockPos.x / 5, blockPos.z / 5) * 2;
+        let snowSpawnHeight: number = heightGen.snowHeight + this.snowHeightNoise.noise(blockPos.x / 5, blockPos.z / 5) * 10;
 
         if (height < 0 || (this.getCaveAt(blockPos) && blockPos.y < heightGen.base)) return Blocks.AIR;
-        else if (height === 0 && blockPos.y >= snowSpawnHeight) return Blocks.SNOW;
+        else if (height <= 4 && blockPos.y >= snowSpawnHeight) return Blocks.SNOW;
         else if (this.getCoalAt(blockPos)) return Blocks.COAL;
         else if (this.getIronAt(blockPos)) return Blocks.IRON;
         else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
@@ -640,7 +638,7 @@ export class World {
         let checkedBlocks: BlockPos[] = [];
         let currentPos: BlockPos = BlockPos.roundFromVec3(startPos);
         checkedBlocks.push(currentPos);
-        if (this.getBlockAt(currentPos).getVisible()) return checkedBlocks;
+        if (condition(this.getBlockAt(currentPos))) return checkedBlocks;
 
         const endPos: Vec3 = startPos.add(direction.normalize().multiply(range));
         const xOverlaps: number[] = World.getRaycastOverlaps(startPos.x, endPos.x, direction.x);
@@ -665,7 +663,7 @@ export class World {
             }
 
             checkedBlocks.push(currentPos);
-            if (this.getBlockAt(currentPos).getVisible()) return checkedBlocks;
+            if (condition(this.getBlockAt(currentPos))) return checkedBlocks;
         }
 
         return undefined;
