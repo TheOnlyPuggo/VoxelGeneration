@@ -100,7 +100,7 @@ export class World {
     private readonly structureNoise: NoiseFunction2D;
 
     readonly worldRadius = 4;
-    private worleyGridSize: number = 128;
+    private worleyGridSize: number;
 
     //readonly chunks: Array<Array<Array<Chunk>>>;
     readonly chunksMap: Map<string, {chunk: Chunk, chunkMeshes: Mesh[]}>;
@@ -114,7 +114,7 @@ export class World {
     private readonly maxAmountOfStoredStructureBlocks: number = 1000;
     //private testPos: Vec2;
 
-    constructor(seed: number) {
+    constructor(seed: number, worleyGridSize: number) {
         const seeder = alea(seed);
 
         this.heightNoiseCoarse = createNoise2D(alea(seeder.next()));
@@ -141,6 +141,8 @@ export class World {
 
         this.chunksMap = new Map<string, {chunk: Chunk, chunkMeshes: Mesh[]}>();
         this.chunkSaveMap = new Map<string, ChunkSave>();
+
+        this.worleyGridSize = worleyGridSize;
 
 
         var testCase: BiomeDistance[] = this.getBiomeData(new BlockPos(390, 90, 128))
