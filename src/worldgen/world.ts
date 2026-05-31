@@ -588,11 +588,17 @@ export class World {
     }
 
     public getBlockAt(blockPos: BlockPos): Block {
+        const chunkEntry = this.chunksMap.get(blockPos.getChunkPos().getKey());
+        if (chunkEntry) {
+            return chunkEntry.chunk.getBlockAt(blockPos.getSubChunkPos());
+        }
+
         const chunkSave = this.chunkSaveMap.get(blockPos.getChunkPos().getKey());
         let diff: Block | undefined;
         if (chunkSave && (diff = chunkSave.getDiff(blockPos.getSubChunkPos()))) {
             return diff;
         }
+
         return this.getBlockToGenerateAt(blockPos);
     }
 

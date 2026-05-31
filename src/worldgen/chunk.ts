@@ -81,6 +81,10 @@ export class Chunk {
         return newGeometry;
     }
 
+    public getBlockAt(subChunkPos: SubChunkPos): Block {
+        return this.blocks[subChunkPos.x][subChunkPos.y][subChunkPos.z];
+    }
+
     public setBlockAt(subChunkPos: SubChunkPos, blockType: Block, isSameAsGeneration: boolean): void {
         this.blocks[subChunkPos.x][subChunkPos.y][subChunkPos.z] = blockType;
         if (isSameAsGeneration) this.save.setBlockAt(subChunkPos, undefined);
