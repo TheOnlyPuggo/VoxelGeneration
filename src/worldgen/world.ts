@@ -10,6 +10,7 @@ import {Model} from "../geometry/modelCreation";
 import {Vec3} from "../positions/vec3";
 import {ChunkSave} from "./chunkSave";
 import { Vec2 } from "../positions/vec2";
+import {SimplexSeeder} from "./simplexSeeder";
 
 const hypo = (x: number, y: number, z: number): number => Math.sqrt(x * x + y * y + z * z);
 
@@ -114,22 +115,24 @@ export class World {
     private readonly maxAmountOfStoredStructureBlocks: number = 1000;
 
     constructor() {
-        this.heightNoiseCoarse = new SimplexNoise();
-        this.heightNoiseMedium = new SimplexNoise();
-        this.heightNoiseFine = new SimplexNoise();
-        this.dirtNoise = new SimplexNoise();
-        this.caveNoise = new SimplexNoise();
-        this.coalNoise = new SimplexNoise();
-        this.ironNoise = new SimplexNoise();
-        this.cucumberNoise = new SimplexNoise();
+        let globalSeeder: SimplexSeeder = new SimplexSeeder(1000);
 
-        this.worleyXNoise = new SimplexNoise();
-        this.worleyZNoise = new SimplexNoise();
-        this.worleyBiome = new SimplexNoise();
-        this.mountainHeightNoise = new SimplexNoise();
-        this.snowHeightNoise = new SimplexNoise();
+        this.heightNoiseCoarse = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.heightNoiseMedium = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.heightNoiseFine = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.dirtNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.caveNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.coalNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.ironNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.cucumberNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
 
-        this.structureNoise = new SimplexNoise();
+        this.worleyXNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.worleyZNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.worleyBiome = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.mountainHeightNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.snowHeightNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+
+        this.structureNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
 
         this.cameraChunkPos = new ChunkPos(0, 0, 0);
         this.previousCameraChunkPos = this.cameraChunkPos;
