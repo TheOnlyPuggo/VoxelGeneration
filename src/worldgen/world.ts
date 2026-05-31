@@ -770,37 +770,47 @@ export class World {
     public getModelAtPos(x: number, z: number): [Model, number] | undefined {
         let structureNoiseVal = this.structureNoise.noise(x, z);
 
-        if (this.hasLocalMaximaNoise(structureNoiseVal, x, z, 2)) return undefined;
-
         let heightAndBiome = this.getHeightAndBiomeFromXZ(x, z);
         if (!heightAndBiome || !heightAndBiome[1]) return undefined;
 
         if (heightAndBiome[0] == BiomeTypes.Plains) {
-            if (structureNoiseVal >= 0.995) return [Model.LoadedModels["BigTree1"], heightAndBiome[1]];
-            if (structureNoiseVal >= 0.99) return [Model.LoadedModels["BigTree2"], heightAndBiome[1]];
-            if (structureNoiseVal > 0.96) return [Model.LoadedModels["Tree1"], heightAndBiome[1]];
-            if (structureNoiseVal > 0.93) return [Model.LoadedModels["Tree2"], heightAndBiome[1]];
+            if (structureNoiseVal >= 0.995 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
+                return [Model.LoadedModels["BigTree1"], heightAndBiome[1]];
+            if (structureNoiseVal >= 0.99 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
+                return [Model.LoadedModels["BigTree2"], heightAndBiome[1]];
+            if (structureNoiseVal > 0.96 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
+                return [Model.LoadedModels["Tree1"], heightAndBiome[1]];
+            if (structureNoiseVal > 0.93 && this.isLocalMaximum(structureNoiseVal, x, z,
+                2)) return [Model.LoadedModels["Tree2"], heightAndBiome[1]];
         }
-        else if (heightAndBiome[0] == BiomeTypes.Ocean && structureNoiseVal > 0.93) return [Model.LoadedModels["PalmTree"], heightAndBiome[1]];
+        else if (heightAndBiome[0] == BiomeTypes.Ocean) {
+            if (structureNoiseVal > 0.96 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
+                return [Model.LoadedModels["PalmTree1"], heightAndBiome[1]];
+            if (structureNoiseVal > 0.93 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
+                return [Model.LoadedModels["PalmTree2"], heightAndBiome[1]];
+        }
         else if (heightAndBiome[0] == BiomeTypes.Desert) {
-            if (structureNoiseVal >= 0.99) return [Model.LoadedModels["Cactus1"], heightAndBiome[1]];
-            if (structureNoiseVal >= 0.96) return [Model.LoadedModels["Cactus2"], heightAndBiome[1]];
-            if (structureNoiseVal >= 0.93) return [Model.LoadedModels["Cactus3"], heightAndBiome[1]];
+            if (structureNoiseVal >= 0.99 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
+                return [Model.LoadedModels["Cactus1"], heightAndBiome[1]];
+            if (structureNoiseVal >= 0.975 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
+                return [Model.LoadedModels["Cactus2"], heightAndBiome[1]];
+            if (structureNoiseVal >= 0.96 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
+                return [Model.LoadedModels["Cactus3"], heightAndBiome[1]];
         }
         else return undefined;
         // CURSED else return Model.LoadedModels["DirtHut"];
     }
 
-    private hasLocalMaximaNoise(noiseValue: number, x: number, z: number, range: number) : boolean {
+    private isLocalMaximum(noiseValue: number, x: number, z: number, range: number) : boolean {
         for (let dx = -range; dx <= range; dx++) {
             for (let dz = -range; dz <= range; dz++) {
                 if (dx == 0 && dz == 0) continue;
 
-                if (this.structureNoise.noise(x + dx, z + dz) > noiseValue) return true;
+                if (this.structureNoise.noise(x + dx, z + dz) > noiseValue) return false;
             }
         }
 
-        return false;
+        return true;
     }
 
     public SetStructureGenFirstTime(state: boolean) {

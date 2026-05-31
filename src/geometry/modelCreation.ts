@@ -63,7 +63,8 @@ export class Model {
         Model.LoadedModels["BigTree2"] = await Model.load("model_data/big_tree_2.csv");
         Model.LoadedModels["DirtHut"] = await Model.load("model_data/dirt_hut.csv");
         Model.LoadedModels["Mushroom"] = await Model.load("model_data/mushroom.csv");
-        Model.LoadedModels["PalmTree"] = await Model.load("model_data/palm_tree_1.csv");
+        Model.LoadedModels["PalmTree1"] = await Model.load("model_data/palm_tree_1.csv");
+        Model.LoadedModels["PalmTree2"] = await Model.load("model_data/palm_tree_2.csv");
         Model.LoadedModels["Cactus1"] = await Model.load("model_data/cactus_1.csv");
         Model.LoadedModels["Cactus2"] = await Model.load("model_data/cactus_2.csv");
         Model.LoadedModels["Cactus3"] = await Model.load("model_data/cactus_3.csv");
