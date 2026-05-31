@@ -823,6 +823,8 @@ export class World {
         if (!heightAndBiome || !heightAndBiome[1]) return undefined;
 
         if (heightAndBiome[0] == BiomeTypes.Plains) {
+            if (structureNoiseVal >= 0.999 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
+                return [Model.LoadedModels["DirtHut"], heightAndBiome[1]];
             if (structureNoiseVal >= 0.995 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
                 return [Model.LoadedModels["BigTree1"], heightAndBiome[1]];
             if (structureNoiseVal >= 0.99 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
