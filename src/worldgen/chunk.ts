@@ -1,6 +1,6 @@
 import {Camera, Mesh} from "three";
 import {Block} from "./block";
-import {BiomeDistance, BiomeTypes, World} from "./world";
+import {BiomeDistance, BiomeTypes, World, WorleyPoint} from "./world";
 import {ChunkPos} from "../positions/chunkPos";
 import {SubChunkPos} from "../positions/subChunkPos";
 import {BlockPos} from "../positions/blockPos";
@@ -8,6 +8,7 @@ import {CompositeGeometry} from "../geometry/compositeGeometry";
 import {ChunkSave} from "./chunkSave";
 import {BlockMap} from "../geometry/blockMap";
 import {Vec3} from "../positions/vec3";
+import { Vec2 } from "../positions/vec2";
 
 export class Chunk {
     readonly world: World;
@@ -21,20 +22,24 @@ export class Chunk {
         this.world = world;
         this.chunkPos = chunkPos;
         this.save = save ?? new ChunkSave();
-
-        let biomeLowerThreshhold: number = 64
-        let topY: number = new SubChunkPos(0, 15, 0).y
+        
+        //neighbouring worley points precalc:
+        
+        let worleyWorldPos = new Vec2(new SubChunkPos(8, 0, 8).x / world.worleyGridSize, new SubChunkPos(8, 0, 8).z / world.worleyGridSize);
+        let worleyGridPos: Vec2 = new Vec2(Math.floor(worleyWorldPos.x), Math.floor(worleyWorldPos.y));
+        let neightbours: WorleyPoint[] = [];
+        for (var x = -1; x < 2; x++){
+            for (var z = -1; z < 2; z++){
+                neightbours.push(new WorleyPoint(world.getWorleyFP(new Vec2(worleyGridPos.x + x, worleyGridPos.y + z)), world.getBiomeAtGrid(new Vec2(worleyGridPos.x + x, worleyGridPos.y + z))));
+            }
+        }
         this.blocks = [];
         let bData: Array<Array<BiomeDistance[]>> = [];
         for (let x: number = 0; x < Chunk.chunkSize; x++){
             bData.push([]);
             for (let z: number = 0; z < Chunk.chunkSize; z++){
-                if (topY < biomeLowerThreshhold){
-                    bData[x].push([new BiomeDistance(0, BiomeTypes.Underground), new BiomeDistance(0, BiomeTypes.Underground)]);
-                } else {
-                    bData[x].push(world.getBiomeData(this.getBlockPos(new SubChunkPos(x, 0, z))));
-                }
-                
+                    bData[x].push(world.getBiomeDataPreCalc(this.getBlockPos(new SubChunkPos(x, 0, z)), neightbours));
+                    //console.log("test");
             }
         }
 
@@ -53,6 +58,7 @@ export class Chunk {
                 }
             }
         }
+        //console.log(world.noiseCounter);
     }
 
     public getChunkMeshes(): Mesh[] | undefined {

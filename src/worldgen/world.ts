@@ -71,6 +71,14 @@ export enum BiomeTypes {
     Ocean,
     Underground
 }
+export class WorleyPoint {
+    public worleyPos: Vec2;
+    public biome: BiomeTypes;
+    constructor(s: Vec2, b: BiomeTypes){
+        this.worleyPos = s;
+        this.biome = b;
+    }
+}
 export class BiomeDistance {
     public distance: number;
     public biome: BiomeTypes;
@@ -98,7 +106,7 @@ export class World {
     private readonly structureNoise: SimplexNoise;
 
     readonly worldRadius = 4;
-    private worleyGridSize: number = 64;
+    public readonly worleyGridSize: number = 64;
 
     //readonly chunks: Array<Array<Array<Chunk>>>;
     readonly chunksMap: Map<string, {chunk: Chunk, chunkMeshes: Mesh[]}>;
@@ -111,6 +119,10 @@ export class World {
 
     private firstStructureGeneration: boolean;
     private readonly maxAmountOfStoredStructureBlocks: number = 1000;
+
+    //profiling:
+    public noiseCounter: number;
+    public slowCounter: number;
 
     constructor() {
         this.heightNoiseCoarse = new SimplexNoise();
@@ -140,6 +152,8 @@ export class World {
 
 
         this.firstStructureGeneration = true;
+        this.noiseCounter = 0;
+        this.slowCounter = 0;
     }
 
     async Update(camera: Camera | null, scene: Scene) {
@@ -396,6 +410,7 @@ export class World {
     // BIOMES
 
     public getHeightAndBiomeFromXZ(x: number, z: number){
+        //console.log(this.slowCounter++);
         let blockPos: BlockPos = new BlockPos(x, 0, z);
         let bD: BiomeDistance[] = this.getBiomeData(blockPos);
         let dFract = bD[0].distance / ((bD[0].distance + bD[1].distance) / 2);
@@ -416,8 +431,24 @@ export class World {
         }
 
     }
+    public getBiomeDataPreCalc(blockPos: BlockPos, worleyPoints: WorleyPoint[]){
+        let worleyWorldPos = new Vec2(blockPos.x / this.worleyGridSize, blockPos.z / this.worleyGridSize);
+        let bD: BiomeDistance[] = [new BiomeDistance(1000, BiomeTypes.Desert), new BiomeDistance(1000, BiomeTypes.Desert)];
+        for (var i = 0; i < 9; i++){
+            let dist: number = worleyWorldPos.distanceTo(worleyPoints[i].worleyPos);
+            if (dist < bD[0].distance){
+                bD[1] = bD[0];
+                bD[0] = new BiomeDistance(dist, worleyPoints[i].biome);
+            } else if (dist < bD[1].distance){
+                bD[1] = new BiomeDistance(dist, worleyPoints[i].biome);
+            }
+        }
+        //console.log(this.slowCounter++);
+        //console.log(this.noiseCounter);
+        return bD;
+    }
+    public getBiomeData(blockPos: BlockPos): BiomeDistance[]{
 
-    public getBiomeData(blockPos: BlockPos){
         let worleyWorldPos = new Vec2(blockPos.x / this.worleyGridSize, blockPos.z / this.worleyGridSize);
         let worleyGridPos: Vec2 = new Vec2(Math.floor(worleyWorldPos.x), Math.floor(worleyWorldPos.y));
         let posWithinGrid: Vec2 = worleyWorldPos.subtract(worleyGridPos);
@@ -438,7 +469,7 @@ export class World {
                 secondClosestBiome.biome = this.getBiomeAtGrid(worleyGridPos.add(worleyGridOffsets[i]));
             }
         }
-
+        
         return [closestBiome, secondClosestBiome];
     }
 
@@ -597,6 +628,7 @@ export class World {
     }
 
     public async setBlockAt(blockPos: BlockPos, blockType: Block, scene: Scene | null) {
+        //console.log(this.slowCounter++);
         const chunkPos = blockPos.getChunkPos();
         const chunkPosKey = chunkPos.getKey();
         const subChunkPos = blockPos.getSubChunkPos();
@@ -682,6 +714,7 @@ export class World {
     }
 
     getBiomeAtGrid(gridPos: Vec2){
+        this.noiseCounter++;
         let b: number = ((this.worleyBiome.noise(gridPos.x, gridPos.y) + 1) * 1000) % 1;
         if (b < 0.25){
             return BiomeTypes.Desert;
@@ -695,6 +728,8 @@ export class World {
     }
 
     getWorleyFP(gridPos: Vec2){
+        this.noiseCounter = this.noiseCounter + 2;
+        //console.log(this.noiseCounter);
         let target: Vec2 = new Vec2(this.worleyXNoise.noise(gridPos.x, gridPos.y) / 2 + 1,
             this.worleyZNoise.noise(gridPos.x, gridPos.y) / 2 + 1);
         return target;
