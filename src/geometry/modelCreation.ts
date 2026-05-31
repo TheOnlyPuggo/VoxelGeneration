@@ -70,7 +70,7 @@ export class Model {
 
     public async loadModelInformation(blockOriginPos: BlockPos) {
         if (Model.generatedStructureBlocksToLoad.has(blockOriginPos.getKey())) return;
-        let modelRotationIndex = (blockOriginPos.x + blockOriginPos.z) % 4;
+        let modelRotationIndex = ((blockOriginPos.x + blockOriginPos.z) % 4 + 4) % 4;
 
         this.blockDatas.forEach((blockData) => {
             let blockPosX = 0;
