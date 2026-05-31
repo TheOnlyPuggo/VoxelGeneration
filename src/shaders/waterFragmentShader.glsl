@@ -66,7 +66,22 @@ vec3 voronoi3d(const in vec3 x) {
   return vec3(sqrt(res), abs(id));
 }
 
-#pragma glslify: export(voronoi3d)
+
+float voronoi2d(const in vec2 point) {
+  vec2 p = floor(point);
+  vec2 f = fract(point);
+  float res = 0.0;
+  for (int j = -1; j <= 1; j++) {
+    for (int i = -1; i <= 1; i++) {
+      vec2 b = vec2(i, j);
+      vec2 r = vec2(b) - f + rhash(p + b);
+      res += 1. / pow(dot(r, r), 8.);
+    }
+  }
+  return pow(1. / res, 0.0625);
+}
+
+#pragma glslify: export(voronoi2d)
 
 
 vec2 hash(vec2 p) {
@@ -92,7 +107,7 @@ float fbm(vec2 p) {
   float amplitude = 0.5;
   float frequency = 1.0;
 
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 2; i++) {
     value     += amplitude * noise(p * frequency);
     frequency *= 2.0; 
     amplitude *= 0.5;
@@ -110,9 +125,10 @@ float sampleCaustic(vec2 worldXZ, float time) {
     float warpY = fbm(worldXZ * uGScale * uFBMScale + vec2(5.2, 1.3) + time * warpSpeed);
 
     vec2 warpedCoords = sampleCoords + vec2(warpX, warpY) * uFBMIntensity;
+    warpedCoords.y += time * zSpeed * uGSpeed;
 
-    float v = voronoi3d(vec3(warpedCoords, time * zSpeed * uGSpeed)).x;
-    v = pow(v, 3.);
+    float v = voronoi2d(warpedCoords);
+    v = v * v * v;
     return clamp(v, 0., 0.8);
 }
 
