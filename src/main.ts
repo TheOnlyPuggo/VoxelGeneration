@@ -65,10 +65,9 @@ async function init(): Promise<void> {
         Game.camera.position.z += 7.0;
         heightAndBiome = Game.world.getHeightAndBiomeFromXZ(Game.camera.position.x, Game.camera.position.z);
     }
-    Game.camera.position.y = heightAndBiome[1] + 5;
+    Game.camera.position.y = heightAndBiome[1] + 200;
     Game.camera.rotateY(-Math.PI * 0.75);
     Game.camera.rotateX(-Math.PI / 4.0);
-
 
     Game.cameraControls = new CameraControls(Game.camera, Game.renderer.domElement, Game.world, false);
 
@@ -90,18 +89,19 @@ async function init(): Promise<void> {
 
     Game.directionalLight = new DirectionalLight(0xfff9de, 2);
     Game.directionalLight.castShadow = true;
-    Game.directionalLight.shadow.mapSize.width = 4096*1;
-    Game.directionalLight.shadow.mapSize.height = 4096*1;
+    Game.directionalLight.shadow.mapSize.width = 8192*1;
+    Game.directionalLight.shadow.mapSize.height = 8192*1;
 
     Game.directionalLight.shadow.camera.near = 0;
     Game.directionalLight.shadow.camera.far = 1000;
-    Game.directionalLight.shadow.camera.left = -50;
-    Game.directionalLight.shadow.camera.right = 50;
-    Game.directionalLight.shadow.camera.top = 30;
-    Game.directionalLight.shadow.camera.bottom = -30;
+    Game.directionalLight.shadow.camera.left = -100;
+    Game.directionalLight.shadow.camera.right = 100;
+    Game.directionalLight.shadow.camera.top = 60;
+    Game.directionalLight.shadow.camera.bottom = -60;
 
     Game.directionalLight.shadow.normalBias = -0.001;
     //Game.directionalLight.shadow.bias = 0.01;
+
     Game.scene.add(Game.directionalLight);
     Game.scene.add(Game.directionalLight.target);
 

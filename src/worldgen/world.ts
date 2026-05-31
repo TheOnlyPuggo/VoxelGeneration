@@ -113,6 +113,7 @@ export class World {
 
     private firstStructureGeneration: boolean;
     private readonly maxAmountOfStoredStructureBlocks: number = 1000;
+    //private testPos: Vec2;
 
     constructor() {
         const seed = ' gimme grass twin';
@@ -145,8 +146,30 @@ export class World {
 
 
         this.firstStructureGeneration = true;
-        var testCase: BiomeDistance[] = this.getBiomeData(new BlockPos(390, 90, 128))
-        console.log("closest biome distance: ", testCase[0].distance, "    Second closest is: ", testCase[1].distance);
+        /*
+        var b: BlockPos = new BlockPos(128, 90, 0);
+
+        let worleyWorldPos = new Vec2(b.x / this.worleyGridSize, b.z / this.worleyGridSize);
+        let worleyGridPos: Vec2 = new Vec2(Math.floor(worleyWorldPos.x), Math.floor(worleyWorldPos.y));
+        let posWithinGrid: Vec2 = worleyWorldPos.subtract(worleyGridPos);
+        console.log(worleyGridPos);
+
+        let closestBiome: BiomeDistance = new BiomeDistance(1000, BiomeTypes.Desert);
+        let c: number = 0
+        for ( var i = 0; i < worleyGridOffsets.length; i++){
+            let s: number = this.getFPDistFromOffset(posWithinGrid, worleyGridPos, worleyGridOffsets[i]);
+            if (s < closestBiome.distance){
+                closestBiome.distance = s;
+                closestBiome.biome = this.getBiomeAtGrid(worleyGridPos.add(worleyGridOffsets[i]));
+                c = i;
+            }
+
+        }
+        console.log(worleyGridOffsets[c].x, ", ", worleyGridOffsets[c].y);
+        console.log(this.getWorleyFP(new Vec2(0, -1)));
+        this.testPos = new Vec2((worleyWorldPos.x + worleyGridOffsets[c].x) * this.worleyGridSize, (worleyWorldPos.y + worleyGridOffsets[c].y) * this.worleyGridSize);
+        console.log(this.testPos.x, ", ", this.testPos.y);
+        */
     }
 
     async Update(camera: Camera | null, scene: Scene) {
@@ -409,7 +432,12 @@ export class World {
             case BiomeTypes.Mountain:
                 return [biome, this.getMountainHeight(blockPos, dFract)];
             case BiomeTypes.Desert:
-                return [biome, this.getDesertHeight(blockPos, dFract)];
+                if (this.getCaveAt(new BlockPos(x, this.getDesertHeight(blockPos, dFract), z))){
+                    return [biome, null]
+                } else {
+                    return [biome, this.getDesertHeight(blockPos, dFract)];
+                }
+                
             case BiomeTypes.Tundra:
                 return [biome, this.getTundraHeight(blockPos, dFract)];
             case BiomeTypes.Ocean:
@@ -455,7 +483,6 @@ export class World {
 
     //CALLED BY CHUNK GENERATION, AND GIVEN BIOME DATA FROM CHUNK MEMOISATION
     getTerrainBlockToGenerateAtFromChunk(blockPos: BlockPos, biomeData: BiomeDistance[]): Block {
-
         if (biomeData[0].biome == BiomeTypes.Mountain){
             return this.mountainGetBlockAt(blockPos, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
             //return Blocks.RED;
@@ -735,8 +762,8 @@ export class World {
     }
 
     getWorleyFP(gridPos: Vec2){
-        let target: Vec2 = new Vec2(this.worleyXNoise(gridPos.x, gridPos.y) / 2 + 1,
-            this.worleyZNoise(gridPos.x, gridPos.y) / 2 + 1);
+        let target: Vec2 = new Vec2(this.worleyXNoise(gridPos.x, gridPos.y) / 2 + 0.5,
+            this.worleyZNoise(gridPos.x, gridPos.y) / 2 + 0.5);
         return target;
     }
 
