@@ -39,7 +39,11 @@ export const PALM_TREE_LOG = new Block("palm_tree_log", new CubeMeshMultiTexture
     "block_textures/log/log_top.png",
     "block_textures/log/log_side.png",
 ), true);
-export const CACTUS = new Block("cactus", new CubeMeshOneColor(1, new Color(0, 1, 0), false), true);
+export const CACTUS = new Block("cactus", new CubeMeshMultiTexture(false,
+    "block_textures/cactus/cactus_top.png",
+    "block_textures/cactus/cactus_top.png",
+    "block_textures/cactus/cactus_side.png",
+), true);
 export const ICE = new Block("ice", new CubeMeshOneColor(1, new Color(0, 1, 1), false), true);
 interface BlockDictionary {
     [key: string]: Block;
