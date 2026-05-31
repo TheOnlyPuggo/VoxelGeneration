@@ -2,6 +2,7 @@ import {BlockPos} from "../positions/blockPos";
 import {World} from "../worldgen/world";
 import {Block} from "../worldgen/block";
 import {CompositeGeometry} from "./compositeGeometry";
+import {AIR} from "../worldgen/blocks";
 
 export class BlockMap {
     public readonly world: World;
@@ -12,7 +13,11 @@ export class BlockMap {
     public constructor(world: World, blockPos: BlockPos) {
         this.world = world;
         this.blockPos = blockPos;
-        this.block = world.getBlockAt(blockPos);
+
+        let foundBlock = world.getBlockAtFromChunk(blockPos);
+        if (foundBlock == undefined) foundBlock = world.getBlockAt(blockPos);
+
+        this.block = foundBlock;
 
         if (!this.block.getTransparent()) {
             this.geometry = undefined;
@@ -31,11 +36,17 @@ export class BlockMap {
     private addFaceToCompositeGeometry(index: number, compositeGeometry: CompositeGeometry): void {
         const blockPos = this.getPos(index);
         if (!blockPos || !this.showBlock(blockPos)) return;
-        this.world.getBlockAt(blockPos).meshConstructor?.addFaceToCompositeGeometry(index, compositeGeometry, blockPos);
+        let foundBlock = this.world.getBlockAtFromChunk(blockPos);
+        if (foundBlock == undefined) foundBlock = this.world.getBlockAt(blockPos);
+
+        foundBlock.meshConstructor?.addFaceToCompositeGeometry(index, compositeGeometry, blockPos);
     }
 
     private showBlock(blockPos: BlockPos): boolean {
-        const block = this.world.getBlockAt(blockPos);
+        let foundBlock = this.world.getBlockAtFromChunk(blockPos);
+        if (foundBlock == undefined) foundBlock = this.world.getBlockAt(blockPos);
+
+        const block = foundBlock;
         return !block.equals(this.block) && block.getVisible();
     }
 

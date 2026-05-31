@@ -627,12 +627,9 @@ export class World {
         return this.getBlockToGenerateAt(blockPos);
     }
 
-    public getBlockAtFromChunk(blockPos: BlockPos): Block {
+    public getBlockAtFromChunk(blockPos: BlockPos): Block | undefined {
         const chunkSave = this.chunkSaveMap.get(blockPos.getChunkPos().getKey());
-        let foundBlock = chunkSave?.getBlocksMap().get(blockPos.getKey());
-        if (foundBlock) return foundBlock;
-        else return Blocks.AIR;
-
+        return chunkSave?.getBlocksMap().get(blockPos.getKey());
     }
 
     public async setBlockAt(blockPos: BlockPos, blockType: Block, scene: Scene | null) {
@@ -674,7 +671,10 @@ export class World {
         let checkedBlocks: BlockPos[] = [];
         let currentPos: BlockPos = BlockPos.roundFromVec3(startPos);
         checkedBlocks.push(currentPos);
-        if (this.getBlockAt(currentPos).getVisible()) return checkedBlocks;
+
+        let foundBlock = this.getBlockAtFromChunk(currentPos);
+        if (foundBlock == undefined) foundBlock = this.getBlockAt(currentPos);
+        if (foundBlock.getVisible()) return checkedBlocks;
 
         const endPos: Vec3 = startPos.add(direction.normalize().multiply(range));
         const xOverlaps: number[] = World.getRaycastOverlaps(startPos.x, endPos.x, direction.x);
@@ -699,7 +699,9 @@ export class World {
             }
 
             checkedBlocks.push(currentPos);
-            if (this.getBlockAt(currentPos).getVisible()) return checkedBlocks;
+            let foundBlock = this.getBlockAtFromChunk(currentPos);
+            if (foundBlock == undefined) foundBlock = this.getBlockAt(currentPos);
+            if (foundBlock.getVisible()) return checkedBlocks;
         }
 
         return undefined;
