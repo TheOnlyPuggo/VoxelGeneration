@@ -159,6 +159,8 @@ function animate(time: number): void {
 
     // #region AnimateWater
     CubeMeshWaterBlock.waterTopMaterial.uniforms.uTime.value = Game.timer?.getElapsed();
+    CubeMeshWaterBlock.waterTopMaterial.uniforms.uCameraPos.value.copy(Game.camera?.position);
+    CubeMeshWaterBlock.waterTopMaterial.uniforms.uLightDir.value.copy(Game.directionalLight?.position).normalize();
     // #endregion
 
     Game.stats?.update();

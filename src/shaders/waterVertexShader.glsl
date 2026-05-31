@@ -1,12 +1,13 @@
+#include <fog_pars_vertex>
+
 uniform float uTime;
 uniform float uGScale;
 uniform float uGSpeed;
 uniform bool uDisplace;
 uniform float uDisplacementAmp;
 
-
 varying vec2 vUv;
-varying vec3 vInstancePos;
+varying vec3 vWorldPos;
 
 vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
 
@@ -43,17 +44,38 @@ float fbm(vec2 p) {
 }
 
 
+
+
 void main() {
-    vec4 instancePos = instanceMatrix * vec4(position, 1.0);
-    vInstancePos = instancePos.xyz;
-    vUv = uv;
+  /*
+  vec4 instancePos = instanceMatrix * vec4(position, 1.0);
+  vInstancePos = instancePos.xyz;
+  vUv = uv;
 
-    vec3 pos = position;
+  vec3 pos = position;
 
-    if (uDisplace) {
-        instancePos.y += fbm(instancePos.xz * 0.05 + vec2(uTime * 0.1 * uGSpeed)) * 1.5 * uDisplacementAmp;
-        instancePos.y += fbm(instancePos.xz * 0.5 + vec2(-uTime * 0.1 * uGSpeed, 0.)) * 0.3 * uDisplacementAmp;
-    }
+  if (uDisplace) {
+      instancePos.y += fbm(instancePos.xz * 0.05 + vec2(uTime * 0.1 * uGSpeed)) * 1.5 * uDisplacementAmp;
+      instancePos.y += fbm(instancePos.xz * 0.5 + vec2(-uTime * 0.1 * uGSpeed, 0.)) * 0.3 * uDisplacementAmp;
+  }
 
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(instancePos.xyz + vec3(0., -0.2, 0.), 1.0);
+  vec4 mvPosition = modelViewMatrix * vec4(instancePos.xyz + vec3(0., -0.2, 0.), 1.0);
+  gl_Position = projectionMatrix * mvPosition;
+  vFogDepth = -mvPosition.z;
+  */
+
+  vec4 instancePos = instanceMatrix * vec4(position, 1.0);
+  vUv = uv;
+
+  if (uDisplace) {
+      instancePos.y += fbm(instancePos.xz * 0.05 + vec2(uTime * 0.1 * uGSpeed)) * 1.5 * uDisplacementAmp;
+      instancePos.y += fbm(instancePos.xz * 0.5  + vec2(-uTime * 0.1 * uGSpeed, 0.)) * 0.3 * uDisplacementAmp;
+  }
+
+  vec3 worldPos = instancePos.xyz + vec3(0., -0.2, 0.);
+  vWorldPos = worldPos;
+
+  vec4 mvPosition = modelViewMatrix * vec4(worldPos, 1.0);
+  gl_Position = projectionMatrix * mvPosition;
+  vFogDepth = -mvPosition.z;
 }
