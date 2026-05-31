@@ -291,14 +291,14 @@ export class CubeMeshWaterBlock extends CubeMeshMultiMaterial {
         CubeMeshWaterBlock.waterTopMaterial = new ShaderMaterial({
             vertexShader: waterVertexShader,
             fragmentShader: waterFragmentShader,
-            // fog: true,
+            fog: true,
             uniforms: UniformsUtils.merge([
                 // UniformsLib.lights,
-                // UniformsLib.fog,
+                UniformsLib.fog,
                 {
                     uTime: { value: 0 },
                     uDisplace: { value: true },
-                    uWaterCol: { value: new Vector3(100./255., 150./255., 237./255.) },
+                    uWaterCol: { value: new Vector3(25/255, 100/255, 230/255) },
                     uCausticCol: { value: new Vector3(1, 1, 1) },
                     uIsTransparent: { value: true },
                     uGScale: { value: 1 },
@@ -306,6 +306,12 @@ export class CubeMeshWaterBlock extends CubeMeshMultiMaterial {
                     uDisplacementAmp: { value: 0.2 },
                     uFBMIntensity: { value: 3 },
                     uFBMScale: { value: 0.2 },
+
+                    uLightDir:    { value: new Vector3(1, 2, 1).normalize() },
+                    uLightColor:  { value: new Vector3(1, 1, 1) },
+                    uCameraPos:   { value: new Vector3() },
+                    uShininess:   { value: 128. },
+                    uSpecularStr: { value: 0.8 },
                 }
             ]),
             side: DoubleSide,
