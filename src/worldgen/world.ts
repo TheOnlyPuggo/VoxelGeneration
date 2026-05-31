@@ -111,6 +111,8 @@ export class World {
     private previousStructureCameraChunkPos: ChunkPos;
     private isGenerating: boolean;
 
+    private generationID = 0;
+
     private readonly maxAmountOfStoredStructureBlocks: number = 1000;
     //private testPos: Vec2;
 
@@ -144,7 +146,6 @@ export class World {
 
         this.worleyGridSize = worleyGridSize;
 
-
         var testCase: BiomeDistance[] = this.getBiomeData(new BlockPos(390, 90, 128))
         console.log("closest biome distance: ", testCase[0].distance, "    Second closest is: ", testCase[1].distance);
     }
@@ -170,6 +171,8 @@ export class World {
     }
 
     public destroy(scene: Scene) {
+        this.generationID++;
+
         for (const [key, chunkEntry] of this.chunksMap) {
             this.removeChunkMeshes(scene, chunkEntry);
         }
@@ -192,6 +195,7 @@ export class World {
     }
 
     private async CreateChunks(): Promise<Chunk[]> {
+        const currentGenerationID = this.generationID;
         let newChunks: Chunk[] = [];
         let createCount = 0;
 
@@ -219,6 +223,7 @@ export class World {
                             ++createCount;
 
                             await nextFrame();
+                            if (this.generationID != currentGenerationID) return [];
                         }
                     }
                 }
@@ -229,6 +234,7 @@ export class World {
     }
 
     private async CreateChunkMeshes(scene: Scene, newChunks: Chunk[]) {
+        const currentGenerationID = this.generationID;
         let createCount = 0;
 
         for (const chunk of newChunks) {
@@ -236,11 +242,13 @@ export class World {
 
             if (++createCount % 2 === 0) {
                 await nextFrame();
+                if (this.generationID != currentGenerationID) return [];
             }
         }
     }
 
     private async DeleteOutOfRenderChunks(scene: Scene) {
+        const currentGenerationID = this.generationID;
         let deleteCount = 0;
 
         const chunkMapEntries = Array.from(this.chunksMap);
@@ -253,6 +261,7 @@ export class World {
             ++deleteCount;
             if (deleteCount % 8 === 0) {
                 await nextFrame();
+                if (currentGenerationID != currentGenerationID) return [];
             }
         }
     }
@@ -765,6 +774,7 @@ export class World {
     // STRUCTURES
 
     private async generateStructureData() {
+        const currentGenerationID = this.generationID;
         if (Model.firstStructureGeneration) await Model.LoadModelData();
 
         let minimumX = (this.cameraChunkPos.x * Chunk.chunkSize) - ((this.worldRadius + 1) * Chunk.chunkSize);
@@ -792,6 +802,7 @@ export class World {
             for (let z = minimumZ; z <= maximumZ; z++) {
                 let modelAndHeight = this.getModelAtPos(x, z);
                 if (modelAndHeight != undefined) await modelAndHeight[0].loadModelInformation(new BlockPos(x, modelAndHeight[1] + 1, z));
+                if (this.generationID != currentGenerationID) return;
             }
         }
 
