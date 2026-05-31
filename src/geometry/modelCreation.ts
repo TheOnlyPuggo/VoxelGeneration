@@ -24,6 +24,8 @@ export class Model {
     public static generatedStructureBlocksToLoad: Map<string, GeneratedStructureBlock> = new Map<string, GeneratedStructureBlock>();
     public static LoadedModels: ModelNamesDictionary = {};
 
+    public static firstStructureGeneration: boolean = true;
+
     private blockOriginPos: BlockPos;
     private blockDatas: ModelBlockData[];
 
