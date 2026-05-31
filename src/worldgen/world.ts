@@ -11,6 +11,7 @@ import {Vec3} from "../positions/vec3";
 import {ChunkSave} from "./chunkSave";
 import { Vec2 } from "../positions/vec2";
 import {SimplexSeeder} from "./simplexSeeder";
+import { NoiseFunction2D } from "simplex-noise";
 
 const hypo = (x: number, y: number, z: number): number => Math.sqrt(x * x + y * y + z * z);
 
@@ -70,7 +71,8 @@ export enum BiomeTypes {
     Plains,
     Mountain,
     Ocean,
-    Underground
+    Underground,
+    Tundra
 }
 export class BiomeDistance {
     public distance: number;
@@ -116,22 +118,22 @@ export class World {
     constructor() {
         let globalSeeder: SimplexSeeder = new SimplexSeeder(1000);
 
-        this.heightNoiseCoarse = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
-        this.heightNoiseMedium = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
-        this.heightNoiseFine = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
-        this.dirtNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
-        this.caveNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
-        this.coalNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
-        this.ironNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
-        this.cucumberNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.heightNoiseCoarse = new SimplexNoise();
+        this.heightNoiseMedium = new SimplexNoise();
+        this.heightNoiseFine = new SimplexNoise();
+        this.dirtNoise = new SimplexNoise();
+        this.caveNoise = new SimplexNoise();
+        this.coalNoise = new SimplexNoise();
+        this.ironNoise = new SimplexNoise();
+        this.cucumberNoise = new SimplexNoise();
 
-        this.worleyXNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
-        this.worleyZNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
-        this.worleyBiome = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
-        this.mountainHeightNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
-        this.snowHeightNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.worleyXNoise = new SimplexNoise();
+        this.worleyZNoise = new SimplexNoise();
+        this.worleyBiome = new SimplexNoise();
+        this.mountainHeightNoise = new SimplexNoise();
+        this.snowHeightNoise = new SimplexNoise();
 
-        this.structureNoise = new SimplexNoise(new SimplexSeeder(globalSeeder.random()));
+        this.structureNoise = new SimplexNoise();
 
         this.cameraChunkPos = new ChunkPos(0, 0, 0);
         this.previousCameraChunkPos = this.cameraChunkPos;
@@ -143,6 +145,8 @@ export class World {
 
 
         this.firstStructureGeneration = true;
+        var testCase: BiomeDistance[] = this.getBiomeData(new BlockPos(390, 90, 128))
+        console.log("closest biome distance: ", testCase[0].distance, "    Second closest is: ", testCase[1].distance);
     }
 
     async Update(camera: Camera | null, scene: Scene) {
@@ -406,6 +410,8 @@ export class World {
                 return [biome, this.getMountainHeight(blockPos, dFract)];
             case BiomeTypes.Desert:
                 return [biome, this.getDesertHeight(blockPos, dFract)];
+            case BiomeTypes.Tundra:
+                return [biome, this.getTundraHeight(blockPos, dFract)];
             case BiomeTypes.Ocean:
                 if (dFract > biomeGen.shorelineFactor){
                     return [biome, this.getOceanHeight(blockPos, dFract)];
@@ -467,6 +473,9 @@ export class World {
         if (biomeData[0].biome == BiomeTypes.Underground){
             return this.undergroundGetBlockAt(blockPos);
         }
+        if (biomeData[0].biome == BiomeTypes.Tundra){
+            return this.tundraGetBlockAt(blockPos, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
+        }
         else {
             return Blocks.AIR;
         }
@@ -490,6 +499,10 @@ export class World {
 
         if (biomeData[0].biome == BiomeTypes.Plains){
             return this.plainsGetBlockAt(blockPos, 0);
+            //return Blocks.GREEN;
+        }
+        if (biomeData[0].biome == BiomeTypes.Tundra){
+            return this.tundraGetBlockAt(blockPos, biomeData[0].distance / ((biomeData[0].distance + biomeData[1].distance) / 2));
             //return Blocks.GREEN;
         }
         else {
@@ -578,6 +591,20 @@ export class World {
         return Blocks.STONE;
     }
     getPlainsHeight(blockPos: BlockPos){
+        return this.getHeightAt(blockPos.x, blockPos.z);
+    }
+    tundraGetBlockAt(blockPos: BlockPos, dFract: number){
+        let height: number = this.getPlainsHeight(blockPos) - blockPos.y;
+        let dirtHeight: number = height - this.getDirtThicknessAt(blockPos.x, blockPos.z);
+
+        if (height < 0 || (this.getCaveAt(blockPos) && blockPos.y < heightGen.base)) return Blocks.AIR;
+        else if (dirtHeight <= 0) return Blocks.SNOW;
+        else if (this.getCoalAt(blockPos)) return Blocks.COAL;
+        else if (this.getIronAt(blockPos)) return Blocks.IRON;
+        else if (this.getCucumberAt(blockPos)) return Blocks.CUCUMBER;
+        return Blocks.STONE;
+    }
+    getTundraHeight(blockPos: BlockPos, dFract: number){
         return this.getHeightAt(blockPos.x, blockPos.z);
     }
 
@@ -690,14 +717,16 @@ export class World {
 
     getBiomeAtGrid(gridPos: Vec2){
         let b: number = ((this.worleyBiome.noise(gridPos.x, gridPos.y) + 1) * 1000) % 1;
-        if (b < 0.25){
+        if (b < 0.2){
             return BiomeTypes.Desert;
-        } else if (b < 0.5){
+        } else if (b < 0.4){
             return BiomeTypes.Mountain;
-        } else if (b < 0.75){
+        } else if (b < 0.6){
             return BiomeTypes.Ocean;
-        } else {
+        } else if (b < 0.8){
             return BiomeTypes.Plains;
+        } else {
+            return BiomeTypes.Tundra;
         }
     }
 
@@ -799,6 +828,14 @@ export class World {
                 return [Model.LoadedModels["Cactus2"], heightAndBiome[1]];
             if (structureNoiseVal >= 0.96 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
                 return [Model.LoadedModels["Cactus3"], heightAndBiome[1]];
+        }
+        else if (heightAndBiome[0] == BiomeTypes.Tundra) {
+            if (structureNoiseVal >= 0.98 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
+                return [Model.LoadedModels["IceSpike1"], heightAndBiome[1]];
+            if (structureNoiseVal >= 0.955 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
+                return [Model.LoadedModels["IceSpike2"], heightAndBiome[1]];
+            if (structureNoiseVal >= 0.93 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
+                return [Model.LoadedModels["IceSpike3"], heightAndBiome[1]];
         }
         else return undefined;
         // CURSED else return Model.LoadedModels["DirtHut"];
