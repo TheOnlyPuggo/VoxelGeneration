@@ -419,7 +419,11 @@ export class World {
                     return [biome, null];
                 }
             case BiomeTypes.Plains:
-                return [biome, this.getPlainsHeight(blockPos)];
+                if (this.getCaveAt(new BlockPos(x, this.getPlainsHeight(blockPos), z))){
+                    return [biome, null]
+                } else {
+                    return [biome, this.getPlainsHeight(blockPos)];
+                }
         }
 
     }
