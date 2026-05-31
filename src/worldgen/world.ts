@@ -409,6 +409,8 @@ export class World {
                 return [biome, this.getMountainHeight(blockPos, dFract)];
             case BiomeTypes.Desert:
                 return [biome, this.getDesertHeight(blockPos, dFract)];
+            case BiomeTypes.Tundra:
+                return [biome, this.getTundraHeight(blockPos, dFract)];
             case BiomeTypes.Ocean:
                 if (dFract > biomeGen.shorelineFactor){
                     return [biome, this.getOceanHeight(blockPos, dFract)];
@@ -825,6 +827,10 @@ export class World {
                 return [Model.LoadedModels["Cactus2"], heightAndBiome[1]];
             if (structureNoiseVal >= 0.96 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
                 return [Model.LoadedModels["Cactus3"], heightAndBiome[1]];
+        }
+        else if (heightAndBiome[0] == BiomeTypes.Tundra) {
+            if (structureNoiseVal >= 0.93 && this.isLocalMaximum(structureNoiseVal, x, z, 2))
+                return [Model.LoadedModels["IceSpike1"], heightAndBiome[1]];
         }
         else return undefined;
         // CURSED else return Model.LoadedModels["DirtHut"];

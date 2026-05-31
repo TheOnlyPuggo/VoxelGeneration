@@ -40,6 +40,7 @@ export const PALM_TREE_LOG = new Block("palm_tree_log", new CubeMeshMultiTexture
     "block_textures/log/log_side.png",
 ), true);
 export const CACTUS = new Block("cactus", new CubeMeshOneColor(1, new Color(0, 1, 0), false), true);
+export const ICE = new Block("ice", new CubeMeshOneColor(1, new Color(0, 1, 1), false), true);
 interface BlockDictionary {
     [key: string]: Block;
 }
@@ -58,5 +59,6 @@ export const MinecraftBlockDictionary: BlockDictionary = {
     "minecraft:azalea_leaves": PALM_TREE_LEAF,
     "minecraft:jungle_log": PALM_TREE_LOG,
     "minecraft:green_wool": CACTUS,
+    "minecraft:packed_ice": ICE,
     "67": CUCUMBER,
 };

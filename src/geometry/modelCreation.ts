@@ -68,6 +68,7 @@ export class Model {
         Model.LoadedModels["Cactus1"] = await Model.load("model_data/cactus_1.csv");
         Model.LoadedModels["Cactus2"] = await Model.load("model_data/cactus_2.csv");
         Model.LoadedModels["Cactus3"] = await Model.load("model_data/cactus_3.csv");
+        Model.LoadedModels["IceSpike1"] = await Model.load("model_data/ice_spike_1.csv");
     }
 
     static async load(modelDataPath: string): Promise<Model> {
