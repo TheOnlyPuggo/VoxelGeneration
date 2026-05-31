@@ -10,6 +10,7 @@ enum PlayerState {
     Normal,
     Crouching,
     Sprinting,
+    Swimming,
 }
 
 export class CameraControls {
@@ -37,7 +38,9 @@ export class CameraControls {
     private walkSpeed: number = 4.317;
     private sprintSpeed: number = 5.612;
     private crouchSpeed: number = 1.3;
+    private swimSpeed: number = 3;
     private moveLerpSpeed: number = 10;
+    private gravityMult: number = 1;
 
     private headBobOffset: number = 0;
     private headSwayOffset: number = 0;
@@ -141,9 +144,8 @@ export class CameraControls {
         this.velocity.x = MathUtils.lerp(this.velocity.x, dir.x, 1 - Math.exp(-this.moveLerpSpeed * delta));
         this.velocity.z = MathUtils.lerp(this.velocity.z, dir.z, 1 - Math.exp(-this.moveLerpSpeed * delta));
 
-        if (this.inputWrapper.inputs.get(Input.Up) && this.isGrounded) {
-            this.velocity.y = this.jumpForce;
-        }
+        // Check for water
+        if (this.IsWater(this.playerPos.x, this.playerPos.y - this.playerHeight, this.playerPos.z)) this.playerState = PlayerState.Swimming;
         
         this.PlayerStateHandle(delta, dir);
         this.CrouchingHeight(delta);
@@ -174,6 +176,10 @@ export class CameraControls {
                 
                 if (this.inputWrapper.IsPressed(Input.Sprint)) this.playerState = PlayerState.Sprinting;
                 if (this.inputWrapper.IsHeld(Input.Down)) this.playerState = PlayerState.Crouching;
+
+                if (this.inputWrapper.inputs.get(Input.Up) && this.isGrounded) this.velocity.y = this.jumpForce;
+
+                this.gravityMult = 1;
                 break;
             case PlayerState.Crouching:
                 this.speed = this.crouchSpeed;
@@ -182,6 +188,10 @@ export class CameraControls {
                 targetCamFOV = 85;
 
                 if (!this.inputWrapper.IsHeld(Input.Down)) this.playerState = PlayerState.Normal;
+
+                if (this.inputWrapper.inputs.get(Input.Up) && this.isGrounded) this.velocity.y = this.jumpForce;
+
+                this.gravityMult = 1;
                 break;
             case PlayerState.Sprinting:
                 this.speed = this.sprintSpeed;
@@ -191,6 +201,28 @@ export class CameraControls {
 
                 if (this.inputWrapper.IsPressed(Input.Sprint) || (dir.x == 0 && dir.z == 0)) this.playerState = PlayerState.Normal;
                 if (this.inputWrapper.IsHeld(Input.Down)) this.playerState = PlayerState.Crouching;
+
+                if (this.inputWrapper.inputs.get(Input.Up) && this.isGrounded) this.velocity.y = this.jumpForce;
+
+                this.gravityMult = 1;
+                break;
+            case PlayerState.Swimming:
+                this.speed = this.swimSpeed;
+                this.headBobFrequencyMultiplier = 0;
+                targetCamFOV = 80;
+                
+                if (this.IsWater(this.playerPos.x, this.playerPos.y - 0.8, this.playerPos.z)) {
+                    if (Math.abs(this.velocity.y) > 1) this.gravityMult = -0.5;
+                } else {
+                    if (Math.abs(this.velocity.y) > 1) this.gravityMult = 0.5;
+                }
+                
+                if (this.inputWrapper.IsHeld(Input.Up)) {
+                    this.gravityMult -= 1;
+                } else this.velocity.y = MathUtils.clamp(this.velocity.y, -2, 2);
+                
+                if (!this.IsWater(this.playerPos.x, this.playerPos.y - this.playerHeight, this.playerPos.z)) this.playerState = PlayerState.Normal;
+
                 break;
         }
         
@@ -220,7 +252,7 @@ export class CameraControls {
     }
 
     MoveAndCollide(delta: number) {
-        this.velocity.y -= this.gravity * delta;
+        this.velocity.y -= this.gravity * this.gravityMult * delta;
         
         let safeStepSize = 0.4;
         let speed = this.velocity.length();
@@ -300,6 +332,10 @@ export class CameraControls {
 
     IsSolid(x: number, y: number, z: number): boolean {
         return this.world ? this.world.getBlockAt(BlockPos.roundFromVec3(new Vec3(x, y, z))).getSolid() : false;
+    }
+
+    IsWater(x: number, y: number, z: number): boolean {
+        return this.world ? this.world.getBlockAt(BlockPos.roundFromVec3(new Vec3(x, y, z))).equals(Blocks.WATER) : false;
     }
 }
 
