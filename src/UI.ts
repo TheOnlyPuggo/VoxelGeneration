@@ -1,17 +1,33 @@
-import {Camera, Scene} from "three";
+import {Camera, DirectionalLight, Mesh, PerspectiveCamera, Scene, Timer, WebGLRenderer} from "three";
 // @ts-ignore
 import {GUI} from 'lil-gui';
 import {CameraControls} from './camera';
 import {WorldWrapper} from "./worldgen/worldWrapper";
+import {GroundedSkybox} from "three/examples/jsm/objects/GroundedSkybox.js";
 
 type GameLike = {
     worldWrapper: WorldWrapper | null
     camera: Camera | null
     cameraControls: CameraControls | null,
-    scene: Scene | null
+    scene: Scene | null,
+    fogActiveState: boolean,
+    changeFogActiveState: (state: boolean) => void,
 }
 
-export function CreateGUI(gameProps: GameLike) {
+export function CreateGUI(gameProps: {
+    scene: Scene | null;
+    camera: PerspectiveCamera | null;
+    cameraControls: CameraControls | null;
+    renderer: WebGLRenderer | null;
+    directionalLight: DirectionalLight | null;
+    environment: { skybox: GroundedSkybox | null };
+    timer: Timer | null;
+    worldWrapper: WorldWrapper | null;
+    instantiatedMeshes: Mesh[] | null;
+    currentFrame: number | null;
+    stats: Stats | null;
+    fogActive: boolean;
+}) {
     const gui = new GUI();
     const positionFolder = gui.addFolder("Position");
     const cameraFolder = gui.addFolder("Camera");
@@ -31,6 +47,7 @@ export function CreateGUI(gameProps: GameLike) {
 
     if (gameProps.cameraControls) {
         cameraFolder.add(gameProps.cameraControls, "isFlyingControls").listen();
+        cameraFolder.add(gameProps, "fogActive").listen();
     }
 
     if (gameProps.worldWrapper) {
