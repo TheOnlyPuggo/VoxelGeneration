@@ -35,8 +35,12 @@ export function CreateGUI(gameProps: GameLike) {
 
     if (gameProps.worldWrapper) {
         generationFolder.add(gameProps.worldWrapper, "seed").listen();
+        generationFolder.add(gameProps.worldWrapper, "chunkSize").listen();
+        generationFolder.add(gameProps.worldWrapper, "chunkRenderDistance").listen();
         generationFolder.add(gameProps.worldWrapper, "biomeSize").listen();
         generationFolder.add(gameProps.worldWrapper, "heightAmplitude").listen();
+        generationFolder.add(gameProps.worldWrapper, "mountainHeight").listen();
+        generationFolder.add(gameProps.worldWrapper, "structureGeneration").listen();
         generationFolder.add({
             regenerateWorld: function() {
                 if (gameProps.scene && gameProps.cameraControls) {

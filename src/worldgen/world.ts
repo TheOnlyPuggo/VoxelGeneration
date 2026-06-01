@@ -82,6 +82,16 @@ export class BiomeDistance {
     }
 }
 
+export interface WorldParameters {
+    seed: number;
+    chunkSize: number;
+    chunkRenderDistance: number;
+    worleyGridSize: number;
+    heightAmplitude: number;
+    mountainHeight: number;
+    enableStructures: boolean;
+}
+
 export class World {
     private readonly heightNoiseCoarse: NoiseFunction2D;
     private readonly heightNoiseMedium: NoiseFunction2D;
@@ -99,7 +109,7 @@ export class World {
 
     private readonly structureNoise: NoiseFunction2D;
 
-    readonly worldRadius = 4;
+    private worldRadius = 4;
     private worleyGridSize: number;
 
     //readonly chunks: Array<Array<Array<Chunk>>>;
@@ -110,14 +120,15 @@ export class World {
     private previousCameraChunkPos: ChunkPos;
     private previousStructureCameraChunkPos: ChunkPos;
     private isGenerating: boolean;
+    private structuresEnabled: boolean;
 
     private generationID = 0;
 
     private readonly maxAmountOfStoredStructureBlocks: number = 1000;
     //private testPos: Vec2;
 
-    constructor(seed: number, worleyGridSize: number, heightAmplitude: number) {
-        const seeder = alea(seed);
+    constructor(worldParams: WorldParameters) {
+        const seeder = alea(worldParams.seed);
 
         this.heightNoiseCoarse = createNoise2D(alea(seeder.next()));
         this.heightNoiseMedium = createNoise2D(alea(seeder.next()));
@@ -144,8 +155,12 @@ export class World {
         this.chunksMap = new Map<string, {chunk: Chunk, chunkMeshes: Mesh[]}>();
         this.chunkSaveMap = new Map<string, ChunkSave>();
 
-        this.worleyGridSize = worleyGridSize;
-        heightGen.amplitude = heightAmplitude;
+        Chunk.chunkSize = worldParams.chunkSize;
+        this.worldRadius = worldParams.chunkRenderDistance;
+        this.worleyGridSize = worldParams.worleyGridSize;
+        heightGen.amplitude = worldParams.heightAmplitude;
+        heightGen.mountainHeight = worldParams.mountainHeight;
+        this.structuresEnabled = worldParams.enableStructures;
 
         var testCase: BiomeDistance[] = this.getBiomeData(new BlockPos(390, 90, 128))
         console.log("closest biome distance: ", testCase[0].distance, "    Second closest is: ", testCase[1].distance);
@@ -158,11 +173,11 @@ export class World {
         if (!this.previousCameraChunkPos.equals(this.cameraChunkPos) && !this.isGenerating)  {
             this.isGenerating = true;
 
-            await this.generateStructureData();
+            if (this.structuresEnabled) await this.generateStructureData();
             const newChunks = await this.CreateChunks();
             await this.CreateChunkMeshes(scene, newChunks);
             await this.DeleteOutOfRenderChunks(scene);
-            await this.deleteOutOfRangeStructureData();
+            if (this.structuresEnabled) await this.deleteOutOfRangeStructureData();
 
             this.isGenerating = false;
             this.previousCameraChunkPos = this.cameraChunkPos;
@@ -197,6 +212,8 @@ export class World {
 
     private async CreateChunks(): Promise<Chunk[]> {
         const currentGenerationID = this.generationID;
+        const generationCenter = this.cameraChunkPos;
+
         let newChunks: Chunk[] = [];
         let createCount = 0;
 
@@ -205,8 +222,7 @@ export class World {
                 for (let y = -i; y <= i; y++) {
                     for (let z = -i; z <= i; z++) {
                         if (x > -i && x < i && y > -i && y < i && z > -i && z < i) continue;
-
-                        const chunkPos = this.cameraChunkPos.add(new ChunkPos(x, y, z));
+                        const chunkPos = generationCenter.add(new ChunkPos(x, y, z));
 
                         if (this.chunkPosWithinRenderDistance(chunkPos)) continue;
 
@@ -776,28 +792,18 @@ export class World {
 
     private async generateStructureData() {
         const currentGenerationID = this.generationID;
+        const generationCenter = this.cameraChunkPos;
         if (Model.firstStructureGeneration) await Model.LoadModelData();
 
-        let minimumX = (this.cameraChunkPos.x * Chunk.chunkSize) - ((this.worldRadius + 1) * Chunk.chunkSize);
-        let maximumX = (this.cameraChunkPos.x * Chunk.chunkSize) + ((this.worldRadius + 1) * Chunk.chunkSize) + Chunk.chunkSize - 1;
-        let minimumZ = (this.cameraChunkPos.z * Chunk.chunkSize) - ((this.worldRadius + 1) * Chunk.chunkSize);
-        let maximumZ = (this.cameraChunkPos.z * Chunk.chunkSize) + ((this.worldRadius + 1) * Chunk.chunkSize) + Chunk.chunkSize - 1;
+        let minimumX = (generationCenter.x * Chunk.chunkSize) - ((this.worldRadius + 2) * Chunk.chunkSize);
+        let maximumX = (generationCenter.x * Chunk.chunkSize) + ((this.worldRadius + 2) * Chunk.chunkSize) + Chunk.chunkSize - 1;
+        let minimumZ = (generationCenter.z * Chunk.chunkSize) - ((this.worldRadius + 2) * Chunk.chunkSize);
+        let maximumZ = (generationCenter.z * Chunk.chunkSize) + ((this.worldRadius + 2) * Chunk.chunkSize) + Chunk.chunkSize - 1;
 
         let chunkPosShift: ChunkPos = this.cameraChunkPos.subtract(this.previousStructureCameraChunkPos);
         this.previousStructureCameraChunkPos = this.cameraChunkPos;
 
         if (Math.abs(chunkPosShift.y) == 1 && chunkPosShift.x == 0 && chunkPosShift.z == 0) return;
-
-        // if (
-        //     !this.firstStructureGeneration &&
-        //     ((Math.abs(chunkPosShift.x) == 1 || Math.abs(chunkPosShift.z) == 1)) &&
-        //     Math.abs(chunkPosShift.x) != Math.abs(chunkPosShift.z)
-        // ) {
-        //     if (chunkPosShift.x == -1) maximumX = minimumX + Chunk.chunkSize;
-        //     else if (chunkPosShift.x == 1) minimumX = maximumX - Chunk.chunkSize;
-        //     else if (chunkPosShift.z == -1) maximumZ = minimumZ + Chunk.chunkSize;
-        //     else if (chunkPosShift.z == 1) minimumZ = maximumZ - Chunk.chunkSize;
-        // }
 
         for (let x = minimumX; x <= maximumX; x++) {
             for (let z = minimumZ; z <= maximumZ; z++) {

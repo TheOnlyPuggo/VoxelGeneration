@@ -1,19 +1,23 @@
-import {World} from "./world";
+import {World, WorldParameters} from "./world";
 import {Scene} from "three";
 import {Model} from "../geometry/modelCreation";
 import {CameraControls} from "../camera";
 
 export class WorldWrapper {
     public seed: number = Math.round(Math.random() * 1000000000);
+    public chunkSize: number = 16;
+    public chunkRenderDistance: number = 4;
     public biomeSize: number = 128;
     public heightAmplitude: number = 3
+    public mountainHeight: number = 128;
+    public structureGeneration: boolean = true;
 
     private world: World;
 
     private static firstLoad = true;
 
     constructor() {
-        this.world = new World(this.seed, this.biomeSize, this.heightAmplitude);
+        this.world = new World(this.getNewWorldParams());
     }
 
     public getWorld(): World {
@@ -22,7 +26,7 @@ export class WorldWrapper {
 
     public regenerate(scene: Scene, cameraControls: CameraControls): void {
         this.world.destroy(scene);
-        this.world = new World(this.seed, this.biomeSize, this.heightAmplitude);
+        this.world = new World(this.getNewWorldParams());
         this.resetCamera(cameraControls);
         Model.generatedStructureBlocksToLoad = new Map();
     }
@@ -41,5 +45,17 @@ export class WorldWrapper {
             WorldWrapper.firstLoad = false;
             cameraControls.playerPos.y += 150;
         }
+    }
+
+    private getNewWorldParams(): WorldParameters {
+        return {
+            seed: this.seed,
+            chunkSize: this.chunkSize,
+            chunkRenderDistance: this.chunkRenderDistance,
+            worleyGridSize: this.biomeSize,
+            heightAmplitude: this.heightAmplitude,
+            mountainHeight: this.mountainHeight,
+            enableStructures: this.structureGeneration
+        };
     }
 }

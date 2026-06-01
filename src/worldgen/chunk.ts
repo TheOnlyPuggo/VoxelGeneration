@@ -15,7 +15,7 @@ export class Chunk {
     readonly blocks: Array<Array<Array<Block>>>;
     readonly save: ChunkSave;
 
-    public static readonly chunkSize: number = 16;
+    public static chunkSize: number = 16;
 
     constructor(world: World, chunkPos: ChunkPos, save: ChunkSave | undefined) {
         this.world = world;
