@@ -44,7 +44,7 @@ export const Game: {
     currentFrame: null,
     stats: null,
     fog: null,
-    fogActive: true,
+    fogActive: false,
 };
 
 init();
@@ -104,7 +104,7 @@ async function init(): Promise<void> {
     Game.scene.add(Game.directionalLight.target);
 
     Game.fog = new Fog(0x6a7b8b, (Game.worldWrapper.getWorld().worldRadius-1)*16, (Game.worldWrapper.getWorld().worldRadius)*16);
-    Game.scene.fog = Game.fog;
+    Game.scene.fog = Game.fogActive ? Game.fog : null;
 
     //const ambientLight = new AmbientLight(0xc2d9ff, 0.8);
     //Game.scene.add(ambientLight);
