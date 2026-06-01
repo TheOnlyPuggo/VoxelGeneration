@@ -323,7 +323,7 @@ export class CubeMeshWaterBlock extends CubeMeshMultiMaterial {
             transparent: true,
         });
 
-        CubeMeshWaterBlock.waterTopGeometry = new PlaneGeometry(1, 1, 32, 32);
+        CubeMeshWaterBlock.waterTopGeometry = new PlaneGeometry(1, 1, 12, 12);
     }
 
     public constructor() {

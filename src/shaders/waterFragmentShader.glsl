@@ -168,12 +168,15 @@ void main() {
 
     vec3 litColor = causticCol * 0.7 + specular;
 
+    vec4 outColor;
     if (uIsTransparent) {
         float alpha = dot(causticCol, vec3(0.333)) * 1.2;
-        gl_FragColor = vec4(litColor, alpha);
+        outColor = vec4(litColor, alpha);
     } else {
-        gl_FragColor = vec4(litColor * 2., 1.);
+        outColor = vec4(litColor * 2., 1.);
     }
+    
+    gl_FragColor = outColor;
 
     #include <fog_fragment>
 }

@@ -9,6 +9,8 @@ import {Model} from "./geometry/modelCreation";
 import {BlockPos} from "./positions/blockPos";
 import {CubeMeshGrassBlock, CubeMeshWaterBlock, CubeMeshSandBlock, CubeMeshSnowBlock} from "./geometry/creation";
 import {WorldWrapper} from "./worldgen/worldWrapper";
+import {WorldVisuals} from "./worldgen/worldVisuals";
+import { deltaTime } from "three/tsl";
 
 
 export const Game: {
@@ -22,7 +24,7 @@ export const Game: {
     },
     timer: Timer | null,
     worldWrapper: WorldWrapper | null,
-    
+    worldVisuals: WorldVisuals | null,
     instantiatedMeshes: Mesh[] | null,
     currentFrame: number | null,
     stats: Stats | null;
@@ -37,7 +39,7 @@ export const Game: {
     },
     timer: null,
     worldWrapper: null,
-
+    worldVisuals: null,
     instantiatedMeshes: null,
     currentFrame: null,
     stats: null,
@@ -73,7 +75,8 @@ async function init(): Promise<void> {
     // Timer
     Game.timer = new Timer();
     Game.currentFrame = 0;
-    
+   
+    Game.worldVisuals = new WorldVisuals(Game);
 
     // Game.renderer.toneMapping = ACESFilmicToneMapping;
     // Game.renderer.toneMappingExposure = 1.0;
@@ -99,7 +102,7 @@ async function init(): Promise<void> {
     Game.scene.add(Game.directionalLight);
     Game.scene.add(Game.directionalLight.target);
 
-    Game.scene.fog = new Fog(0x6a7b8b, (Game.worldWrapper.getWorld().worldRadius-1)*16, (Game.worldWrapper.getWorld().worldRadius)*16);
+    Game.scene.fog = null;//new Fog(0x6a7b8b, (Game.worldWrapper.getWorld().worldRadius-1)*16, (Game.worldWrapper.getWorld().worldRadius)*16);
 
     //const ambientLight = new AmbientLight(0xc2d9ff, 0.8);
     //Game.scene.add(ambientLight);
@@ -158,10 +161,16 @@ function animate(time: number): void {
     // #endregion
 
     // #region AnimateWater
-    CubeMeshWaterBlock.waterTopMaterial.uniforms.uTime.value = Game.timer?.getElapsed();
-    CubeMeshWaterBlock.waterTopMaterial.uniforms.uCameraPos.value.copy(Game.camera?.position);
-    CubeMeshWaterBlock.waterTopMaterial.uniforms.uLightDir.value.copy(Game.directionalLight?.position).normalize();
+    if (Game.timer && Game.camera && Game.directionalLight) {
+        CubeMeshWaterBlock.waterTopMaterial.uniforms.uTime.value = Game.timer.getElapsed();
+        CubeMeshWaterBlock.waterTopMaterial.uniforms.uCameraPos.value.copy(Game.camera.position);
+        CubeMeshWaterBlock.waterTopMaterial.uniforms.uLightDir.value.copy(Game.directionalLight.position).normalize();
+    }
     // #endregion
+
+    if (Game.worldVisuals) {
+        Game.worldVisuals.Animate(Game.timer?.getDelta() ?? 0);
+    }
 
     Game.stats?.update();
     requestAnimationFrame(animate);
