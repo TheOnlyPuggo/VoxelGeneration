@@ -109,7 +109,7 @@ export class World {
 
     private readonly structureNoise: NoiseFunction2D;
 
-    private worldRadius = 4;
+    public worldRadius = 4;
     private worleyGridSize: number;
 
     //readonly chunks: Array<Array<Array<Chunk>>>;
