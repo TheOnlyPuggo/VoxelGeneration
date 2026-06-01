@@ -78,7 +78,7 @@ void main() {
   vec4 mvPosition = modelViewMatrix * vec4(worldPos, 1.0);
   gl_Position = projectionMatrix * mvPosition;
 
-  #ifdef USE_FOG
+#ifdef USE_FOG
   vFogDepth = -mvPosition.z;
-  #endif
+#endif
 }

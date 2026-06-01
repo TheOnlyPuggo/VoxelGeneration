@@ -27,7 +27,9 @@ export const Game: {
     worldVisuals: WorldVisuals | null,
     instantiatedMeshes: Mesh[] | null,
     currentFrame: number | null,
-    stats: Stats | null;
+    stats: Stats | null,
+    fog: Fog | null,
+    fogActive: boolean,
 } = {
     scene: null,
     camera: null,
@@ -43,6 +45,8 @@ export const Game: {
     instantiatedMeshes: null,
     currentFrame: null,
     stats: null,
+    fog: null,
+    fogActive: true,
 };
 
 init();
@@ -102,7 +106,8 @@ async function init(): Promise<void> {
     Game.scene.add(Game.directionalLight);
     Game.scene.add(Game.directionalLight.target);
 
-    Game.scene.fog = null;//new Fog(0x6a7b8b, (Game.worldWrapper.getWorld().worldRadius-1)*16, (Game.worldWrapper.getWorld().worldRadius)*16);
+    Game.fog = new Fog(0x6a7b8b, (Game.worldWrapper.getWorld().worldRadius-1)*16, (Game.worldWrapper.getWorld().worldRadius)*16);
+    Game.scene.fog = Game.fog;
 
     //const ambientLight = new AmbientLight(0xc2d9ff, 0.8);
     //Game.scene.add(ambientLight);
@@ -148,6 +153,12 @@ function animate(time: number): void {
     }
 
     if (Game.scene) Game.worldWrapper?.getWorld().Update(Game.camera, Game.scene);
+
+    if (Game.scene && Game.fogActive && !Game.scene.fog) {
+        Game.scene.fog = Game.fog;
+    } else if (Game.scene && !Game.fogActive && Game.scene.fog) {
+        Game.scene.fog = null;
+    }
 
     // #region AnimateGrass
     CubeMeshGrassBlock.grassMaterial.uniforms.uTime.value = Game.timer?.getElapsed();
