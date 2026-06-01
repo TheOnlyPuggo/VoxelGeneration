@@ -11,6 +11,7 @@ import {CubeMeshGrassBlock, CubeMeshWaterBlock, CubeMeshSandBlock, CubeMeshSnowB
 import {WorldWrapper} from "./worldgen/worldWrapper";
 import {WorldVisuals} from "./worldgen/worldVisuals";
 import { deltaTime } from "three/tsl";
+import { Chunk } from "./worldgen/chunk";
 
 
 export const Game: {
@@ -106,7 +107,7 @@ async function init(): Promise<void> {
     Game.scene.add(Game.directionalLight);
     Game.scene.add(Game.directionalLight.target);
 
-    Game.fog = new Fog(0x6a7b8b, (Game.worldWrapper.getWorld().worldRadius-1)*16, (Game.worldWrapper.getWorld().worldRadius)*16);
+    Game.fog = new Fog(0x6a7b8b, (Game.worldWrapper.getWorld().worldRadius-2)*Chunk.chunkSize, (Game.worldWrapper.getWorld().worldRadius-1)*Chunk.chunkSize);
     Game.scene.fog = Game.fog;
 
     //const ambientLight = new AmbientLight(0xc2d9ff, 0.8);
